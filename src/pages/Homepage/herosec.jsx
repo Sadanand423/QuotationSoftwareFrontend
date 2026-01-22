@@ -1,9 +1,13 @@
 import React from 'react'
 import HeroSection from '../../components/Homepage/Herosection.jsx'
+import { useNavigate } from 'react-router-dom'
+
 const herosec = () => {
+  const navigate = useNavigate();
+
   return (
     <div>
-      <HeroSection />
+      <HeroSection onGetStarted={() => navigate('/login')} />
     </div>
   )
 }
