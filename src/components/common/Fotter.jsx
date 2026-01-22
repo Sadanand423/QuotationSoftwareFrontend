@@ -63,7 +63,7 @@ const Footer = () => {
                 <svg className="w-5 h-5 text-cyan-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                 </svg>
-                <p className="text-left">Office No. 102-B, First Floor, Business Commercial -A, Survey No. 21/18-21/24, Tech Road, Your City - 411027</p>
+                <p className="text-left">Office No. 102-B, First Floor, Ganesham Commercial -A, Survey No. 21/18-21/24, BRTS Road, Pimple Saudagar, Pune- 411027</p>
               </div>
               <div className="flex items-center space-x-3 justify-center sm:justify-start">
                 <svg className="w-5 h-5 text-cyan-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">

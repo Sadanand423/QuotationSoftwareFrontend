@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Prevent horizontal overflow */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
 /* Hide scrollbar for desktop while keeping functionality */
 @media (min-width: 1024px) {
   /* Hide scrollbar for webkit browsers (Chrome, Safari, Edge) */
