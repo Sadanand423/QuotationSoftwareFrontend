@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import mainlogo from '../../assets/mainlogo.webp';
 import LoginModal from '../login/LoginSelection';
 
@@ -18,9 +19,10 @@ const Navbar = () => {
             
             {/* Desktop Menu */}
             <ul className="hidden md:flex gap-8">
+              <li><Link to="/" className="text-white font-medium hover:text-yellow-300 transition-colors">Home</Link></li>
               <li><a href="#about" className="text-white font-medium hover:text-yellow-300 transition-colors">About</a></li>
               <li><a href="#features" className="text-white font-medium hover:text-yellow-300 transition-colors">Features</a></li>
-              <li><a href="#contact" className="text-white font-medium hover:text-yellow-300 transition-colors">Contact Us</a></li>
+              <li><Link to="/contact" className="text-white font-medium hover:text-yellow-300 transition-colors">Contact Us</Link></li>
               <li>
                 <button 
                   onClick={() => setShowLoginModal(true)}
@@ -50,9 +52,10 @@ const Navbar = () => {
           {isMenuOpen && (
             <div className="md:hidden pb-4">
               <ul className="flex flex-col gap-4">
+                <li><Link to="/" className="text-white font-medium hover:text-yellow-300 transition-colors block">Home</Link></li>
                 <li><a href="#about" className="text-white font-medium hover:text-yellow-300 transition-colors block">About</a></li>
                 <li><a href="#features" className="text-white font-medium hover:text-yellow-300 transition-colors block">Features</a></li>
-                <li><a href="#contact" className="text-white font-medium hover:text-yellow-300 transition-colors block">Contact Us</a></li>
+                <li><Link to="/contact" className="text-white font-medium hover:text-yellow-300 transition-colors block">Contact Us</Link></li>
                 <li>
                   <button 
                     onClick={() => setShowLoginModal(true)}
