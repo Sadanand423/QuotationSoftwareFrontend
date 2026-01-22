@@ -52,13 +52,14 @@ const Navbar = () => {
           {isMenuOpen && (
             <div className="md:hidden pb-4">
               <ul className="flex flex-col gap-4">
-                <li><Link to="/" className="text-white font-medium hover:text-yellow-300 transition-colors block">Home</Link></li>
-                <li><a href="#about" className="text-white font-medium hover:text-yellow-300 transition-colors block">About</a></li>
-                <li><a href="#features" className="text-white font-medium hover:text-yellow-300 transition-colors block">Features</a></li>
-                <li><Link to="/contact" className="text-white font-medium hover:text-yellow-300 transition-colors block">Contact Us</Link></li>
+                <li><Link to="/" onClick={() => setIsMenuOpen(false)} className="text-white font-medium hover:text-yellow-300 transition-colors block">Home</Link></li>
+                <li><a href="#about" onClick={() => setIsMenuOpen(false)} className="text-white font-medium hover:text-yellow-300 transition-colors block">About</a></li>
+                <li><a href="#features" onClick={() => setIsMenuOpen(false)} className="text-white font-medium hover:text-yellow-300 transition-colors block">Features</a></li>
+                <li><Link to="/contact" onClick={() => setIsMenuOpen(false)} className="text-white font-medium hover:text-yellow-300 transition-colors block">Contact Us</Link></li>
                 <li>
                   <Link 
                     to="/login"
+                    onClick={() => setIsMenuOpen(false)}
                     className="text-white font-medium hover:text-yellow-300 transition-colors text-left"
                   >
                     Login
