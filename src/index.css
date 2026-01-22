@@ -1,1 +1,20 @@
 @import "tailwindcss";
+
+/* Hide scrollbar for desktop while keeping functionality */
+@media (min-width: 1024px) {
+  /* Hide scrollbar for webkit browsers (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+  }
+  
+  /* Hide scrollbar for Firefox */
+  html {
+    scrollbar-width: none;
+  }
+  
+  /* Ensure smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+}
