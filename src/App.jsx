@@ -5,19 +5,32 @@ import Navbar from './components/common/Navbar'
 import Footer from './components/common/Fotter.jsx'
 import ContactUs from './components/Homepage/ContactUs'
 import LoginModal from './components/login/LoginSelection'
+import AdminPanel from './components/Admin/AdminPanel'
+import EmployeePanel from './components/Employee/EmployeePanel'
 
 function App() {
   return (
     <Router>
+      <Routes>
+        <Route path="/admin/*" element={<AdminPanel />} />
+        <Route path="/employee/*" element={<EmployeePanel />} />
+        <Route path="/*" element={<MainLayout />} />
+      </Routes>
+    </Router>
+  )
+}
+
+function MainLayout() {
+  return (
+    <>
       <Navbar />
-      
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/contact" element={<ContactUs />} />
         <Route path="/login" element={<LoginPage />} />
       </Routes>
       <Footer />
-    </Router>
+    </>
   )
 }
 
