@@ -14,13 +14,21 @@ const LoginModal = ({ isOpen, onClose }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (activeTab === 'admin') {
-      console.log('Admin Login:', { username: formData.username, password: formData.password });
-      // Navigate to admin dashboard
-      window.location.href = '/admin-dashboard';
+      // Admin credentials: username: admin, password: admin123
+      if (formData.username === 'admin' && formData.password === 'admin123') {
+        console.log('Admin Login Successful');
+        window.location.href = '/admin';
+      } else {
+        alert('Invalid admin credentials');
+      }
     } else {
-      console.log('Employee Login:', { employeeId: formData.employeeId, password: formData.password });
-      // Navigate to employee dashboard
-      window.location.href = '/employee-dashboard';
+      // Employee credentials: employeeId: EMP001, password: emp123
+      if (formData.employeeId === 'EMP001' && formData.password === 'emp123') {
+        console.log('Employee Login Successful');
+        window.location.href = '/employee';
+      } else {
+        alert('Invalid employee credentials');
+      }
     }
     onClose();
   };
