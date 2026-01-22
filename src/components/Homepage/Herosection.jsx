@@ -8,6 +8,9 @@ const HeroSection = () => {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll);
     
+    // Reset scroll position on page load
+    window.scrollTo(0, 0);
+    
     // Trigger animation on page load
     const timer = setTimeout(() => {
       setIsVisible(true);
@@ -20,7 +23,7 @@ const HeroSection = () => {
   }, []);
 
   return (
-    <section className="relative bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 min-h-screen flex items-center justify-center px-4">
+    <section className="relative bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 min-h-screen md:min-h-screen sm:min-h-[70vh] flex items-center justify-center px-4">
       {/* Parallax Background Elements */}
       <div className="absolute inset-0">
         <div 
