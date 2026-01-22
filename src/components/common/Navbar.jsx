@@ -24,12 +24,12 @@ const Navbar = () => {
               <li><a href="#features" className="text-white font-medium hover:text-yellow-300 transition-colors">Features</a></li>
               <li><Link to="/contact" className="text-white font-medium hover:text-yellow-300 transition-colors">Contact Us</Link></li>
               <li>
-                <button 
-                  onClick={() => setShowLoginModal(true)}
+                <Link 
+                  to="/login"
                   className="text-white font-medium hover:text-yellow-300 transition-colors"
                 >
                   Login
-                </button>
+                </Link>
               </li>
             </ul>
 
@@ -57,12 +57,12 @@ const Navbar = () => {
                 <li><a href="#features" className="text-white font-medium hover:text-yellow-300 transition-colors block">Features</a></li>
                 <li><Link to="/contact" className="text-white font-medium hover:text-yellow-300 transition-colors block">Contact Us</Link></li>
                 <li>
-                  <button 
-                    onClick={() => setShowLoginModal(true)}
+                  <Link 
+                    to="/login"
                     className="text-white font-medium hover:text-yellow-300 transition-colors text-left"
                   >
                     Login
-                  </button>
+                  </Link>
                 </li>
               </ul>
             </div>
