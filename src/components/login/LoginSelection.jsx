@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-
 const LoginModal = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState('employee');
   const [formData, setFormData] = useState({ username: '', employeeId: '', password: '' });

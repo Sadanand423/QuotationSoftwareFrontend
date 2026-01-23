@@ -16,36 +16,40 @@ const Reports = () => {
   ];
 
   return (
-    <div>
-      <h2 className="text-3xl font-bold mb-6">Reports & Analytics</h2>
+    <div className="space-y-6 sm:space-y-8">
+      <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+        Reports & Analytics
+      </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {quickStats.map((stat, index) => (
-          <div key={index} className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-sm text-gray-500 mb-1">{stat.label}</h3>
+          <div key={index} className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+            <h3 className="text-xs sm:text-sm text-gray-500 mb-1 font-medium">{stat.label}</h3>
             <div className="flex items-center justify-between">
-              <p className="text-2xl font-bold">{stat.value}</p>
-              <span className="text-sm text-green-600">{stat.change}</span>
+              <p className="text-xl sm:text-2xl font-bold text-gray-800">{stat.value}</p>
+              <span className="text-xs sm:text-sm text-green-600 bg-green-50 px-2 py-1 rounded-full font-medium">{stat.change}</span>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {reportTypes.map((report, index) => (
-          <div key={index} className="bg-white p-6 rounded-lg shadow">
+          <div key={index} className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105">
             <div className="flex items-center mb-4">
-              <span className="text-3xl mr-4">{report.icon}</span>
-              <div>
-                <h3 className="text-xl font-semibold">{report.title}</h3>
-                <p className="text-gray-600">{report.description}</p>
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mr-4">
+                <span className="text-2xl sm:text-3xl">{report.icon}</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-800">{report.title}</h3>
+                <p className="text-gray-600 text-sm sm:text-base">{report.description}</p>
               </div>
             </div>
-            <div className="flex gap-2">
-              <button className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105 font-medium">
                 Generate
               </button>
-              <button className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+              <button className="flex-1 bg-gradient-to-r from-gray-500 to-gray-600 text-white px-4 py-2 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105 font-medium">
                 Schedule
               </button>
             </div>
@@ -53,22 +57,29 @@ const Reports = () => {
         ))}
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-xl font-semibold mb-4">Recent Reports</h3>
+      <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg border border-gray-100">
+        <h3 className="text-lg sm:text-xl font-semibold mb-4 text-gray-800 flex items-center">
+          <span className="mr-2">📄</span>
+          Recent Reports
+        </h3>
         <div className="space-y-3">
-          <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
-            <div>
-              <p className="font-medium">Monthly Revenue Report - January 2024</p>
-              <p className="text-sm text-gray-600">Generated on Jan 31, 2024</p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200 gap-2">
+            <div className="flex-1">
+              <p className="font-medium text-gray-800 text-sm sm:text-base">Monthly Revenue Report - January 2024</p>
+              <p className="text-xs sm:text-sm text-gray-600">Generated on Jan 31, 2024</p>
             </div>
-            <button className="text-blue-600 hover:text-blue-800">Download</button>
+            <button className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:shadow-md transition-all duration-300 transform hover:scale-105 font-medium text-sm">
+              Download
+            </button>
           </div>
-          <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
-            <div>
-              <p className="font-medium">Client Activity Report - Q4 2023</p>
-              <p className="text-sm text-gray-600">Generated on Dec 31, 2023</p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200 gap-2">
+            <div className="flex-1">
+              <p className="font-medium text-gray-800 text-sm sm:text-base">Client Activity Report - Q4 2023</p>
+              <p className="text-xs sm:text-sm text-gray-600">Generated on Dec 31, 2023</p>
             </div>
-            <button className="text-blue-600 hover:text-blue-800">Download</button>
+            <button className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:shadow-md transition-all duration-300 transform hover:scale-105 font-medium text-sm">
+              Download
+            </button>
           </div>
         </div>
       </div>
