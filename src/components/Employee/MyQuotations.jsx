@@ -14,25 +14,25 @@ const MyQuotations = () => {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-gray-800">My Quotations</h2>
-          <p className="text-gray-600 mt-1">Manage your assigned quotations</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">My Quotations</h2>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage your assigned quotations</p>
         </div>
-        <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+        <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 text-sm sm:text-base self-start sm:self-auto">
           + New Quotation
         </button>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border">
-        <div className="p-6 border-b">
-          <div className="flex space-x-4">
+        <div className="p-4 sm:p-6 border-b">
+          <div className="flex flex-wrap gap-2 sm:gap-4">
             {['all', 'draft', 'pending', 'approved', 'rejected'].map((status) => (
               <button
                 key={status}
                 onClick={() => setFilter(status)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium capitalize ${
+                className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium capitalize ${
                   filter === status
                     ? 'bg-green-100 text-green-600'
                     : 'text-gray-600 hover:bg-gray-100'
@@ -48,28 +48,28 @@ const MyQuotations = () => {
           <table className="min-w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Date</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredQuotations.map((quote) => (
                 <tr key={quote.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm font-medium flex items-center">
-                    <div className={`w-3 h-3 rounded-full mr-3 ${
+                  <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm font-medium flex items-center">
+                    <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full mr-2 sm:mr-3 ${
                       quote.priority === 'high' ? 'bg-red-400' :
                       quote.priority === 'medium' ? 'bg-yellow-400' : 'bg-green-400'
                     }`}></div>
-                    {quote.id}
+                    <span className="truncate">{quote.id}</span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-800">{quote.client}</td>
-                  <td className="px-6 py-4 text-sm font-semibold">${quote.amount.toLocaleString()}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className={`px-3 py-1 text-xs rounded-full font-medium ${
+                  <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-800 truncate">{quote.client}</td>
+                  <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm font-semibold">${quote.amount.toLocaleString()}</td>
+                  <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm">
+                    <span className={`px-2 sm:px-3 py-1 text-xs rounded-full font-medium ${
                       quote.status === 'Approved' ? 'bg-green-100 text-green-700' :
                       quote.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
                       quote.status === 'Draft' ? 'bg-gray-100 text-gray-700' :
@@ -78,14 +78,14 @@ const MyQuotations = () => {
                       {quote.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{quote.date}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <div className="flex space-x-2">
-                      <button className="text-green-600 hover:text-green-800">View</button>
+                  <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-600 hidden sm:table-cell">{quote.date}</td>
+                  <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm">
+                    <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-1 sm:space-y-0">
+                      <button className="text-green-600 hover:text-green-800 text-xs sm:text-sm">View</button>
                       {quote.status === 'Draft' && (
-                        <button className="text-green-600 hover:text-green-800">Edit</button>
+                        <button className="text-green-600 hover:text-green-800 text-xs sm:text-sm">Edit</button>
                       )}
-                      <button className="text-purple-600 hover:text-purple-800">Duplicate</button>
+                      <button className="text-purple-600 hover:text-purple-800 text-xs sm:text-sm">Duplicate</button>
                     </div>
                   </td>
                 </tr>
