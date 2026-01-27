@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const MyClients = () => {
+const MyClients = ({ onCreateQuotation }) => {
   const [showForm, setShowForm] = useState(false);
   const [clients] = useState([
     { id: 1, name: 'ABC Corp', email: 'contact@abccorp.com', phone: '+1-555-0123', quotations: 3, lastContact: '2024-01-15' },
@@ -61,7 +61,10 @@ const MyClients = () => {
               <p className="text-gray-600 text-xs sm:text-sm">📅 Last Contact: {client.lastContact}</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
-              <button className="flex-1 bg-green-500 text-white py-2 px-3 rounded-lg text-xs sm:text-sm hover:bg-green-600">
+              <button 
+                onClick={() => onCreateQuotation && onCreateQuotation(client)}
+                className="flex-1 bg-green-500 text-white py-2 px-3 rounded-lg text-xs sm:text-sm hover:bg-green-600"
+              >
                 Create Quote
               </button>
               <button className="flex-1 bg-gray-500 text-white py-2 px-3 rounded-lg text-xs sm:text-sm hover:bg-gray-600">

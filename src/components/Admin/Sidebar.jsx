@@ -3,7 +3,10 @@ import React from 'react';
 const Sidebar = ({ activeModule, setActiveModule, sidebarOpen, setSidebarOpen }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊', gradient: 'from-blue-500 to-blue-600' },
+    { id: 'workflow', label: 'Project Workflow', icon: '🔄', gradient: 'from-cyan-500 to-cyan-600' },
     { id: 'quotations', label: 'Quotations', icon: '📋', gradient: 'from-green-500 to-green-600' },
+    { id: 'payments', label: 'Payments', icon: '💳', gradient: 'from-emerald-500 to-emerald-600' },
+    { id: 'invoices', label: 'Invoices', icon: '📄', gradient: 'from-indigo-500 to-indigo-600' },
     { id: 'clients', label: 'Clients', icon: '👥', gradient: 'from-purple-500 to-purple-600' },
     { id: 'products', label: 'Products', icon: '📦', gradient: 'from-orange-500 to-orange-600' },
     { id: 'users', label: 'Users', icon: '👤', gradient: 'from-pink-500 to-pink-600' },
@@ -70,15 +73,7 @@ const Sidebar = ({ activeModule, setActiveModule, sidebarOpen, setSidebarOpen })
             </button>
           ))}
         </nav>
-        <div className="absolute bottom-4 sm:bottom-6 left-3 sm:left-6 right-3 sm:right-6">
-          <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-lg p-3 sm:p-4 border border-gray-700">
-            <p className="text-xs text-gray-300 mb-1">System Status</p>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span className="text-xs sm:text-sm text-green-400">All Systems Online</span>
-            </div>
-          </div>
-        </div>
+
       </div>
     </>
   );

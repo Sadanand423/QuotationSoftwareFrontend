@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import Sidebar from './Sidebar';
 import Dashboard from './Dashboard';
+import ProjectWorkflow from './ProjectWorkflow';
 import QuotationManagement from './QuotationManagement';
+import InvoiceGenerator from './InvoiceGenerator';
 import ClientManagement from './ClientManagement';
 import ProductManagement from './ProductManagement';
 import UserManagement from './UserManagement';
@@ -15,7 +17,9 @@ const AdminPanel = () => {
   const renderContent = () => {
     switch (activeModule) {
       case 'dashboard': return <Dashboard />;
+      case 'workflow': return <ProjectWorkflow />;
       case 'quotations': return <QuotationManagement />;
+      case 'invoices': return <InvoiceGenerator />;
       case 'clients': return <ClientManagement />;
       case 'products': return <ProductManagement />;
       case 'users': return <UserManagement />;
