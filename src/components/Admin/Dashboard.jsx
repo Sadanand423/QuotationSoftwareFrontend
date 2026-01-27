@@ -1,12 +1,68 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 const Dashboard = () => {
-  const stats = [
-    { title: 'Total Quotations', value: '1,247', color: 'from-blue-500 to-blue-600', icon: '📋', change: '+12%' },
-    { title: 'Pending Quotations', value: '23', color: 'from-yellow-500 to-orange-500', icon: '⏳', change: '+5%' },
-    { title: 'Approved Quotations', value: '1,156', color: 'from-green-500 to-emerald-500', icon: '✅', change: '+18%' },
-    { title: 'Total Revenue', value: '$2.4M', color: 'from-purple-500 to-pink-500', icon: '💰', change: '+25%' }
-  ];
+  const [stats, setStats] = useState([
+    { title: 'Total Quotations', value: '0', color: 'from-blue-500 to-blue-600', icon: '📋', change: '+12%' },
+    { title: 'Total Clients', value: '0', color: 'from-indigo-500 to-purple-500', icon: '👥', change: '+8%' },
+    { title: 'Total Employees', value: '0', color: 'from-orange-500 to-red-500', icon: '👨💼', change: '+15%' },
+    { title: 'Total Revenue', value: '$0', color: 'from-green-500 to-emerald-500', icon: '💰', change: '+25%' }
+  ]);
+  const [chartData, setChartData] = useState({
+    approved: 0,
+    pending: 0,
+    draft: 0,
+    monthlyRevenue: []
+  });
+
+  useEffect(() => {
+    // Load data from localStorage and calculate stats
+    const quotations = JSON.parse(localStorage.getItem('quotations') || '[]');
+    const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+    const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+    const invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
+
+    // Calculate quotation stats
+    const approvedQuotations = quotations.filter(q => q.status === 'Approved').length;
+    const pendingQuotations = quotations.filter(q => q.status === 'Pending').length;
+
+    // Calculate total revenue from approved quotations and paid invoices
+    const quotationRevenue = quotations
+      .filter(q => q.status === 'Approved')
+      .reduce((sum, q) => sum + (q.amount || 0), 0);
+    
+    const invoiceRevenue = invoices
+      .filter(i => i.status === 'Paid')
+      .reduce((sum, i) => sum + (i.amount || 0), 0);
+    
+    const totalRevenue = quotationRevenue + invoiceRevenue;
+
+    // Get unique clients from quotations
+    const uniqueClients = new Set();
+    quotations.forEach(q => {
+      if (q.clientName) uniqueClients.add(q.clientName);
+    });
+    clients.forEach(c => {
+      if (c.name) uniqueClients.add(c.name);
+    });
+
+    setStats([
+      { title: 'Total Quotations', value: quotations.length.toString(), color: 'from-blue-500 to-blue-600', icon: '📋', change: '+12%' },
+      { title: 'Approved Quotations', value: approvedQuotations.toString(), color: 'from-green-500 to-emerald-500', icon: '✅', change: '+18%' },
+      { title: 'Pending Quotations', value: pendingQuotations.toString(), color: 'from-yellow-500 to-orange-500', icon: '⏳', change: '+5%' },
+      { title: 'Total Clients', value: uniqueClients.size.toString(), color: 'from-indigo-500 to-purple-500', icon: '👥', change: '+8%' },
+      { title: 'Total Employees', value: employees.length.toString(), color: 'from-orange-500 to-red-500', icon: '👨💼', change: '+15%' },
+      { title: 'Total Revenue', value: `$${totalRevenue.toLocaleString()}`, color: 'from-green-500 to-emerald-500', icon: '💰', change: '+25%' }
+    ]);
+
+    // Set chart data
+    const draftQuotations = quotations.filter(q => q.status === 'Draft').length;
+    setChartData({
+      approved: approvedQuotations,
+      pending: pendingQuotations,
+      draft: draftQuotations,
+      monthlyRevenue: [12000, 15000, 18000, 22000, 25000, 28000]
+    });
+  }, []);
 
   const recentQuotations = [
     { id: 'Q-2024-001', client: 'ABC Corp', amount: '$15,000', status: 'Pending', priority: 'high' },
@@ -28,7 +84,7 @@ const Dashboard = () => {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6">
         {stats.map((stat, index) => (
           <div key={index} className="group relative">
             <div className="absolute inset-0 bg-gradient-to-r from-white to-gray-50 rounded-2xl shadow-lg group-hover:shadow-2xl transition-all duration-300 transform group-hover:scale-105"></div>
@@ -50,14 +106,93 @@ const Dashboard = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 sm:gap-8">
+        {/* Pie Chart - Quotation Status */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 sm:p-6">
+          <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-4 sm:p-6">
+            <h3 className="text-lg sm:text-xl font-bold text-white flex items-center">
+              <span className="mr-2">🍰</span>
+              Quotation Status
+            </h3>
+            <p className="text-purple-100 text-xs sm:text-sm mt-1">Distribution overview</p>
+          </div>
+          <div className="p-6 flex flex-col items-center">
+            <div className="relative w-32 h-32 mb-4">
+              <div className="absolute inset-0 rounded-full" style={{
+                background: `conic-gradient(
+                  #10b981 0deg ${(chartData.approved / (chartData.approved + chartData.pending + chartData.draft) * 360) || 0}deg,
+                  #f59e0b ${(chartData.approved / (chartData.approved + chartData.pending + chartData.draft) * 360) || 0}deg ${((chartData.approved + chartData.pending) / (chartData.approved + chartData.pending + chartData.draft) * 360) || 0}deg,
+                  #6b7280 ${((chartData.approved + chartData.pending) / (chartData.approved + chartData.pending + chartData.draft) * 360) || 0}deg 360deg
+                )`
+              }}></div>
+              <div className="absolute inset-4 bg-white rounded-full flex items-center justify-center">
+                <span className="text-lg font-bold text-gray-800">{chartData.approved + chartData.pending + chartData.draft}</span>
+              </div>
+            </div>
+            <div className="space-y-2 w-full">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                  <span className="text-sm text-gray-600">Approved</span>
+                </div>
+                <span className="text-sm font-semibold">{chartData.approved}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                  <span className="text-sm text-gray-600">Pending</span>
+                </div>
+                <span className="text-sm font-semibold">{chartData.pending}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-gray-500 rounded-full mr-2"></div>
+                  <span className="text-sm text-gray-600">Draft</span>
+                </div>
+                <span className="text-sm font-semibold">{chartData.draft}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Line Chart - Revenue Trend */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-4 sm:p-6">
+            <h3 className="text-lg sm:text-xl font-bold text-white flex items-center">
+              <span className="mr-2">📈</span>
+              Revenue Trend
+            </h3>
+            <p className="text-blue-100 text-xs sm:text-sm mt-1">Last 6 months</p>
+          </div>
+          <div className="p-6">
+            <div className="h-40 flex items-end justify-between space-x-2">
+              {chartData.monthlyRevenue.map((value, index) => {
+                const maxValue = Math.max(...chartData.monthlyRevenue);
+                const height = (value / maxValue) * 100;
+                return (
+                  <div key={index} className="flex-1 flex flex-col items-center">
+                    <div className="text-xs text-gray-500 mb-2">${(value/1000).toFixed(0)}k</div>
+                    <div 
+                      className="w-full bg-gradient-to-t from-blue-500 to-cyan-400 rounded-t transition-all duration-1000 ease-out"
+                      style={{ height: `${height}%` }}
+                    ></div>
+                    <div className="text-xs text-gray-400 mt-2">
+                      {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'][index]}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+        {/* Recent Quotations */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+          <div className="bg-gradient-to-r from-green-500 to-teal-500 p-4 sm:p-6">
             <h3 className="text-lg sm:text-xl font-bold text-white flex items-center">
               <span className="mr-2">📈</span>
               Recent Quotations
             </h3>
-            <p className="text-blue-100 text-xs sm:text-sm mt-1">Latest quotation activities</p>
+            <p className="text-green-100 text-xs sm:text-sm mt-1">Latest quotation activities</p>
           </div>
           <div className="p-4 sm:p-6 space-y-4">
             {recentQuotations.map((quote) => (
@@ -84,30 +219,6 @@ const Dashboard = () => {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-green-500 to-teal-500 p-4 sm:p-6">
-            <h3 className="text-lg sm:text-xl font-bold text-white flex items-center">
-              <span className="mr-2">⚡</span>
-              Quick Actions
-            </h3>
-            <p className="text-green-100 text-xs sm:text-sm mt-1">Streamline your workflow</p>
-          </div>
-          <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
-            <button className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 text-sm sm:text-base">
-              <span>📋</span>
-              <span>Create New Quotation</span>
-            </button>
-            <button className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 text-sm sm:text-base">
-              <span>👥</span>
-              <span>Add New Client</span>
-            </button>
-            <button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 text-sm sm:text-base">
-              <span>📈</span>
-              <span>Generate Report</span>
-            </button>
           </div>
         </div>
       </div>
