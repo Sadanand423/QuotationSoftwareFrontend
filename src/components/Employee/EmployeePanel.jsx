@@ -4,6 +4,8 @@ import EmployeeDashboard from './EmployeeDashboard';
 import MyQuotations from './MyQuotations';
 import MyClients from './MyClients';
 import CreateQuotation from './CreateQuotation';
+import Invoice from './Invoice';
+import MyInvoice from './MyInvoice';
 import MyProfile from './MyProfile';
 
 const EmployeePanel = () => {
@@ -19,9 +21,11 @@ const EmployeePanel = () => {
   const renderContent = () => {
     switch (activeModule) {
       case 'dashboard': return <EmployeeDashboard onCreateQuotation={() => setActiveModule('create')} />;
-      case 'quotations': return <MyQuotations />;
       case 'clients': return <MyClients onCreateQuotation={handleCreateQuotation} />;
       case 'create': return <CreateQuotation selectedClient={selectedClient} />;
+      case 'quotations': return <MyQuotations />;
+      case 'invoice': return <Invoice />;
+      case 'myinvoice': return <MyInvoice />;
       case 'profile': return <MyProfile />;
       default: return <EmployeeDashboard />;
     }

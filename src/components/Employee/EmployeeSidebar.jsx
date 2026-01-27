@@ -3,10 +3,12 @@ import React from 'react';
 const EmployeeSidebar = ({ activeModule, setActiveModule, onClose }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊', gradient: 'from-blue-500 to-blue-600' },
-    { id: 'quotations', label: 'My Quotations', icon: '📋', gradient: 'from-green-500 to-green-600' },
-    { id: 'clients', label: 'My Clients', icon: '👥', gradient: 'from-purple-500 to-purple-600' },
-    { id: 'create', label: 'Create Quote', icon: '➕', gradient: 'from-orange-500 to-orange-600' },
-    { id: 'profile', label: 'My Profile', icon: '👤', gradient: 'from-pink-500 to-pink-600' }
+    { id: 'clients', label: 'Clients', icon: '👥', gradient: 'from-purple-500 to-purple-600' },
+    { id: 'create', label: 'Create Quotation', icon: '➕', gradient: 'from-orange-500 to-orange-600' },
+    { id: 'quotations', label: 'My Quotation', icon: '📋', gradient: 'from-green-500 to-green-600' },
+    { id: 'invoice', label: 'Invoice', icon: '🧾', gradient: 'from-indigo-500 to-indigo-600' },
+    { id: 'myinvoice', label: 'My Invoice', icon: '📄', gradient: 'from-teal-500 to-teal-600' },
+    { id: 'profile', label: 'Profile', icon: '👤', gradient: 'from-pink-500 to-pink-600' }
   ];
 
   return (
