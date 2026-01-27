@@ -28,10 +28,10 @@ const MyClients = ({ onCreateQuotation }) => {
         <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
           <h3 className="text-lg sm:text-xl font-semibold mb-4">Add New Client</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input type="text" placeholder="Company Name" className="border p-2 sm:p-3 rounded-lg text-sm sm:text-base" />
-            <input type="email" placeholder="Email Address" className="border p-2 sm:p-3 rounded-lg text-sm sm:text-base" />
-            <input type="tel" placeholder="Phone Number" className="border p-2 sm:p-3 rounded-lg text-sm sm:text-base" />
-            <input type="text" placeholder="Contact Person" className="border p-2 sm:p-3 rounded-lg text-sm sm:text-base" />
+            <input type="text" placeholder="Client Name" className="border p-2 sm:p-3 rounded-lg text-sm sm:text-base" />
+            <input type="text" placeholder="Project Name" className="border p-2 sm:p-3 rounded-lg text-sm sm:text-base" />
+            <input type="email" placeholder="Email" className="border p-2 sm:p-3 rounded-lg text-sm sm:text-base" />
+            <input type="tel" placeholder="Phone No" className="border p-2 sm:p-3 rounded-lg text-sm sm:text-base" />
             <textarea placeholder="Address" className="border p-2 sm:p-3 rounded-lg md:col-span-2 text-sm sm:text-base" rows="2"></textarea>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 mt-4">
