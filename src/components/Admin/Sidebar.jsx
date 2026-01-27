@@ -3,17 +3,13 @@ import React from 'react';
 const Sidebar = ({ activeModule, setActiveModule, sidebarOpen, setSidebarOpen }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊', gradient: 'from-blue-500 to-blue-600' },
-    { id: 'workflow', label: 'Project Workflow', icon: '🔄', gradient: 'from-cyan-500 to-cyan-600' },
     { id: 'quotations', label: 'Quotations', icon: '📋', gradient: 'from-green-500 to-green-600' },
-    { id: 'payments', label: 'Payments', icon: '💳', gradient: 'from-emerald-500 to-emerald-600' },
     { id: 'invoices', label: 'Invoices', icon: '📄', gradient: 'from-indigo-500 to-indigo-600' },
     { id: 'clients', label: 'Clients', icon: '👥', gradient: 'from-purple-500 to-purple-600' },
-    { id: 'products', label: 'Products', icon: '📦', gradient: 'from-orange-500 to-orange-600' },
-    { id: 'users', label: 'Users', icon: '👤', gradient: 'from-pink-500 to-pink-600' },
+    { id: 'employees', label: 'Employee', icon: '👨‍💼', gradient: 'from-orange-500 to-orange-600' },
     { id: 'reports', label: 'Reports', icon: '📈', gradient: 'from-indigo-500 to-indigo-600' },
-    { id: 'settings', label: 'Settings', icon: '⚙️', gradient: 'from-gray-500 to-gray-600' }
+    { id: 'profile', label: 'Profile', icon: '👤', gradient: 'from-gray-500 to-gray-600' }
   ];
-
   return (
     <>
       {/* Mobile overlay */}
