@@ -85,7 +85,6 @@ const MyQuotations = () => {
                       {quote.status === 'Draft' && (
                         <button className="text-green-600 hover:text-green-800 text-xs sm:text-sm">Edit</button>
                       )}
-                      <button className="text-purple-600 hover:text-purple-800 text-xs sm:text-sm">Duplicate</button>
                     </div>
                   </td>
                 </tr>
