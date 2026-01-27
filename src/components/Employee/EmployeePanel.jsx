@@ -9,13 +9,19 @@ import MyProfile from './MyProfile';
 const EmployeePanel = () => {
   const [activeModule, setActiveModule] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState(null);
+
+  const handleCreateQuotation = (client = null) => {
+    setSelectedClient(client);
+    setActiveModule('create');
+  };
 
   const renderContent = () => {
     switch (activeModule) {
-      case 'dashboard': return <EmployeeDashboard />;
+      case 'dashboard': return <EmployeeDashboard onCreateQuotation={() => setActiveModule('create')} />;
       case 'quotations': return <MyQuotations />;
-      case 'clients': return <MyClients />;
-      case 'create': return <CreateQuotation />;
+      case 'clients': return <MyClients onCreateQuotation={handleCreateQuotation} />;
+      case 'create': return <CreateQuotation selectedClient={selectedClient} />;
       case 'profile': return <MyProfile />;
       default: return <EmployeeDashboard />;
     }

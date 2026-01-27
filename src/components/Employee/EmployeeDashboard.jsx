@@ -1,6 +1,6 @@
 import React from 'react';
 
-const EmployeeDashboard = () => {
+const EmployeeDashboard = ({ onCreateQuotation }) => {
   const stats = [
     { title: 'My Quotations', value: '24', color: 'from-blue-500 to-blue-600', icon: '📋', change: '+8%' },
     { title: 'Pending Approval', value: '5', color: 'from-yellow-500 to-orange-500', icon: '⏳', change: '+2%' },
@@ -96,7 +96,10 @@ const EmployeeDashboard = () => {
             <p className="text-green-100 text-xs sm:text-sm mt-1">Streamline your workflow</p>
           </div>
           <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
-            <button className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 text-sm sm:text-base">
+            <button 
+              onClick={() => onCreateQuotation && onCreateQuotation()}
+              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 text-sm sm:text-base"
+            >
               <span>📋</span>
               <span>Create New Quotation</span>
             </button>
@@ -107,6 +110,7 @@ const EmployeeDashboard = () => {
             <button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 text-sm sm:text-base">
               <span>📈</span>
               <span>Generate Report</span>
+              
             </button>
           </div>
         </div>

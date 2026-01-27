@@ -59,15 +59,7 @@ const EmployeeSidebar = ({ activeModule, setActiveModule, onClose }) => {
           </button>
         ))}
       </nav>
-      <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6">
-        <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-lg p-3 sm:p-4 border border-gray-700">
-          <p className="text-xs text-gray-300 mb-1">Employee Access</p>
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-xs sm:text-sm text-green-400">Limited Access Mode</span>
-          </div>
-        </div>
-      </div>
+
     </div>
   );
 };
