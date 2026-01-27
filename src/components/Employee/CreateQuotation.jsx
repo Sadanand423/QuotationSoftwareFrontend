@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
+import QuotationPreview from './QuotationPreview';
+import QuotationPrint from './QuotationPrint';
 
 const CreateQuotation = ({ selectedClient }) => {
+  const [showPreview, setShowPreview] = useState(false);
+  const [showPrint, setShowPrint] = useState(false);
   const [formData, setFormData] = useState({
     quotationNumber: `QT-${Date.now().toString().slice(-6)}`,
     date: new Date().toLocaleDateString('en-IN'),
@@ -16,26 +20,18 @@ const CreateQuotation = ({ selectedClient }) => {
     currency: 'INR',
     totalCost: '₹2,50,00,000 2.5 Crores',
     costBreakdown: [
-      { srNo: 1, area: 'Architecture & Planning', scope: 'System design, technical architecture, SRS, scalability planning', amount: 15 },
-      { srNo: 2, area: 'UI / UX Design', scope: 'Brand identity, UI theme, dashboards, editor layout, responsive design', amount: 18 },
-      { srNo: 3, area: 'Core 3D Engine Development', scope: 'Real-time 3D rendering, drag-drop, rotate, scale, snap, collision, lighting, performance optimization', amount: 100 },
-      { srNo: 4, area: 'Backend Development', scope: 'APIs, authentication, user roles, pricing logic, scene save load, database', amount: 50 },
-      { srNo: 5, area: '3D Asset Creation & Optimization', scope: '500-1000 furniture & room models, materials, textures, Draco compression', amount: 45 },
-      { srNo: 6, area: 'Testing & Quality Assurance', scope: 'Functional testing, performance profiling, security testing, browser compatibility', amount: 20 },
-      { srNo: 7, area: 'DevOps & Cloud Deployment', scope: 'AWS setup, CI/CD pipelines, server configuration, production rollout', amount: 12 },
-      { srNo: 8, area: 'Project Management & Delivery', scope: 'Sprint planning, reporting, coordination, final deployment support', amount: 10 }
+      { srNo: 1, area: 'Architecture & Planning', scope: '', amount: '' },
+      { srNo: 2, area: 'UI / UX Design', scope: '', amount: '' },
+      { srNo: 3, area: 'Core 3D Engine Development', scope: '', amount: '' },
+      { srNo: 4, area: 'Backend Development', scope: '', amount: '' },
+      { srNo: 5, area: '3D Asset Creation & Optimization', scope: '', amount: '' },
+      { srNo: 6, area: 'Testing & Quality Assurance', scope: '', amount: '' },
+      { srNo: 7, area: 'DevOps & Cloud Deployment', scope: '', amount: '' },
+      { srNo: 8, area: 'Project Management & Delivery', scope: '', amount: '' }
     ],
     includes: [
-      'Complete enterprise-grade 3D web platform',
-      'React + React Three Fiber (R3F) based architecture',
-      'Drag, drop, rotate, scale, snap & collision system',
-      'Advanced material, texture & lighting engine',
-      'Room templates & furniture library',
-      'Scene save/load & export (PNG)',
+      'Complete enterprise-grade web platform',
       'Backend APIs + database',
-      'AWS cloud deployment',
-      '500-1000 optimized 3D models',
-      'Security, performance & scalability optimization',
       'QA testing & production rollout'
     ],
     timeline: [
@@ -52,14 +48,23 @@ const CreateQuotation = ({ selectedClient }) => {
       changeRequests: 'Any scope change will be quoted separately'
     },
     projectManager: 'Sagar Solanke',
-    operationManager: 'Bikram Burman'
+    operationManager: 'Bikram Burman',
+    projectManagerSignature: null,
+    operationManagerSignature: null
   });
 
   const addCostItem = () => {
     setFormData({
       ...formData,
-      costBreakdown: [...formData.costBreakdown, { srNo: formData.costBreakdown.length + 1, area: '', scope: '', amount: 0 }]
+      costBreakdown: [...formData.costBreakdown, { srNo: formData.costBreakdown.length + 1, area: '', scope: '', amount: '' }]
     });
+  };
+
+  const removeCostItem = (index) => {
+    const newItems = formData.costBreakdown.filter((_, i) => i !== index);
+    // Re-number the items
+    const reNumberedItems = newItems.map((item, i) => ({ ...item, srNo: i + 1 }));
+    setFormData({ ...formData, costBreakdown: reNumberedItems });
   };
 
   const updateCostItem = (index, field, value) => {
@@ -257,10 +262,11 @@ const CreateQuotation = ({ selectedClient }) => {
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="bg-gradient-to-r from-gray-50 to-gray-100">
-                      <th className="border border-gray-200 p-3 text-left font-semibold text-gray-700 text-sm w-16">Sr. No</th>
-                      <th className="border border-gray-200 p-3 text-left font-semibold text-gray-700 text-sm min-w-48">Development Area</th>
-                      <th className="border border-gray-200 p-3 text-left font-semibold text-gray-700 text-sm min-w-64">Scope Includes</th>
+                      <th className="border border-gray-200 p-3 text-left font-semibold text-gray-700 text-sm w-20">Sr. No</th>
+                      <th className="border border-gray-200 p-3 text-left font-semibold text-gray-700 text-sm">Development Area</th>
+                      <th className="border border-gray-200 p-3 text-left font-semibold text-gray-700 text-sm">Scope Includes</th>
                       <th className="border border-gray-200 p-3 text-left font-semibold text-gray-700 text-sm w-32">Amount (₹ Lakhs)</th>
+                      <th className="border border-gray-200 p-3 text-left font-semibold text-gray-700 text-sm w-20">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -273,6 +279,7 @@ const CreateQuotation = ({ selectedClient }) => {
                             className="w-full outline-none bg-transparent font-medium text-gray-800 focus:bg-blue-50 focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 transition-all"
                             value={item.area}
                             onChange={(e) => updateCostItem(index, 'area', e.target.value)}
+                            placeholder="Enter development area"
                           />
                         </td>
                         <td className="border border-gray-200 p-3">
@@ -281,27 +288,37 @@ const CreateQuotation = ({ selectedClient }) => {
                             rows="3"
                             value={item.scope}
                             onChange={(e) => updateCostItem(index, 'scope', e.target.value)}
+                            placeholder="Enter scope details"
                           />
                         </td>
                         <td className="border border-gray-200 p-3">
                           <input 
-                            type="number" 
+                            type="text" 
                             className="w-full outline-none bg-transparent font-semibold text-orange-600 focus:bg-orange-50 focus:ring-2 focus:ring-orange-200 rounded px-2 py-1 transition-all text-center"
                             value={item.amount}
-                            onChange={(e) => updateCostItem(index, 'amount', parseInt(e.target.value) || 0)}
+                            onChange={(e) => updateCostItem(index, 'amount', e.target.value)}
+                            placeholder="Amount"
                           />
+                        </td>
+                        <td className="border border-gray-200 p-3 text-center">
+                          <button 
+                            onClick={() => removeCostItem(index)}
+                            className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition-colors text-xs"
+                          >
+                            Remove
+                          </button>
                         </td>
                       </tr>
                     ))}
                     <tr className="bg-gradient-to-r from-orange-100 to-amber-100 font-bold">
-                      <td className="border border-gray-200 p-4 text-center" colSpan="2">
+                      <td className="border border-gray-200 p-4 text-center" colSpan="3">
                         <span className="text-gray-800 text-lg">TOTAL PROJECT COST</span>
                       </td>
-                      <td className="border border-gray-200 p-4 text-gray-700 font-semibold">Fixed Enterprise Cost</td>
                       <td className="border border-gray-200 p-4 text-center">
                         <span className="text-orange-700 text-lg font-bold">₹{calculateTotal()} Lakhs</span>
                         <div className="text-sm text-gray-600 font-normal">(₹2.5 Crores)</div>
                       </td>
+                      <td className="border border-gray-200 p-4"></td>
                     </tr>
                   </tbody>
                 </table>
@@ -333,7 +350,7 @@ const CreateQuotation = ({ selectedClient }) => {
             </div>
             
             <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 {formData.includes.map((item, index) => (
                   <div key={index} className="flex items-start bg-green-50 rounded-lg p-3 border border-green-100 hover:bg-green-100 transition-colors">
                     <span className="text-green-600 mr-3 mt-1 text-lg font-bold">✓</span>
@@ -347,6 +364,15 @@ const CreateQuotation = ({ selectedClient }) => {
                         setFormData({...formData, includes: newIncludes});
                       }}
                     />
+                    <button 
+                      onClick={() => {
+                        const newIncludes = formData.includes.filter((_, i) => i !== index);
+                        setFormData({...formData, includes: newIncludes});
+                      }}
+                      className="ml-2 bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 transition-colors"
+                    >
+                      Remove
+                    </button>
                   </div>
                 ))}
               </div>
@@ -530,9 +556,28 @@ const CreateQuotation = ({ selectedClient }) => {
             <div className="p-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
                 <div className="text-center">
-                  <div className="w-32 h-20 border-2 border-dashed border-gray-300 rounded-lg mx-auto mb-4 flex items-center justify-center bg-gray-50">
-                    <span className="text-gray-400 text-sm">Signature</span>
+                  <div className="w-32 h-20 border-2 border-dashed border-gray-300 rounded-lg mx-auto mb-4 flex items-center justify-center bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => document.getElementById('projectManagerSign').click()}>
+                    <span className="text-gray-400 text-sm">Click to Sign</span>
                   </div>
+                  <input 
+                    id="projectManagerSign"
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          setFormData({...formData, projectManagerSignature: event.target.result});
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                  {formData.projectManagerSignature && (
+                    <img src={formData.projectManagerSignature} alt="Signature" className="w-32 h-20 mx-auto mb-4 border rounded-lg" />
+                  )}
                   <input 
                     type="text" 
                     className="text-center font-semibold outline-none border-b-2 border-gray-300 focus:border-blue-500 transition-colors w-full max-w-xs mx-auto block text-lg"
@@ -544,9 +589,28 @@ const CreateQuotation = ({ selectedClient }) => {
                 </div>
                 
                 <div className="text-center">
-                  <div className="w-32 h-20 border-2 border-dashed border-gray-300 rounded-lg mx-auto mb-4 flex items-center justify-center bg-gray-50">
-                    <span className="text-gray-400 text-sm">Signature</span>
+                  <div className="w-32 h-20 border-2 border-dashed border-gray-300 rounded-lg mx-auto mb-4 flex items-center justify-center bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => document.getElementById('operationManagerSign').click()}>
+                    <span className="text-gray-400 text-sm">Click to Sign</span>
                   </div>
+                  <input 
+                    id="operationManagerSign"
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          setFormData({...formData, operationManagerSignature: event.target.result});
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                  {formData.operationManagerSignature && (
+                    <img src={formData.operationManagerSignature} alt="Signature" className="w-32 h-20 mx-auto mb-4 border rounded-lg" />
+                  )}
                   <input 
                     type="text" 
                     className="text-center font-semibold outline-none border-b-2 border-gray-300 focus:border-blue-500 transition-colors w-full max-w-xs mx-auto block text-lg"
@@ -605,15 +669,23 @@ const CreateQuotation = ({ selectedClient }) => {
             <button className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-4 rounded-xl hover:from-blue-600 hover:to-blue-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center">
               <span className="mr-2 text-lg">📤</span> Send for Approval
             </button>
-            <button className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-8 py-4 rounded-xl hover:from-purple-600 hover:to-purple-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center">
-              <span className="mr-2 text-lg">📧</span> Email to Client
-            </button>
-            <button className="bg-gradient-to-r from-gray-500 to-gray-600 text-white px-8 py-4 rounded-xl hover:from-gray-600 hover:to-gray-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center">
-              <span className="mr-2 text-lg">🖨️</span> Print Preview
+            <button 
+              onClick={() => setShowPreview(true)}
+              className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-8 py-4 rounded-xl hover:from-purple-600 hover:to-purple-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
+            >
+              <span className="mr-2 text-lg">👁️</span> Preview & Print
             </button>
           </div>
         </div>
       </div>
+      
+      {/* Preview Modal */}
+      {showPreview && (
+        <QuotationPreview 
+          formData={formData} 
+          onClose={() => setShowPreview(false)} 
+        />
+      )}
     </div>
   );
 };
