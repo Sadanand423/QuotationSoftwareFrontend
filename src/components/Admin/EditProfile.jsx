@@ -31,10 +31,7 @@ const EditProfile = () => {
   });
 
   const tabs = [
-    { id: 'personal', label: 'Personal Info', icon: '👤' },
-    { id: 'professional', label: 'Professional', icon: '💼' },
-    { id: 'address', label: 'Address', icon: '📍' },
-    { id: 'social', label: 'Social Links', icon: '🔗' }
+    { id: 'personal', label: 'Personal Info', icon: '👤' }
   ];
 
   const handleInputChange = (field, value) => {
@@ -97,212 +94,79 @@ const EditProfile = () => {
         </div>
 
         <div className="p-4 sm:p-6">
-          {activeTab === 'personal' && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700">First Name</label>
-                  <input 
-                    type="text" 
-                    value={profile.firstName}
-                    onChange={(e) => handleInputChange('firstName', e.target.value)}
-                    className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700">Last Name</label>
-                  <input 
-                    type="text" 
-                    value={profile.lastName}
-                    onChange={(e) => handleInputChange('lastName', e.target.value)}
-                    className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                  />
-                </div>
-              </div>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700">Email</label>
-                <input 
-                  type="email" 
-                  value={profile.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700">Phone</label>
-                  <input 
-                    type="tel" 
-                    value={profile.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                    className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700">Date of Birth</label>
-                  <input 
-                    type="date" 
-                    value={profile.dateOfBirth}
-                    onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                    className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700">Gender</label>
-                <select 
-                  value={profile.gender}
-                  onChange={(e) => handleInputChange('gender', e.target.value)}
-                  className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                >
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                  <option value="prefer-not-to-say">Prefer not to say</option>
-                </select>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'professional' && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700">Job Title</label>
-                  <input 
-                    type="text" 
-                    value={profile.jobTitle}
-                    onChange={(e) => handleInputChange('jobTitle', e.target.value)}
-                    className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700">Department</label>
-                  <select 
-                    value={profile.department}
-                    onChange={(e) => handleInputChange('department', e.target.value)}
-                    className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  >
-                    <option value="Sales">Sales</option>
-                    <option value="Marketing">Marketing</option>
-                    <option value="HR">Human Resources</option>
-                    <option value="IT">Information Technology</option>
-                    <option value="Finance">Finance</option>
-                    <option value="Operations">Operations</option>
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700">Employee ID</label>
-                  <input 
-                    type="text" 
-                    value={profile.employeeId}
-                    readOnly
-                    className="w-full border border-gray-300 p-3 rounded-xl bg-gray-50 text-gray-600" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700">Join Date</label>
-                  <input 
-                    type="date" 
-                    value={profile.joinDate}
-                    onChange={(e) => handleInputChange('joinDate', e.target.value)}
-                    className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'address' && (
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700">Street Address</label>
+                <label className="block text-sm font-medium mb-2 text-gray-700">First Name</label>
                 <input 
                   type="text" 
-                  value={profile.street}
-                  onChange={(e) => handleInputChange('street', e.target.value)}
-                  className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700">City</label>
-                  <input 
-                    type="text" 
-                    value={profile.city}
-                    onChange={(e) => handleInputChange('city', e.target.value)}
-                    className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700">State</label>
-                  <input 
-                    type="text" 
-                    value={profile.state}
-                    onChange={(e) => handleInputChange('state', e.target.value)}
-                    className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700">ZIP Code</label>
-                  <input 
-                    type="text" 
-                    value={profile.zipCode}
-                    onChange={(e) => handleInputChange('zipCode', e.target.value)}
-                    className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700">Country</label>
-                  <input 
-                    type="text" 
-                    value={profile.country}
-                    onChange={(e) => handleInputChange('country', e.target.value)}
-                    className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'social' && (
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700">LinkedIn Profile</label>
-                <input 
-                  type="url" 
-                  value={profile.linkedin}
-                  onChange={(e) => handleInputChange('linkedin', e.target.value)}
-                  placeholder="https://linkedin.com/in/yourprofile"
+                  value={profile.firstName}
+                  onChange={(e) => handleInputChange('firstName', e.target.value)}
                   className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700">Twitter Profile</label>
+                <label className="block text-sm font-medium mb-2 text-gray-700">Last Name</label>
                 <input 
-                  type="url" 
-                  value={profile.twitter}
-                  onChange={(e) => handleInputChange('twitter', e.target.value)}
-                  placeholder="https://twitter.com/yourhandle"
-                  className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700">Personal Website</label>
-                <input 
-                  type="url" 
-                  value={profile.website}
-                  onChange={(e) => handleInputChange('website', e.target.value)}
-                  placeholder="https://yourwebsite.com"
+                  type="text" 
+                  value={profile.lastName}
+                  onChange={(e) => handleInputChange('lastName', e.target.value)}
                   className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
                 />
               </div>
             </div>
-          )}
+            <div>
+              <label className="block text-sm font-medium mb-2 text-gray-700">Email</label>
+              <input 
+                type="email" 
+                value={profile.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700">Phone</label>
+                <input 
+                  type="tel" 
+                  value={profile.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700">Date of Birth</label>
+                <input 
+                  type="date" 
+                  value={profile.dateOfBirth}
+                  onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                  className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2 text-gray-700">Gender</label>
+              <select 
+                value={profile.gender}
+                onChange={(e) => handleInputChange('gender', e.target.value)}
+                className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              >
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+                <option value="prefer-not-to-say">Prefer not to say</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2 text-gray-700">Address</label>
+              <input 
+                type="text" 
+                value={profile.street}
+                onChange={(e) => handleInputChange('street', e.target.value)}
+                className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
+              />
+            </div>
+          </div>
 
           <div className="flex flex-col sm:flex-row gap-3 mt-8 pt-6 border-t border-gray-200">
             <button 
