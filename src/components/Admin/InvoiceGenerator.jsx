@@ -4,7 +4,7 @@ const InvoiceGenerator = () => {
   const [invoices, setInvoices] = useState([]);
   const [activeFilter, setActiveFilter] = useState('All');
 
-  const statusFilters = ['All', 'Pending', 'Paid', 'Overdue'];
+  const statusFilters = ['All'];
 
   useEffect(() => {
     // Load invoices from localStorage
@@ -94,7 +94,7 @@ const InvoiceGenerator = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">{invoice.clientName}</td>
-                  <td className="px-6 py-4 text-sm font-semibold text-gray-900">${invoice.amount.toLocaleString()}</td>
+                  <td className="px-6 py-4 text-sm font-semibold text-gray-900">${invoice.amount?.toLocaleString() || '0'}</td>
                   <td className="px-6 py-4 text-sm">
                     <span className={`px-3 py-1 text-xs rounded-full font-medium ${getStatusColor(invoice.status)}`}>
                       {invoice.status}

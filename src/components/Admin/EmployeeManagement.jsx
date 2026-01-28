@@ -4,13 +4,17 @@ const EmployeeManagement = () => {
   const [employees, setEmployees] = useState([]);
   const [currentView, setCurrentView] = useState('list');
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     empId: '',
     joinDate: '',
-    password: ''
+    password: '',
+    status: 'Active',
+    department: 'Sales'
   });
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -181,17 +185,35 @@ const EmployeeManagement = () => {
             </div>
             
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">🔒 Password</label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">🏢 Department</label>
+              <select
+                name="department"
+                value={formData.department}
                 onChange={handleChange}
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
-                placeholder="Enter secure password"
-                autoComplete="new-password"
-                required={currentView === 'add'}
-              />
+                required
+              >
+                <option value="Sales">Sales</option>
+                <option value="Marketing">Marketing</option>
+                <option value="HR">Human Resources</option>
+                <option value="IT">Information Technology</option>
+                <option value="Finance">Finance</option>
+                <option value="Operations">Operations</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">🟢 Status</label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
+                required
+              >
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
             </div>
             
             <div className="col-span-1 sm:col-span-2 pt-3 sm:pt-4">
@@ -281,29 +303,53 @@ const EmployeeManagement = () => {
     <div className="p-4 sm:p-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">👥 Employee Management</h2>
-        <button
-          onClick={handleAddEmployee}
-          className="bg-blue-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-sm sm:text-base font-medium hover:bg-blue-700"
-        >
-          ✨ Add Employee
-        </button>
-      </div>
-
-      {employees.length === 0 ? (
-        <div className="text-center py-8 sm:py-12 bg-white rounded-lg">
-          <div className="text-3xl sm:text-4xl mb-3 sm:mb-4">👥</div>
-          <h3 className="text-base sm:text-lg font-bold text-gray-600 mb-2">No Employees Yet</h3>
-          <p className="text-gray-500 mb-3 sm:mb-4 text-sm">Start building your team</p>
+        <div className="flex gap-3">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search employees..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            />
+            <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
           <button
             onClick={handleAddEmployee}
-            className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg font-medium text-sm"
+            className="bg-blue-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-sm sm:text-base font-medium hover:bg-blue-700"
           >
-            ✨ Add First Employee
+            ✨ Add Employee
           </button>
+        </div>
+      </div>
+
+      {employees.filter(emp => 
+        emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.empId?.toLowerCase().includes(searchTerm.toLowerCase())
+      ).length === 0 ? (
+        <div className="text-center py-8 sm:py-12 bg-white rounded-lg">
+          <div className="text-3xl sm:text-4xl mb-3 sm:mb-4">👥</div>
+          <h3 className="text-base sm:text-lg font-bold text-gray-600 mb-2">No Employees Found</h3>
+          <p className="text-gray-500 mb-3 sm:mb-4 text-sm">{searchTerm ? 'Try adjusting your search' : 'Start building your team'}</p>
+          {!searchTerm && (
+            <button
+              onClick={handleAddEmployee}
+              className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg font-medium text-sm"
+            >
+              ✨ Add First Employee
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {employees.map((employee, index) => (
+          {employees.filter(emp => 
+            emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            emp.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            emp.empId?.toLowerCase().includes(searchTerm.toLowerCase())
+          ).map((employee, index) => (
             <div key={employee.id} className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 md:p-6 hover:shadow-md transition-shadow">
               <div className="flex items-center mb-3 sm:mb-4">
                 <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-r ${
