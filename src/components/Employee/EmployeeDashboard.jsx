@@ -50,69 +50,39 @@ const EmployeeDashboard = ({ onCreateQuotation }) => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 sm:p-6">
-            <h3 className="text-lg sm:text-xl font-bold text-white flex items-center">
-              <span className="mr-2">📈</span>
-              Recent Quotations
-            </h3>
-            <p className="text-blue-100 text-xs sm:text-sm mt-1">Latest quotation activities</p>
-          </div>
-          <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
-            {recentQuotations.map((quote) => (
-              <div key={quote.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200 gap-2 sm:gap-0">
-                <div className="flex items-center space-x-3 sm:space-x-4">
-                  <div className={`w-3 h-3 rounded-full ${
-                    quote.priority === 'high' ? 'bg-red-400' :
-                    quote.priority === 'medium' ? 'bg-yellow-400' : 'bg-green-400'
-                  }`}></div>
-                  <div>
-                    <p className="font-semibold text-gray-800 text-sm sm:text-base">{quote.id}</p>
-                    <p className="text-xs sm:text-sm text-gray-500">{quote.client}</p>
-                  </div>
-                </div>
-                <div className="text-left sm:text-right flex sm:flex-col items-center sm:items-end gap-2 sm:gap-1">
-                  <p className="font-bold text-gray-800 text-sm sm:text-base">{quote.amount}</p>
-                  <span className={`text-xs px-2 sm:px-3 py-1 rounded-full font-medium ${
-                    quote.status === 'Approved' ? 'bg-green-100 text-green-700' :
-                    quote.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-gray-100 text-gray-700'
-                  }`}>
-                    {quote.status}
-                  </span>
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 sm:p-6">
+          <h3 className="text-lg sm:text-xl font-bold text-white flex items-center">
+            <span className="mr-2">📈</span>
+            Recent Quotations
+          </h3>
+          <p className="text-blue-100 text-xs sm:text-sm mt-1">Latest quotation activities</p>
+        </div>
+        <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
+          {recentQuotations.map((quote) => (
+            <div key={quote.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200 gap-2 sm:gap-0">
+              <div className="flex items-center space-x-3 sm:space-x-4">
+                <div className={`w-3 h-3 rounded-full ${
+                  quote.priority === 'high' ? 'bg-red-400' :
+                  quote.priority === 'medium' ? 'bg-yellow-400' : 'bg-green-400'
+                }`}></div>
+                <div>
+                  <p className="font-semibold text-gray-800 text-sm sm:text-base">{quote.id}</p>
+                  <p className="text-xs sm:text-sm text-gray-500">{quote.client}</p>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-green-500 to-teal-500 p-4 sm:p-6">
-            <h3 className="text-lg sm:text-xl font-bold text-white flex items-center">
-              <span className="mr-2">⚡</span>
-              Quick Actions
-            </h3>
-            <p className="text-green-100 text-xs sm:text-sm mt-1">Streamline your workflow</p>
-          </div>
-          <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
-            <button 
-              onClick={() => onCreateQuotation && onCreateQuotation()}
-              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 text-sm sm:text-base"
-            >
-              <span>📋</span>
-              <span>Create New Quotation</span>
-            </button>
-            <button className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 text-sm sm:text-base">
-              <span>👥</span>
-              <span>Add New Client</span>
-            </button>
-            <button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 text-sm sm:text-base">
-              <span>📈</span>
-              <span>Generate Report</span>
-              
-            </button>
-          </div>
+              <div className="text-left sm:text-right flex sm:flex-col items-center sm:items-end gap-2 sm:gap-1">
+                <p className="font-bold text-gray-800 text-sm sm:text-base">{quote.amount}</p>
+                <span className={`text-xs px-2 sm:px-3 py-1 rounded-full font-medium ${
+                  quote.status === 'Approved' ? 'bg-green-100 text-green-700' :
+                  quote.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
+                  'bg-gray-100 text-gray-700'
+                }`}>
+                  {quote.status}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

@@ -23,12 +23,14 @@ function App() {
 function MainLayout() {
   return (
     <>
-      <Navbar />
-      <Routes>
+       <Navbar />
+    <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/contact" element={<ContactUs />} />
         <Route path="/login" element={<LoginPage />} />
       </Routes>
+   
+      
       <Footer />
     </>
   )

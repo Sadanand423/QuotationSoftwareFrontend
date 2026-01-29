@@ -331,9 +331,6 @@ const CreateQuotation = ({ selectedClient }) => {
                 >
                   <span className="mr-2">+</span> Add Cost Item
                 </button>
-                <button className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl">
-                  📊 Recalculate Total
-                </button>
               </div>
             </div>
           </div>
