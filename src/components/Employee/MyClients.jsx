@@ -67,9 +67,6 @@ const MyClients = ({ onCreateQuotation }) => {
               >
                 Create Quote
               </button>
-              <button className="flex-1 bg-gray-500 text-white py-2 px-3 rounded-lg text-xs sm:text-sm hover:bg-gray-600">
-                Contact
-              </button>
             </div>
           </div>
         ))}

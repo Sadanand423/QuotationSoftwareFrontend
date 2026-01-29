@@ -34,6 +34,10 @@ const Invoice = () => {
     }
   });
 
+  const handlePrintInvoice = () => {
+    window.print();
+  };
+
   const generateInvoice = (quotation) => {
     const taxAmount = (parseFloat(quotation.amount.replace(/[₹,]/g, '')) * parseFloat(invoiceData.taxRate)) / 100;
     const finalAmount = parseFloat(quotation.amount.replace(/[₹,]/g, '')) + taxAmount;
@@ -91,7 +95,7 @@ const Invoice = () => {
                     </div>
                     <button 
                       onClick={() => generateInvoice(quotation)}
-                      className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 font-medium text-sm sm:text-base self-start sm:self-auto"
+                      className="bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 transition-colors duration-200 font-medium text-sm whitespace-nowrap ml-4"
                     >
                       Generate Invoice
                     </button>
