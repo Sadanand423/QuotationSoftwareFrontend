@@ -20,15 +20,37 @@ const LoginModal = ({ isOpen, onClose }) => {
       } else {
         alert('Invalid admin credentials');
       }
+    }else {
+  // 🔥 CALL BACKEND LOGIN API
+  fetch("http://localhost:8080/api/employee/auth/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      employeeId: formData.employeeId,
+      password: formData.password
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.token) {
+      console.log("Login success");
+
+      // save JWT token
+      localStorage.setItem("token", data.token);
+
+      window.location.href = "/employee";
     } else {
-      // Employee credentials: employeeId: EMP001, password: emp123
-      if (formData.employeeId === 'EMP001' && formData.password === 'emp123') {
-        console.log('Employee Login Successful');
-        window.location.href = '/employee';
-      } else {
-        alert('Invalid employee credentials');
-      }
+      alert("Invalid credentials");
     }
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Server error");
+  });
+}
+
     onClose();
   };
 
