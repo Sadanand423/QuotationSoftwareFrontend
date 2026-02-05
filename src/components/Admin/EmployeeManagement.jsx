@@ -53,27 +53,31 @@ const EmployeeManagement = () => {
     setSelectedEmployee(employee);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    let updatedEmployees;
-    if (currentView === 'add') {
-      const newEmployee = { ...formData, id: Date.now() };
-      updatedEmployees = [...employees, newEmployee];
-    } else {
-      updatedEmployees = employees.map(emp => 
-        emp.id === selectedEmployee.id ? { ...formData, id: selectedEmployee.id } : emp
-      );
-    }
-    
-    localStorage.setItem('employees', JSON.stringify(updatedEmployees));
-    setEmployees(updatedEmployees);
-    
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
-    
-    setCurrentView('list');
-  };
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  try {
+    const res = await fetch("http://localhost:8080/api/admin/employees", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
+    });
+
+    const data = await res.json();
+
+    alert("Employee saved to MongoDB ✅");
+
+    setEmployees([...employees, data]);
+    setCurrentView("list");
+
+  } catch (err) {
+    console.error(err);
+    alert("Error saving employee ❌");
+  }
+};
+
 
   const handleChange = (e) => {
     setFormData({
@@ -332,7 +336,7 @@ const EmployeeManagement = () => {
             </svg>
           </div>
           <button
-            onClick={handleAddEmployee}
+            onClick={handleSubmit}
             className="bg-blue-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-sm sm:text-base font-medium hover:bg-blue-700"
           >
             ✨ Add Employee
