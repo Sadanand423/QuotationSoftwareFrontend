@@ -49,7 +49,7 @@ const QuotationPreview = ({ formData, onClose }) => {
             onClick={onClose}
             className="bg-gray-500 text-white px-3 sm:px-4 py-2 rounded hover:bg-gray-600 text-sm sm:text-base"
           >
-            Close
+            Close  
           </button>
         </div>
         

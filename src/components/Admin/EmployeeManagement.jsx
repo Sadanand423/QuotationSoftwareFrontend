@@ -160,31 +160,8 @@ const EmployeeManagement = () => {
                 required
               />
             </div>
-            
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">🆔 Employee ID</label>
-              <input
-                type="text"
-                name="empId"
-                value={formData.empId}
-                className="w-full p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 text-xs sm:text-sm"
-                readOnly
-              />
-            </div>
-            
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">📅 Join Date</label>
-              <input
-                type="date"
-                name="joinDate"
-                value={formData.joinDate}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
-                required
-              />
-            </div>
-            
-            <div>
+
+             <div>
               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">🏢 Department</label>
               <select
                 name="department"
@@ -203,7 +180,45 @@ const EmployeeManagement = () => {
             </div>
             
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">🟢 Status</label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">🆔 Employee ID</label>
+              <input
+                type="text"
+                name="empId"
+                value={formData.empId}
+                className="w-full p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 text-xs sm:text-sm"
+                readOnly
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">🔐 Password</label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
+                placeholder="Enter password"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">📅 Join Date</label>
+              <input
+                type="date"
+                name="joinDate"
+                value={formData.joinDate}
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
+                required
+              />
+            </div>
+            
+
+            
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">✅ Status</label>
               <select
                 name="status"
                 value={formData.status}
