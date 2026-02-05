@@ -336,7 +336,7 @@ const EmployeeManagement = () => {
             </svg>
           </div>
           <button
-            onClick={handleSubmit}
+            onClick={ handleAddEmployee}
             className="bg-blue-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-sm sm:text-base font-medium hover:bg-blue-700"
           >
             ✨ Add Employee
