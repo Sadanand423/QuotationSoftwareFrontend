@@ -5,7 +5,8 @@ const EmployeeManagement = () => {
   const [currentView, setCurrentView] = useState('list');
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
+
+  const [showSuccess, setShowSuccess] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -16,14 +17,21 @@ const EmployeeManagement = () => {
     status: 'Active',
     department: 'Sales'
   });
-  const [showSuccess, setShowSuccess] = useState(false);
 
+  // ✅ FETCH FROM BACKEND (NO localStorage)
   useEffect(() => {
-    const savedEmployees = localStorage.getItem('employees');
-    if (savedEmployees) {
-      setEmployees(JSON.parse(savedEmployees));
-    }
+    fetchEmployees();
   }, []);
+
+  const fetchEmployees = async () => {
+    try {
+      const res = await fetch("http://localhost:8080/api/admin/employees");
+      const data = await res.json();
+      setEmployees(data);
+    } catch (err) {
+      console.error("Fetch error", err);
+    }
+  };
 
   const generateEmpId = () => {
     const randomNum = Math.floor(Math.random() * 999) + 1;
@@ -38,7 +46,9 @@ const EmployeeManagement = () => {
       phone: '',
       empId: generateEmpId(),
       joinDate: new Date().toISOString().split('T')[0],
-      password: ''
+      password: '',
+      status: 'Active',
+      department: 'Sales'
     });
   };
 
@@ -53,31 +63,38 @@ const EmployeeManagement = () => {
     setSelectedEmployee(employee);
   };
 
+  // ✅ ADD + UPDATE (POST / PUT)
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  try {
-    const res = await fetch("http://localhost:8080/api/admin/employees", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
-    });
+    const isEdit = currentView === "edit";
+    const url = isEdit
+      ? `http://localhost:8080/api/admin/employees/${selectedEmployee.id}`
+      : "http://localhost:8080/api/admin/employees";
 
-    const data = await res.json();
+    const method = isEdit ? "PUT" : "POST";
 
-    alert("Employee saved to MongoDB ✅");
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
 
-    setEmployees([...employees, data]);
-    setCurrentView("list");
+      const data = await res.json();
 
-  } catch (err) {
-    console.error(err);
-    alert("Error saving employee ❌");
-  }
-};
-
+      if (isEdit) {
+        setEmployees(employees.map(emp => emp.id === data.id ? data : emp));
+      } else {
+        setEmployees([...employees, data]);
+      }
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
+      setCurrentView("list");
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleChange = (e) => {
     setFormData({
@@ -86,11 +103,19 @@ const EmployeeManagement = () => {
     });
   };
 
-  const deleteEmployee = (id) => {
-    if (window.confirm('Are you sure you want to delete this employee?')) {
-      const updatedEmployees = employees.filter(emp => emp.id !== id);
-      setEmployees(updatedEmployees);
-      localStorage.setItem('employees', JSON.stringify(updatedEmployees));
+  // ✅ DELETE FROM BACKEND
+  const deleteEmployee = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this employee?')) return;
+
+    try {
+      await fetch(`http://localhost:8080/api/admin/employees/${id}`, {
+        method: "DELETE"
+      });
+
+      setEmployees(employees.filter(emp => emp.id !== id));
+      setCurrentView("list");
+    } catch (err) {
+      console.error("Delete failed", err);
     }
   };
 
@@ -98,6 +123,8 @@ const EmployeeManagement = () => {
     setCurrentView('list');
     setSelectedEmployee(null);
   };
+
+  
 
   // Add/Edit Form View
   if (currentView === 'add' || currentView === 'edit') {
@@ -369,7 +396,7 @@ const EmployeeManagement = () => {
             emp.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             emp.empId?.toLowerCase().includes(searchTerm.toLowerCase())
           ).map((employee, index) => (
-            <div key={employee.id} className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 md:p-6 hover:shadow-md transition-shadow">
+            <div key={employee._id} className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 md:p-6 hover:shadow-md transition-shadow">
               <div className="flex items-center mb-3 sm:mb-4">
                 <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-r ${
                   index % 4 === 0 ? 'from-blue-400 to-blue-600' :
