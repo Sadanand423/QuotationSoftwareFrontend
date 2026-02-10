@@ -39,6 +39,7 @@ const LoginModal = ({ isOpen, onClose }) => {
           window.location.href = "/admin";
         } else {
           alert("Invalid admin credentials");
+          return;
         }
       } catch (err) {
         console.error(err);
@@ -66,9 +67,11 @@ const LoginModal = ({ isOpen, onClose }) => {
 
       if (res.ok && data.token) {
         localStorage.setItem("token", data.token);
+        localStorage.setItem("empId", formData.employeeId);
         window.location.href = "/employee";
       } else {
         alert("Invalid credentials");
+        return;
       }
     } catch (err) {
       console.error(err);

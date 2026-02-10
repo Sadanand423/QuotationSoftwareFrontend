@@ -12,28 +12,19 @@ const ClientManagement = () => {
 
   const statusFilters = ['All', 'Active', 'Inactive'];
 
-  useEffect(() => {
-    // Load clients from localStorage
-    const savedClients = localStorage.getItem('clients');
-    if (savedClients) {
-      setClients(JSON.parse(savedClients));
-    } else {
-      // Sample clients data
-      const sampleClients = [
-        { id: 'CLI-001', name: 'ABC Corp', email: 'contact@abccorp.com', phone: '+1-555-0123', status: 'Active', joinDate: '2024-01-15' },
-        { id: 'CLI-002', name: 'XYZ Ltd', email: 'info@xyzltd.com', phone: '+1-555-0124', status: 'Active', joinDate: '2024-01-14' },
-        { id: 'CLI-003', name: 'Tech Solutions', email: 'hello@techsol.com', phone: '+1-555-0125', status: 'Inactive', joinDate: '2024-01-13' }
-      ];
-      setClients(sampleClients);
-      localStorage.setItem('clients', JSON.stringify(sampleClients));
-    }
-  }, []);
+useEffect(() => {
+  fetch("http://localhost:8080/api/clients")
+    .then(res => res.json())
+    .then(data => setClients(data))
+    .catch(err => console.error(err));
+}, []);
+
 
   const filteredClients = clients.filter(client => {
     const matchesFilter = activeFilter === 'All' || client.status === activeFilter;
     const matchesSearch = client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         client.id?.toLowerCase().includes(searchTerm.toLowerCase());
+                         client.clientId?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
@@ -43,31 +34,46 @@ const ClientManagement = () => {
     setShowModal(true);
   };
 
-  const handleAddClient = () => {
-    const clientId = `CLI-${String(clients.length + 1).padStart(3, '0')}`;
-    const clientWithId = { ...newClient, id: clientId, joinDate: new Date().toISOString().split('T')[0] };
-    const updatedClients = [...clients, clientWithId];
-    setClients(updatedClients);
-    localStorage.setItem('clients', JSON.stringify(updatedClients));
-    setNewClient({ name: '', email: '', phone: '', status: 'Active' });
-    setShowAddForm(false);
-  };
+const handleAddClient = async () => {
+  const response = await fetch("http://localhost:8080/api/clients", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(newClient)
+  });
 
-  const handleStatusUpdate = (clientId, newStatus) => {
-    const updatedClients = clients.map(c => 
+  const savedClient = await response.json();
+  setClients([...clients, savedClient]);
+
+  setNewClient({ name: '', email: '', phone: '', status: 'Active' });
+  setShowAddForm(false);
+};
+
+
+const handleStatusUpdate = async (clientId, newStatus) => {
+  await fetch(`http://localhost:8080/api/clients/${clientId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: newStatus })
+  });
+
+  setClients(
+    clients.map(c =>
       c.id === clientId ? { ...c, status: newStatus } : c
-    );
-    setClients(updatedClients);
-    localStorage.setItem('clients', JSON.stringify(updatedClients));
-    setShowModal(false);
-  };
+    )
+  );
 
-  const handleDelete = (clientId) => {
-    const updatedClients = clients.filter(c => c.id !== clientId);
-    setClients(updatedClients);
-    localStorage.setItem('clients', JSON.stringify(updatedClients));
-    setShowModal(false);
-  };
+  setShowModal(false);
+};
+
+const handleDelete = async (clientId) => {
+  await fetch(`http://localhost:8080/api/clients/${clientId}`, {
+    method: "DELETE"
+  });
+
+  setClients(clients.filter(c => c.id !== clientId));
+  setShowModal(false);
+};
+
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -151,7 +157,7 @@ const ClientManagement = () => {
                   <td className="px-6 py-4 text-sm">
                     <div className="flex items-center">
                       <div className={`w-2 h-2 rounded-full mr-3 ${getStatusDot(client.status)}`}></div>
-                      <span className="font-medium text-gray-900">{client.id}</span>
+                      <span className="font-medium text-gray-900">{client.clientId}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">{client.name}</td>
@@ -270,7 +276,7 @@ const ClientManagement = () => {
               
               {modalType === 'view' && selectedClient && (
                 <div className="space-y-3">
-                  <p><strong>ID:</strong> {selectedClient.id}</p>
+                  <p><strong>Client ID:</strong> {selectedClient.clientId}</p>
                   <p><strong>Name:</strong> {selectedClient.name}</p>
                   <p><strong>Email:</strong> {selectedClient.email}</p>
                   <p><strong>Phone:</strong> {selectedClient.phone}</p>

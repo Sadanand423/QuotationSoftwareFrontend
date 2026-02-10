@@ -1,44 +1,107 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const MyClients = ({ onCreateQuotation }) => {
   const [showForm, setShowForm] = useState(false);
-  const [clients] = useState([
-    { id: 1, name: 'ABC Corp', email: 'contact@abccorp.com', phone: '+1-555-0123', quotations: 3, lastContact: '2024-01-15' },
-    { id: 2, name: 'XYZ Ltd', email: 'info@xyzltd.com', phone: '+1-555-0124', quotations: 2, lastContact: '2024-01-14' },
-    { id: 3, name: 'Tech Solutions', email: 'hello@techsol.com', phone: '+1-555-0125', quotations: 4, lastContact: '2024-01-13' },
-    { id: 4, name: 'StartupCo', email: 'team@startup.com', phone: '+1-555-0126', quotations: 1, lastContact: '2024-01-12' }
-  ]);
+  const [clients, setClients] = useState([]);
+  const [newClient, setNewClient] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    status: 'Active'
+  });
+
+  // ✅ Fetch ALL clients added by Admin
+  useEffect(() => {
+    fetch("http://localhost:8080/api/clients")
+      .then(res => res.json())
+      .then(data => setClients(data))
+      .catch(err => console.error(err));
+  }, []);
+
+  // ✅ Add client (Employee can also add)
+  const handleAddClient = async () => {
+    const response = await fetch("http://localhost:8080/api/clients", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newClient)
+    });
+
+    const savedClient = await response.json();
+    setClients([...clients, savedClient]);
+
+    setNewClient({
+      name: '',
+      email: '',
+      phone: '',
+      address: '',
+      status: 'Active'
+    });
+
+    setShowForm(false);
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">My Clients</h2>
-          <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage your assigned clients</p>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">
+            All clients added by Admin & Employee
+          </p>
         </div>
         <button 
           onClick={() => setShowForm(true)}
-          className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 text-sm sm:text-base self-start sm:self-auto"
+          className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 text-sm sm:text-base"
         >
           + Add Client
         </button>
       </div>
 
+      {/* Add Client Form */}
       {showForm && (
         <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
           <h3 className="text-lg sm:text-xl font-semibold mb-4">Add New Client</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input type="text" placeholder="Client Name" className="border p-2 sm:p-3 rounded-lg text-sm sm:text-base" />
-            <input type="text" placeholder="Project Name" className="border p-2 sm:p-3 rounded-lg text-sm sm:text-base" />
-            <input type="email" placeholder="Email" className="border p-2 sm:p-3 rounded-lg text-sm sm:text-base" />
-            <input type="tel" placeholder="Phone No" className="border p-2 sm:p-3 rounded-lg text-sm sm:text-base" />
-            <textarea placeholder="Address" className="border p-2 sm:p-3 rounded-lg md:col-span-2 text-sm sm:text-base" rows="2"></textarea>
+            <input
+              type="text"
+              placeholder="Client Name"
+              value={newClient.name}
+              onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
+              className="border p-2 rounded-lg"
+            />
+            <input
+              type="email"
+              placeholder="Email"
+              value={newClient.email}
+              onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+              className="border p-2 rounded-lg"
+            />
+            <input
+              type="tel"
+              placeholder="Phone No"
+              value={newClient.phone}
+              onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
+              className="border p-2 rounded-lg"
+            />
+            <textarea
+              placeholder="Address"
+              value={newClient.address}
+              onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
+              className="border p-2 rounded-lg md:col-span-2"
+              rows="2"
+            />
           </div>
-          <div className="flex flex-col sm:flex-row gap-2 mt-4">
-            <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 text-sm sm:text-base">Save</button>
-            <button 
+          <div className="flex gap-2 mt-4">
+            <button
+              onClick={handleAddClient}
+              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
+            >
+              Save
+            </button>
+            <button
               onClick={() => setShowForm(false)}
-              className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 text-sm sm:text-base"
+              className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
             >
               Cancel
             </button>
@@ -46,28 +109,25 @@ const MyClients = ({ onCreateQuotation }) => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      {/* Clients List */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {clients.map((client) => (
-          <div key={client.id} className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-2">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-800">{client.name}</h3>
-              <span className="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded-full self-start">
-                {client.quotations} Quotes
+          <div key={client.id} className="bg-white p-4 rounded-lg shadow-sm border">
+            <div className="flex justify-between mb-3">
+              <h3 className="text-lg font-semibold">{client.name}</h3>
+              <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
+                {client.clientId}
               </span>
             </div>
-            <div className="space-y-2 mb-4">
-              <p className="text-gray-600 text-xs sm:text-sm break-all">📧 {client.email}</p>
-              <p className="text-gray-600 text-xs sm:text-sm">📞 {client.phone}</p>
-              <p className="text-gray-600 text-xs sm:text-sm">📅 Last Contact: {client.lastContact}</p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <button 
-                onClick={() => onCreateQuotation && onCreateQuotation(client)}
-                className="flex-1 bg-green-500 text-white py-2 px-3 rounded-lg text-xs sm:text-sm hover:bg-green-600"
-              >
-                Create Quote
-              </button>
-            </div>
+            <p className="text-sm text-gray-600">📧 {client.email}</p>
+            <p className="text-sm text-gray-600">📞 {client.phone}</p>
+
+            <button
+              onClick={() => onCreateQuotation?.(client)}
+              className="mt-4 w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600"
+            >
+              Create Quote
+            </button>
           </div>
         ))}
       </div>

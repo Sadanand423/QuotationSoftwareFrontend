@@ -15,7 +15,9 @@ const EmployeeManagement = () => {
     joinDate: '',
     password: '',
     status: 'Active',
-    department: 'Sales'
+    department: 'Sales',
+    photo: ''
+
   });
 
   // ✅ FETCH FROM BACKEND (NO localStorage)
@@ -48,15 +50,29 @@ const EmployeeManagement = () => {
       joinDate: new Date().toISOString().split('T')[0],
       password: '',
       status: 'Active',
-      department: 'Sales'
+      department: 'Sales',
+      photo: ''
     });
   };
 
-  const handleEditEmployee = (employee) => {
-    setCurrentView('edit');
-    setSelectedEmployee(employee);
-    setFormData({ ...employee });
-  };
+const handleEditEmployee = (employee) => {
+  setCurrentView('edit');
+  setSelectedEmployee(employee);
+
+  setFormData({
+    name: employee.name ?? '',
+    email: employee.email ?? '',
+    phone: employee.phone ?? '',
+    empId: employee.empId ?? '',
+    joinDate: employee.joinDate ?? '',
+    password: employee.password ?? '',
+    status: employee.status ?? 'Active',
+    department: employee.department ?? 'Sales', 
+    photo: employee.photo ?? ''
+  });
+};
+
+
 
   const handleViewEmployee = (employee) => {
     setCurrentView('view');
@@ -124,7 +140,20 @@ const EmployeeManagement = () => {
     setSelectedEmployee(null);
   };
 
-  
+  const handlePhotoChange = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    setFormData(prev => ({
+      ...prev,
+      photo: reader.result // base64
+    }));
+  };
+  reader.readAsDataURL(file);
+};
+
 
   // Add/Edit Form View
   if (currentView === 'add' || currentView === 'edit') {
@@ -247,6 +276,7 @@ const EmployeeManagement = () => {
             </div>
             
 
+
             
             <div>
               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">✅ Status</label>
@@ -261,7 +291,44 @@ const EmployeeManagement = () => {
                 <option value="Inactive">Inactive</option>
               </select>
             </div>
-            
+             
+             <div className="col-span-1 sm:col-span-2 flex items-center justify-between gap-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+  
+  {/* Photo Preview */}
+  <div className="flex items-center gap-3">
+    <div className="w-14 h-14 rounded-full bg-blue-100 border-2 border-blue-400 overflow-hidden flex items-center justify-center">
+      {formData.photo ? (
+        <img
+          src={formData.photo}
+          alt="Employee"
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <span className="text-blue-600 font-bold text-sm">IMG</span>
+      )}
+    </div>
+
+    <div>
+      <p className="text-sm font-semibold text-gray-700">Profile Photo</p>
+      <p className="text-xs text-gray-500">PNG / JPG up to 2MB</p>
+    </div>
+  </div>
+
+  {/* Upload Button */}
+  <label className="cursor-pointer">
+    <input
+      type="file"
+      accept="image/*"
+      onChange={handlePhotoChange}
+      className="hidden"
+    />
+    <span className="bg-green-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg text-xs sm:text-sm font-medium">
+      Upload
+    </span>
+  </label>
+
+</div>
+
             <div className="col-span-1 sm:col-span-2 pt-3 sm:pt-4">
               <button
                 type="submit"
@@ -396,16 +463,22 @@ const EmployeeManagement = () => {
             emp.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             emp.empId?.toLowerCase().includes(searchTerm.toLowerCase())
           ).map((employee, index) => (
-            <div key={employee._id} className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 md:p-6 hover:shadow-md transition-shadow">
+            <div key={employee.id} className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 md:p-6 hover:shadow-md transition-shadow">
               <div className="flex items-center mb-3 sm:mb-4">
-                <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-r ${
-                  index % 4 === 0 ? 'from-blue-400 to-blue-600' :
-                  index % 4 === 1 ? 'from-green-400 to-green-600' :
-                  index % 4 === 2 ? 'from-purple-400 to-purple-600' :
-                  'from-orange-400 to-orange-600'
-                } flex items-center justify-center text-white font-bold text-xs sm:text-sm md:text-lg`}>
-                  {employee.name.charAt(0).toUpperCase()}
-                </div>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+                      {employee.photo ? (
+                      <img
+                        src={employee.photo}
+                        alt={employee.name}
+                        className="w-full h-full object-cover"
+    />
+  ) : (
+    <span className="text-white font-bold text-xs sm:text-sm md:text-lg bg-blue-500 w-full h-full flex items-center justify-center">
+      {employee.name?.charAt(0).toUpperCase()}
+    </span>
+  )}
+</div>
+
                 <div className="ml-3 flex-1 min-w-0">
                   <h4 className="font-bold text-gray-800 text-sm sm:text-base md:text-lg truncate">{employee.name}</h4>
                   <p className="text-xs sm:text-sm text-gray-500">{employee.empId}</p>
