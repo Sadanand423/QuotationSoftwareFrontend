@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import QuotationPreview from './QuotationPreview';
 import QuotationPrint from './QuotationPrint';
 
 const CreateQuotation = ({ selectedClient }) => {
   const [showPreview, setShowPreview] = useState(false);
   const [showPrint, setShowPrint] = useState(false);
+  const [clients, setClients] = useState([]);
+
   const [formData, setFormData] = useState({
     quotationNumber: `QT-${Date.now().toString().slice(-6)}`,
     date: new Date().toLocaleDateString('en-IN'),
@@ -52,6 +54,17 @@ const CreateQuotation = ({ selectedClient }) => {
     projectManagerSignature: null,
     operationManagerSignature: null
   });
+  useEffect(() => {
+  if (selectedClient) {
+    setFormData((prev) => ({
+      ...prev,
+      client: selectedClient.name || '',
+      clientContact: selectedClient.email || '',
+      clientPhone: selectedClient.phone || '',
+      clientAddress: selectedClient.address || ''
+    }));
+  }
+}, [selectedClient]);
 
   const addCostItem = () => {
     setFormData({
@@ -77,7 +90,8 @@ const CreateQuotation = ({ selectedClient }) => {
   const calculateTotal = () => {
     return formData.costBreakdown.reduce((total, item) => total + (item.amount || 0), 0);
   };
-
+   
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto bg-white shadow-2xl">
