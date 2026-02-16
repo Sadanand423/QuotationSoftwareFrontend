@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import QuotationPreview from './QuotationPreview';
-import QuotationPrint from './QuotationPrint';
+
 
 const CreateQuotation = ({ selectedClient }) => {
   const [showPreview, setShowPreview] = useState(false);
-  const [showPrint, setShowPrint] = useState(false);
+
   const [clients, setClients] = useState([]);
 
   const [formData, setFormData] = useState({
@@ -14,13 +14,14 @@ const CreateQuotation = ({ selectedClient }) => {
     project: '',
     client: selectedClient?.name || '',
     clientAddress: '',
-    clientContact: '',
+    clientEmail: '',
     clientPhone: '',
     preparedBy: 'Development Team',
     documentType: 'Commercial Quotation',
     version: '1.0',
     currency: 'INR',
-    totalCost: '₹2,50,00,000 2.5 Crores',
+    totalCost: 0,
+    aboutProject: '',
     costBreakdown: [
       { srNo: 1, area: 'Architecture & Planning', scope: '', amount: '' },
       { srNo: 2, area: 'UI / UX Design', scope: '', amount: '' },
@@ -59,12 +60,22 @@ const CreateQuotation = ({ selectedClient }) => {
     setFormData((prev) => ({
       ...prev,
       client: selectedClient.name || '',
-      clientContact: selectedClient.email || '',
+      clientEmail: selectedClient.email || '',
       clientPhone: selectedClient.phone || '',
       clientAddress: selectedClient.address || ''
     }));
   }
 }, [selectedClient]);
+    
+
+  useEffect(() => {
+  const total = calculateTotal();
+  setFormData((prev) => ({
+    ...prev,
+    totalCost: total
+  }));
+}, [formData.costBreakdown]);
+
 
   const addCostItem = () => {
     setFormData({
@@ -86,11 +97,66 @@ const CreateQuotation = ({ selectedClient }) => {
     );
     setFormData({ ...formData, costBreakdown: newItems });
   };
-
-  const calculateTotal = () => {
-    return formData.costBreakdown.reduce((total, item) => total + (item.amount || 0), 0);
-  };
    
+
+ const calculateTotal = () => {
+  return formData.costBreakdown.reduce((total, item) => {
+    const amount = parseFloat(item.amount);
+    return total + (isNaN(amount) ? 0 : amount);
+  }, 0);
+};
+  const formatIndianCurrency = (amount) => {
+  if (!amount || amount === 0) return "₹ 0";
+
+  if (amount >= 10000000) {
+    return `₹ ${(amount / 10000000).toFixed(2)} Crores`;
+  } 
+  else if (amount >= 100000) {
+    return `₹ ${(amount / 100000).toFixed(2)} Lakhs`;
+  } 
+  else {
+    return `₹ ${amount.toLocaleString('en-IN')}`;
+  }
+};
+
+  const saveQuotation = async () => {
+  if (!formData.client || !formData.project) {
+    alert("Client and Project name required ❗");
+    return;
+  }
+
+  try {
+    const response = await fetch("http://localhost:8080/api/quotations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData)
+    });
+
+    if (!response.ok) {
+      alert("Error saving quotation ❌");
+      return;
+    }
+
+    const data = await response.json();
+
+    // ✅ IMPORTANT FIX
+    setFormData(prev => ({
+      ...prev,
+      id: data.id   // <-- STORE id (NOT _id)
+    }));
+
+    alert("Quotation Saved Successfully ✅");
+
+    setShowPreview(true);
+
+  } catch (error) {
+    console.error("Error:", error);
+    alert("Server error ❌");
+  }
+};
+
+
+
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -182,8 +248,8 @@ const CreateQuotation = ({ selectedClient }) => {
                   <input 
                     type="email" 
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-sm"
-                    value={formData.clientContact}
-                    onChange={(e) => setFormData({...formData, clientContact: e.target.value})}
+                    value={formData.clientEmail}
+                    onChange={(e) => setFormData({...formData, clientEmail: e.target.value})}
                     placeholder="Enter email address"
                   />
                 </div>
@@ -229,12 +295,14 @@ const CreateQuotation = ({ selectedClient }) => {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600 block mb-1">Total Cost:</label>
-                  <input 
-                    type="text" 
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none text-sm font-semibold text-orange-700"
-                    value={formData.totalCost}
-                    onChange={(e) => setFormData({...formData, totalCost: e.target.value})}
+                 <input 
+                   type="text"
+                   readOnly
+                   value={formatIndianCurrency(formData.totalCost)}
+
+                   className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-100 font-semibold text-orange-700"
                   />
+
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -260,6 +328,22 @@ const CreateQuotation = ({ selectedClient }) => {
             </div>
           </div>
         </div>
+   
+{/* About Project */}
+<div className="px-4 sm:px-6 lg:px-8 pb-6">
+  <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
+    <h3 className="text-lg font-bold text-yellow-700 mb-2">About Project</h3>
+    <textarea
+      rows={4}
+      className="w-full px-3 py-2 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 outline-none resize-none text-sm"
+      placeholder="Write something about the project..."
+      value={formData.aboutProject}
+      onChange={(e) => setFormData({...formData, aboutProject: e.target.value})}
+    />
+  </div>
+</div>
+
+      
 
         {/* Cost Breakdown */}
         <div className="px-4 sm:px-6 lg:px-8 pb-6">
@@ -267,7 +351,7 @@ const CreateQuotation = ({ selectedClient }) => {
             <div className="bg-gradient-to-r from-slate-700 to-slate-800 px-6 py-4">
               <h2 className="text-xl font-bold text-white flex items-center">
                 <span className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center mr-3 text-sm font-bold">1</span>
-                Cost Breakdown (Fixed Price – ₹2.5 Cr)
+                Cost Breakdown 
               </h2>
             </div>
             
@@ -307,7 +391,7 @@ const CreateQuotation = ({ selectedClient }) => {
                         </td>
                         <td className="border border-gray-200 p-3">
                           <input 
-                            type="text" 
+                            type="number" 
                             className="w-full outline-none bg-transparent font-semibold text-orange-600 focus:bg-orange-50 focus:ring-2 focus:ring-orange-200 rounded px-2 py-1 transition-all text-center"
                             value={item.amount}
                             onChange={(e) => updateCostItem(index, 'amount', e.target.value)}
@@ -329,8 +413,8 @@ const CreateQuotation = ({ selectedClient }) => {
                         <span className="text-gray-800 text-lg">TOTAL PROJECT COST</span>
                       </td>
                       <td className="border border-gray-200 p-4 text-center">
-                        <span className="text-orange-700 text-lg font-bold">₹{calculateTotal()} Lakhs</span>
-                        <div className="text-sm text-gray-600 font-normal">(₹2.5 Crores)</div>
+                        <span className="text-orange-700 text-lg font-bold">{formatIndianCurrency(formData.totalCost)}</span>
+                       
                       </td>
                       <td className="border border-gray-200 p-4"></td>
                     </tr>
@@ -674,29 +758,42 @@ const CreateQuotation = ({ selectedClient }) => {
         {/* Action Buttons */}
         <div className="bg-gray-50 px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 rounded-xl hover:from-green-600 hover:to-green-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center">
-              <span className="mr-2 text-lg">💾</span> Save Quotation
+            <button
+               onClick={saveQuotation}
+               className="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 rounded-xl"
+                    >
+                💾 Save Quotation
             </button>
-            <button className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-4 rounded-xl hover:from-blue-600 hover:to-blue-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center">
-              <span className="mr-2 text-lg">📤</span> Send for Approval
-            </button>
+
+            
+
             <button 
-              onClick={() => setShowPreview(true)}
-              className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-8 py-4 rounded-xl hover:from-purple-600 hover:to-purple-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
-            >
-              <span className="mr-2 text-lg">👁️</span> Preview & Print
-            </button>
+  onClick={() => {
+    if (!formData.id) {
+      alert("Please save the quotation before previewing or sending for approval.");
+      return;
+    }
+    setShowPreview(true);
+  }}
+  className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-8 py-4 rounded-xl hover:from-purple-600 hover:to-purple-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
+>
+  <span className="mr-2 text-lg">👁️</span> Preview 
+</button>
+
+            
           </div>
         </div>
       </div>
       
       {/* Preview Modal */}
-      {showPreview && (
-        <QuotationPreview 
-          formData={formData} 
-          onClose={() => setShowPreview(false)} 
-        />
-      )}
+     {showPreview && (
+  <QuotationPreview 
+    formData={formData} 
+    onClose={() => setShowPreview(false)} 
+  />
+)}
+
+
     </div>
   );
 };
