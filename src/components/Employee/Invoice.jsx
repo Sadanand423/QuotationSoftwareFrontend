@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Invoice = () => {
+  const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [selectedQuotation, setSelectedQuotation] = useState(null);
   
-  // Mock approved quotations data
-  const approvedQuotations = [
-    { id: 'Q-2024-045', client: 'ABC Corp', project: '3D Web Platform', amount: '₹15,00,000', approvedDate: '2024-01-15', status: 'Ready for Invoice' },
-    { id: 'Q-2024-044', client: 'XYZ Ltd', project: 'E-commerce Site', amount: '₹8,50,000', approvedDate: '2024-01-14', status: 'Ready for Invoice' },
-    { id: 'Q-2024-043', client: 'Tech Solutions', project: 'Mobile App', amount: '₹22,00,000', approvedDate: '2024-01-13', status: 'Ready for Invoice' }
-  ];
+  // ✅ Dynamic State for Backend Data
+  const [approvedQuotations, setApprovedQuotations] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // ✅ Get Employee ID
+  const currentEmpId = localStorage.getItem("empId") || "EMP-001";
 
   const [invoiceData, setInvoiceData] = useState({
     invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
@@ -34,26 +36,84 @@ const Invoice = () => {
     }
   });
 
+  // ✅ 1. Fetch Approved Quotations for this Employee
+  useEffect(() => {
+    const fetchQuotations = async () => {
+      try {
+        const response = await fetch(`http://localhost:8080/api/quotations/employee/id/${currentEmpId}`);
+        if (response.ok) {
+          const data = await response.json();
+          // Filter only 'Approved' status
+          const approved = data.filter(q => q.status === 'Approved');
+          setApprovedQuotations(approved);
+        }
+      } catch (error) {
+        console.error("Error loading quotations:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchQuotations();
+  }, [currentEmpId]);
+
+  // ✅ 2. Save Invoice to Backend
+  const handleSaveInvoice = async () => {
+    try {
+      // Ensure we are sending the current employee ID and clean data
+      const payload = {
+        ...invoiceData,
+        employeeId: currentEmpId,
+        status: 'Sent',
+        date: new Date().toLocaleDateString('en-IN') // Standardizing date
+      };
+
+      const response = await fetch(`http://localhost:8080/api/invoices/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        alert("Invoice generated and saved successfully! ✅");
+        // 3. Redirect to the MyInvoice page after success
+        navigate('./MyInvoice'); 
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to save: ${errorData.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error("Save Error:", error);
+      alert("Server connection error ❌");
+    }
+  };
+
   const handlePrintInvoice = () => {
     window.print();
   };
 
   const generateInvoice = (quotation) => {
-    const taxAmount = (parseFloat(quotation.amount.replace(/[₹,]/g, '')) * parseFloat(invoiceData.taxRate)) / 100;
-    const finalAmount = parseFloat(quotation.amount.replace(/[₹,]/g, '')) + taxAmount;
-    
-    setInvoiceData({
-      ...invoiceData,
-      quotationId: quotation.id,
-      clientName: quotation.client,
-      projectName: quotation.project,
-      totalAmount: quotation.amount,
-      taxAmount: `₹${taxAmount.toLocaleString('en-IN')}`,
-      finalAmount: `₹${finalAmount.toLocaleString('en-IN')}`
-    });
-    setSelectedQuotation(quotation);
-    setShowForm(true);
-  };
+  const rawAmount = typeof quotation.totalCost === 'string' 
+    ? parseFloat(quotation.totalCost.replace(/[₹,]/g, '')) 
+    : quotation.totalCost;
+
+  const taxAmount = (rawAmount * parseFloat(invoiceData.taxRate)) / 100;
+  const finalTotal = rawAmount + taxAmount;
+  
+  setInvoiceData({
+    ...invoiceData,
+    quotationId: quotation.quotationNumber || quotation.id,
+    clientName: quotation.client,
+    clientEmail: quotation.clientEmail || '', 
+    clientPhone: quotation.clientPhone || '',
+    clientAddress: quotation.clientAddress || '',
+    projectName: quotation.project,
+    totalAmount: rawAmount, // Store as number for better DB handling
+    taxAmount: taxAmount,
+    finalAmount: finalTotal
+  });
+  setSelectedQuotation(quotation);
+  setShowForm(true);
+};
 
   return (
     <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
@@ -77,19 +137,23 @@ const Invoice = () => {
           </div>
           
           <div className="p-4 sm:p-6">
-            {approvedQuotations.length > 0 ? (
+            {isLoading ? (
+               <div className="text-center py-6 text-gray-500">Loading approved projects...</div>
+            ) : approvedQuotations.length > 0 ? (
               <div className="space-y-3 sm:space-y-4">
                 {approvedQuotations.map((quotation) => (
                   <div key={quotation.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors gap-3 sm:gap-0">
                     <div className="flex-1">
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                         <div className="flex-1">
-                          <p className="font-semibold text-gray-800 text-sm sm:text-base">{quotation.id}</p>
+                          <p className="font-semibold text-gray-800 text-sm sm:text-base">{quotation.quotationNumber || quotation.id}</p>
                           <p className="text-xs sm:text-sm text-gray-600">{quotation.client} - {quotation.project}</p>
                         </div>
                         <div className="text-left sm:text-right">
-                          <p className="font-bold text-green-600 text-sm sm:text-base">{quotation.amount}</p>
-                          <p className="text-xs text-gray-500">Approved: {quotation.approvedDate}</p>
+                          <p className="font-bold text-green-600 text-sm sm:text-base">
+                            ₹{quotation.totalCost?.toLocaleString('en-IN')}
+                          </p>
+                          <p className="text-xs text-gray-500">Approved: {quotation.date}</p>
                         </div>
                       </div>
                     </div>
@@ -254,10 +318,14 @@ const Invoice = () => {
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
-              <button className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-lg hover:from-green-600 hover:to-green-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base">
+              <button 
+                onClick={handleSaveInvoice}
+                className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-lg hover:from-green-600 hover:to-green-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base">
                 Generate Invoice
               </button>
-              <button className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-lg hover:from-blue-600 hover:to-blue-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base">
+              <button 
+                onClick={handlePrintInvoice}
+                className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-lg hover:from-blue-600 hover:to-blue-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base">
                 Preview Invoice
               </button>
               <button 
