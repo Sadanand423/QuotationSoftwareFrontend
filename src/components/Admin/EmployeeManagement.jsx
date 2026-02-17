@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 
+
 const EmployeeManagement = () => {
+ const [isFocused, setIsFocused] = useState(false);
+
   const [employees, setEmployees] = useState([]);
   const [currentView, setCurrentView] = useState('list');
   const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -40,8 +43,10 @@ const EmployeeManagement = () => {
     return `EMP${randomNum.toString().padStart(3, '0')}`;
   };
 
-  const handleAddEmployee = () => {
+    const handleAddEmployee = () => {
+    setSelectedEmployee(null);   // ✅ clear edit state
     setCurrentView('add');
+
     setFormData({
       name: '',
       email: '',
@@ -54,6 +59,7 @@ const EmployeeManagement = () => {
       photo: ''
     });
   };
+
 
 const handleEditEmployee = (employee) => {
   setCurrentView('edit');
@@ -83,7 +89,11 @@ const handleEditEmployee = (employee) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const isEdit = currentView === "edit";
+    // 🚨 Stop submission if password invalid
+   if (!isPasswordValid) return;
+
+  const isEdit = currentView === "edit";
+
     const url = isEdit
       ? `http://localhost:8080/api/admin/employees/${selectedEmployee.id}`
       : "http://localhost:8080/api/admin/employees";
@@ -154,6 +164,27 @@ const handleEditEmployee = (employee) => {
   reader.readAsDataURL(file);
 };
 
+// 🔐 Password Validation
+const password = formData.password || "";
+
+const passwordRules = {
+  length: password.length >= 8,
+  capital: /[A-Z]/.test(password),
+  number: /[0-9]/.test(password),
+  special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+};
+
+const validCount = Object.values(passwordRules).filter(Boolean).length;
+const isPasswordValid = validCount === 4;
+
+
+
+const getStrength = () => {
+  if (validCount <= 1) return { text: "Weak", color: "bg-red-500", width: "25%" };
+  if (validCount === 2 || validCount === 3)
+    return { text: "Medium", color: "bg-yellow-500", width: "60%" };
+  return { text: "Strong", color: "bg-green-500", width: "100%" };
+};
 
   // Add/Edit Form View
   if (currentView === 'add' || currentView === 'edit') {
@@ -181,7 +212,7 @@ const handleEditEmployee = (employee) => {
             </div>
           )}
           
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <form className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 overflow-visible">
             <div>
               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">👤 Name</label>
               <input
@@ -200,6 +231,7 @@ const handleEditEmployee = (employee) => {
               <input
                 type="email"
                 name="email"
+                autoComplete="new-email"
                 value={formData.email}
                 onChange={handleChange}
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
@@ -250,18 +282,63 @@ const handleEditEmployee = (employee) => {
               />
             </div>
 
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">🔐 Password</label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
-                placeholder="Enter password"
-                required
-              />
-            </div>
+          
+          <div className="relative">
+  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+    🔐 Password
+  </label>
+
+  <input
+    type="password"
+    name="password"
+    autoComplete="new-password"
+    value={formData.password}
+    onChange={handleChange}
+    onFocus={() => setIsFocused(true)}
+    onBlur={() => setIsFocused(false)}
+    className={`w-full p-2 rounded-lg text-xs sm:text-sm border transition-all duration-300 ${
+      isFocused && isPasswordValid
+        ? "border-green-500 bg-green-50 focus:ring-2 focus:ring-green-500"
+        : "border-gray-300 focus:ring-2 focus:ring-blue-500"
+    }`}
+    placeholder="Enter strong password"
+    required
+  />
+
+  {isFocused && formData.password.length > 0 && !isPasswordValid && (
+    <div
+      className="absolute left-0 top-full mt-2 w-full z-20 
+                 bg-red-50 border border-red-300 text-red-600 
+                 text-xs px-3 py-2 rounded-lg shadow-lg animate-slideFade 
+                 flex items-start gap-2"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-4 w-4 mt-0.5 flex-shrink-0"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M12 9v2m0 4h.01M10.29 3.86l-7.2 12.48A1 1 0 004 18h16a1 1 0 00.91-1.66l-7.2-12.48a1 1 0 00-1.72 0z"
+        />
+      </svg>
+
+      <span>
+        Password must be at least 8 characters and include an uppercase letter, number and special character.
+      </span>
+    </div>
+  )}
+</div>
+
+
+
+
+
+
             
             <div>
               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">📅 Join Date</label>
@@ -330,12 +407,18 @@ const handleEditEmployee = (employee) => {
 </div>
 
             <div className="col-span-1 sm:col-span-2 pt-3 sm:pt-4">
-              <button
+             <button
                 type="submit"
-                className="w-full bg-blue-600 text-white p-2 sm:p-3 rounded-lg font-semibold hover:bg-blue-700 text-sm"
+                disabled={!isPasswordValid}
+                className={`w-full py-2.5 rounded-md text-sm font-medium transition-all duration-200
+                  ${isPasswordValid
+                    ? "bg-blue-600 hover:bg-blue-700 text-white"
+                    : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}
               >
-                {currentView === 'add' ? '✨ Add Employee' : '💾 Update Employee'}
+                {currentView === 'add' ? 'Add Employee' : 'Update Employee'}
               </button>
+
+
             </div>
           </form>
         </div>
