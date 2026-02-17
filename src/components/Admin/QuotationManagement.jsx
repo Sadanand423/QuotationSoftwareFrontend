@@ -247,54 +247,134 @@ const handleDelete = async (quoteId) => {
         )}
       </div>
 
-      {/* Modal logic remains same as your provided code */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold mb-4 capitalize">{modalType} Quotation</h3>
-            {modalType === 'view' && selectedQuote && (
-              <div className="space-y-2 text-sm">
-                <p><strong>No:</strong> {selectedQuote.quotationNumber}</p>
-                <p><strong>Client:</strong> {selectedQuote.client}</p>
-                <p><strong>Amount:</strong> {selectedQuote.currency} {selectedQuote.totalCost?.toLocaleString()}</p>
-                <p><strong>Date:</strong> {selectedQuote.date}</p>
+      {/* --- ACTION MODAL (VIEW / EDIT / DELETE) --- */}
+          {showModal && selectedQuote && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+              <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all animate-in fade-in zoom-in duration-200">
+
+                {/* Header */}
+                <div className="flex justify-between items-center border-b pb-3 mb-4">
+                  <h3 className="text-xl font-bold text-gray-800 capitalize">
+                    {modalType} Quotation
+                  </h3>
+                  <button
+                    onClick={() => setShowModal(false)}
+                    className="text-gray-400 hover:text-gray-600 text-2xl"
+                  >
+                    &times;
+                  </button>
+                </div>
+
+                {/* VIEW */}
+                {modalType === "view" && (
+                  <div className="space-y-4">
+                    <div className="flex justify-between border-b border-gray-50 pb-2">
+                      <span className="text-gray-500">Quotation No</span>
+                      <span className="text-gray-900 font-bold">
+                        {selectedQuote.quotationNumber}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between border-b border-gray-50 pb-2">
+                      <span className="text-gray-500">Client</span>
+                      <span className="text-gray-900">
+                        {selectedQuote.client}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between border-b border-gray-50 pb-2">
+                      <span className="text-gray-500">Amount</span>
+                      <span className="text-green-600 font-bold">
+                        {selectedQuote.currency}{" "}
+                        {selectedQuote.totalCost?.toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Date</span>
+                      <span className="text-gray-900">
+                        {selectedQuote.date}
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={() => setShowModal(false)}
+                      className="mt-8 w-full bg-gray-800 text-white py-3 rounded-xl font-semibold hover:bg-gray-900 transition-colors"
+                    >
+                      Close Details
+                    </button>
+                  </div>
+                )}
+
+                {/* EDIT */}
+                {modalType === "edit" && (
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-500">
+                      Update status for{" "}
+                      <span className="font-semibold text-gray-900">
+                        {selectedQuote.quotationNumber}
+                      </span>
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      {["Draft", "Pending", "Approved", "Rejected"].map((status) => (
+                        <button
+                          key={status}
+                          onClick={() =>
+                            updateQuotationStatus(selectedQuote.id, status)
+                          }
+                          className={`px-4 py-2 rounded-xl border text-sm transition-all ${
+                            selectedQuote.status === status
+                              ? "bg-blue-50 border-blue-500 text-blue-600"
+                              : "hover:bg-gray-50"
+                          }`}
+                        >
+                          {status}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => setShowModal(false)}
+                      className="mt-6 w-full bg-gray-800 text-white py-3 rounded-xl font-semibold hover:bg-gray-900 transition-colors"
+                    >
+                      Done
+                    </button>
+                  </div>
+                )}
+
+                {/* DELETE */}
+                {modalType === "delete" && (
+                  <div className="space-y-5">
+                    <p className="text-gray-600 text-sm leading-relaxed">
+                      Are you sure you want to delete quotation{" "}
+                      <span className="font-semibold text-gray-900">
+                        {selectedQuote.quotationNumber}
+                      </span>
+                      ?
+                    </p>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => handleDelete(selectedQuote.id)}
+                        className="flex-1 bg-red-600 text-white py-3 rounded-xl font-semibold hover:bg-red-700 transition-colors"
+                      >
+                        Delete
+                      </button>
+
+                      <button
+                        onClick={() => setShowModal(false)}
+                        className="flex-1 bg-gray-200 text-gray-800 py-3 rounded-xl font-semibold hover:bg-gray-300 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-            {/* 1. Add this inside the Modal, above the Close button */}
-
-{modalType === 'edit' && selectedQuote && (
-  <div className="space-y-4">
-    <p className="text-sm text-gray-500">Update status for {selectedQuote.quotationNumber}</p>
-    <div className="grid grid-cols-2 gap-2">
-      {["Draft", "Pending", "Approved", "Rejected"].map(status => (
-        <button 
-          key={status}
-          onClick={() => updateQuotationStatus(selectedQuote.id, status)}
-          className={`px-4 py-2 rounded-lg border text-sm transition-all ${selectedQuote.status === status ? 'bg-blue-50 border-blue-500 text-blue-600' : 'hover:bg-gray-50'}`}
-        >
-          {status}
-        </button>
-      ))}
-    </div>
-  </div>
-)}
-
-{modalType === 'delete' && selectedQuote && (
-  <div className="text-center">
-    <p className="mb-6 text-gray-600">Are you sure you want to delete <strong>{selectedQuote.quotationNumber}</strong>?</p>
-    <div className="flex justify-center gap-4">
-      <button onClick={() => setShowModal(false)} className="px-4 py-2 bg-gray-100 rounded-lg">Cancel</button>
-      <button onClick={() => handleDelete(selectedQuote.id)} className="px-4 py-2 bg-red-600 text-white rounded-lg">Confirm Delete</button>
-    </div>
-  </div>
-)}
-            {/* ... other modal contents ... */}
-            <div className="flex justify-end mt-6">
-              <button onClick={() => setShowModal(false)} className="bg-gray-200 px-4 py-2 rounded-lg text-sm">Close</button>
             </div>
-          </div>
-        </div>
-      )}
+          )}
+
     </div>
   );
 };

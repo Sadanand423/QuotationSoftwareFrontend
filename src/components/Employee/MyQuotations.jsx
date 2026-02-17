@@ -41,12 +41,6 @@ const MyQuotations = () => {
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">My Quotations</h2>
           <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage assigned quotations (ID: {currentEmpId})</p>
         </div>
-        <button 
-          onClick={() => navigate('/create-quotation')}
-          className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
-        >
-          + New Quotation
-        </button>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border">
@@ -112,14 +106,7 @@ const MyQuotations = () => {
                       >
                         View
                       </button>
-                      {(quote.status === 'Draft' || !quote.status || quote.status === 'Pending') && (
-                        <button 
-                          onClick={() => navigate(`/edit-quotation/${quote.id}`)}
-                          className="text-blue-600 hover:text-blue-800 font-medium"
-                        >
-                          Edit
-                        </button>
-                      )}
+                    
                     </td>
                   </tr>
                 ))
