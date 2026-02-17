@@ -125,28 +125,43 @@ const CreateQuotation = ({ selectedClient }) => {
     return;
   }
 
+  // 1. Get the Unique EmpId from localStorage
+  const currentEmpId = localStorage.getItem("empId");
+
+  if (!currentEmpId) {
+    alert("Session expired. Please login again. ❌");
+    return;
+  }
+
+  // 2. Prepare the payload with the dynamic fields
+  const payload = {
+    ...formData,
+    preparedBy: currentEmpId, // Forces the quotation to belong to THIS employee
+    status: "Pending"         // Ensures the Admin sees it as new
+  };
+
   try {
     const response = await fetch("http://localhost:8080/api/quotations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData)
+      body: JSON.stringify(payload) // Send payload, not formData
     });
 
     if (!response.ok) {
+      // If server returns 500, this alert will trigger
       alert("Error saving quotation ❌");
       return;
     }
 
     const data = await response.json();
 
-    // ✅ IMPORTANT FIX
+    // ✅ Sync the ID from the database into your local state
     setFormData(prev => ({
       ...prev,
-      id: data.id   // <-- STORE id (NOT _id)
+      id: data.id 
     }));
 
     alert("Quotation Saved Successfully ✅");
-
     setShowPreview(true);
 
   } catch (error) {

@@ -1,41 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const MyQuotations = () => {
+  const navigate = useNavigate();
   const [filter, setFilter] = useState('all');
-  const [quotations] = useState([
-    { id: 'Q-2024-045', client: 'ABC Corp', amount: 15000, status: 'Pending', date: '2024-01-15', priority: 'high' },
-    { id: 'Q-2024-044', client: 'XYZ Ltd', amount: 8500, status: 'Approved', date: '2024-01-14', priority: 'medium' },
-    { id: 'Q-2024-043', client: 'Tech Solutions', amount: 22000, status: 'Draft', date: '2024-01-13', priority: 'low' },
-    { id: 'Q-2024-042', client: 'StartupCo', amount: 5000, status: 'Rejected', date: '2024-01-12', priority: 'medium' }
-  ]);
+  const [quotations, setQuotations] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedQuote, setSelectedQuote] = useState(null);
+
+  const currentEmpId = localStorage.getItem("empId") || "EMP-001"; 
+
+  const fetchMyQuotations = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`http://localhost:8080/api/quotations/employee/id/${currentEmpId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setQuotations(data);
+      }
+    } catch (error) {
+      console.error("Network error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMyQuotations();
+  }, [currentEmpId]);
 
   const filteredQuotations = quotations.filter(quote => 
-    filter === 'all' || quote.status.toLowerCase() === filter
+    filter === 'all' || (quote.status && quote.status.toLowerCase() === filter.toLowerCase())
   );
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-4">
+      {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">My Quotations</h2>
-          <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage your assigned quotations</p>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage assigned quotations (ID: {currentEmpId})</p>
         </div>
-        <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 text-sm sm:text-base self-start sm:self-auto">
+        <button 
+          onClick={() => navigate('/create-quotation')}
+          className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+        >
           + New Quotation
         </button>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border">
-        <div className="p-4 sm:p-6 border-b">
-          <div className="flex flex-wrap gap-2 sm:gap-4">
-            {['all', 'draft', 'pending', 'approved', 'rejected'].map((status) => (
+        {/* Status Filter Tabs */}
+        <div className="p-4 border-b">
+          <div className="flex flex-wrap gap-2">
+            {['all', 'pending', 'approved', 'rejected'].map((status) => (
               <button
                 key={status}
                 onClick={() => setFilter(status)}
-                className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium capitalize ${
-                  filter === status
-                    ? 'bg-green-100 text-green-600'
-                    : 'text-gray-600 hover:bg-gray-100'
+                className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-medium capitalize transition-all ${
+                  filter === status ? 'bg-green-100 text-green-600' : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
                 {status}
@@ -44,55 +67,110 @@ const MyQuotations = () => {
           </div>
         </div>
 
+        {/* Table Section */}
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Date</th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quotation No</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                {/* ✅ Added Date Header */}
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredQuotations.map((quote) => (
-                <tr key={quote.id} className="hover:bg-gray-50">
-                  <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm font-medium flex items-center">
-                    <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full mr-2 sm:mr-3 ${
-                      quote.priority === 'high' ? 'bg-red-400' :
-                      quote.priority === 'medium' ? 'bg-yellow-400' : 'bg-green-400'
-                    }`}></div>
-                    <span className="truncate">{quote.id}</span>
-                  </td>
-                  <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-800 truncate">{quote.client}</td>
-                  <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm font-semibold">${quote.amount.toLocaleString()}</td>
-                  <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm">
-                    <span className={`px-2 sm:px-3 py-1 text-xs rounded-full font-medium ${
-                      quote.status === 'Approved' ? 'bg-green-100 text-green-700' :
-                      quote.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
-                      quote.status === 'Draft' ? 'bg-gray-100 text-gray-700' :
-                      'bg-red-100 text-red-700'
-                    }`}>
-                      {quote.status}
-                    </span>
-                  </td>
-                  <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-600 hidden sm:table-cell">{quote.date}</td>
-                  <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm">
-                    <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-1 sm:space-y-0">
-                      <button className="text-green-600 hover:text-green-800 text-xs sm:text-sm">View</button>
-                      {quote.status === 'Draft' && (
-                        <button className="text-green-600 hover:text-green-800 text-xs sm:text-sm">Edit</button>
+              {isLoading ? (
+                <tr><td colSpan="6" className="px-6 py-10 text-center text-gray-500">Loading...</td></tr>
+              ) : filteredQuotations.length === 0 ? (
+                <tr><td colSpan="6" className="px-6 py-10 text-center text-gray-500">No quotations found.</td></tr>
+              ) : (
+                filteredQuotations.map((quote) => (
+                  <tr key={quote.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm font-medium">{quote.quotationNumber}</td>
+                    <td className="px-6 py-4 text-sm text-gray-800">{quote.client}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">
+                      {quote.currency} {quote.totalCost?.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                        quote.status === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {quote.status || 'Pending'}
+                      </span>
+                    </td>
+                    {/* ✅ Added Date Column */}
+                    <td className="px-6 py-4 text-sm text-gray-600 hidden sm:table-cell">
+                      {quote.date || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 text-sm space-x-3">
+                      <button 
+                        onClick={() => setSelectedQuote(quote)} 
+                        className="text-green-600 hover:text-green-800 font-medium"
+                      >
+                        View
+                      </button>
+                      {(quote.status === 'Draft' || !quote.status || quote.status === 'Pending') && (
+                        <button 
+                          onClick={() => navigate(`/edit-quotation/${quote.id}`)}
+                          className="text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                          Edit
+                        </button>
                       )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* --- VIEW QUOTATION MODAL --- */}
+      {selectedQuote && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center border-b pb-3 mb-4">
+              <h3 className="text-xl font-bold text-gray-800">Quotation Summary</h3>
+              <button onClick={() => setSelectedQuote(null)} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="flex justify-between border-b border-gray-50 pb-2">
+                <span className="text-gray-500">Quotation Number</span>
+                <span className="text-gray-900 font-bold">{selectedQuote.quotationNumber}</span>
+              </div>
+              <div className="flex justify-between border-b border-gray-50 pb-2">
+                <span className="text-gray-500">Client Name</span>
+                <span className="text-gray-900 font-medium">{selectedQuote.client}</span>
+              </div>
+              <div className="flex justify-between border-b border-gray-50 pb-2">
+                <span className="text-gray-500">Project Name</span>
+                <span className="text-gray-900">{selectedQuote.project || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between border-b border-gray-50 pb-2">
+                <span className="text-gray-500">Total Amount</span>
+                <span className="text-green-600 font-bold">{selectedQuote.currency} {selectedQuote.totalCost?.toLocaleString()}</span>
+              </div>
+              {/* ✅ Date Row in Modal */}
+              <div className="flex justify-between">
+                <span className="text-gray-500">Created Date</span>
+                <span className="text-gray-900">{selectedQuote.date || 'N/A'}</span>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setSelectedQuote(null)}
+              className="mt-8 w-full bg-gray-800 text-white py-3 rounded-xl font-semibold hover:bg-gray-900 transition-colors"
+            >
+              Close Details
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
