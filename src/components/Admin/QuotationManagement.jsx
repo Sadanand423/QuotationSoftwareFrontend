@@ -290,6 +290,18 @@ const handleDelete = async (quoteId) => {
                       </span>
                     </div>
 
+                    <div className="flex justify-between border-b border-gray-50 pb-2">
+                      <span className="text-gray-500">Status</span>
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(
+                          selectedQuote.status || "Draft"
+                        )}`}
+                      >
+                        {selectedQuote.status || "Draft"}
+                      </span>
+                    </div>
+
+
                     <div className="flex justify-between">
                       <span className="text-gray-500">Date</span>
                       <span className="text-gray-900">
