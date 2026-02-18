@@ -49,13 +49,14 @@ const Dashboard = () => {
       { title: 'Total Quotations', value: quotations.length.toString(), color: 'from-blue-500 to-blue-600', icon: '📋', change: '+12%' },
       { title: 'Approved Quotations', value: approvedQuotations.toString(), color: 'from-green-500 to-emerald-500', icon: '✅', change: '+18%' },
       { title: 'Pending Quotations', value: pendingQuotations.toString(), color: 'from-yellow-500 to-orange-500', icon: '⏳', change: '+5%' },
+      { title: 'Draft Quotations', value: quotations.filter(q => (q.status || 'Draft') === 'Draft').length.toString(), color: 'from-gray-500 to-gray-700', icon: '📝', change: '+5%'},      
       { title: 'Total Clients', value: uniqueClients.size.toString(), color: 'from-indigo-500 to-purple-500', icon: '👥', change: '+8%' },
-      { title: 'Total Employees', value: employees.length.toString(), color: 'from-orange-500 to-red-500', icon: '👨💼', change: '+15%' },
       { title: 'Total Revenue', value: `$${totalRevenue.toLocaleString()}`, color: 'from-green-500 to-emerald-500', icon: '💰', change: '+25%' }
     ]);
 
     // Set chart data
     const draftQuotations = quotations.filter(q => q.status === 'Draft').length;
+    
     setChartData({
       approved: approvedQuotations,
       pending: pendingQuotations,
