@@ -22,6 +22,15 @@ const Dashboard = () => {
       const res = await fetch("http://localhost:8080/api/quotations");
       const quotations = await res.json();
 
+      // ✅ FETCH ALL CLIENTS
+      const clientRes = await fetch("http://localhost:8080/api/clients");
+      let clients = [];
+      if (clientRes.ok) {
+        clients = await clientRes.json();
+      }
+      const totalClients = clients.length;
+
+
       // GET LATEST 3 QUOTATIONS (recently added)
       const latestThree = [...quotations].reverse().slice(0, 3);
       setRecentQuotations(latestThree);
@@ -36,18 +45,14 @@ const Dashboard = () => {
         .filter(q => q.status === "Approved")
         .reduce((sum, q) => sum + (q.totalCost || 0), 0);
 
-      // UNIQUE CLIENTS
-      const uniqueClients = new Set();
-      quotations.forEach(q => {
-        if (q.client) uniqueClients.add(q.client);
-      });
+
 
       setStats([
         { title: 'Total Quotations', value: quotations.length.toString(), color: 'from-blue-500 to-blue-600', icon: '📋', change: '+12%' },
         { title: 'Approved Quotations', value: approvedQuotations.toString(), color: 'from-green-500 to-emerald-500', icon: '✅', change: '+18%' },
         { title: 'Pending Quotations', value: pendingQuotations.toString(), color: 'from-yellow-500 to-orange-500', icon: '⏳', change: '+5%' },
         { title: 'Draft Quotations', value: draftQuotations.toString(), color: 'from-gray-500 to-gray-700', icon: '📝', change: '+5%' },
-        { title: 'Total Clients', value: uniqueClients.size.toString(), color: 'from-indigo-500 to-purple-500', icon: '👥', change: '+8%' },
+        { title: 'Total Clients', value: totalClients.toString(), color: 'from-indigo-500 to-purple-500', icon: '👥', change: '+8%' },
         { title: 'Total Revenue', value: `₹${totalRevenue.toLocaleString()}`, color: 'from-green-500 to-emerald-500', icon: '💰', change: '+25%' }
       ]);
 

@@ -14,19 +14,27 @@ const EmployeeDashboard = ({ onCreateQuotation }) => {
       );
       const quotations = await res.json();
 
+      // ✅ FETCH ALL CLIENTS
+      const clientRes = await fetch("http://localhost:8080/api/clients");
+      let clients = [];
+      if (clientRes.ok) {
+        clients = await clientRes.json();
+      }
+      const totalClients = clients.length;
+
       // STATUS COUNTS
       const pending = quotations.filter(
-        q => (q.status || "").toLowerCase() === "pending").length;
+        q => (q.status || "").toLowerCase() === "pending"
+      ).length;
 
       const approved = quotations.filter(
-        q => (q.status || "").toLowerCase() === "approved").length;
+        q => (q.status || "").toLowerCase() === "approved"
+      ).length;
 
-
-      // THIS MONTH APPROVED
+      // APPROVED THIS MONTH (your working parser)
       const approvedThisMonth = quotations.filter(q => {
         if ((q.status || "").toLowerCase() !== "approved" || !q.date) return false;
 
-        // parse dd/MM/yyyy or dd-MM-yyyy
         const parts = q.date.includes("/")
           ? q.date.split("/")
           : q.date.split("-");
@@ -43,25 +51,16 @@ const EmployeeDashboard = ({ onCreateQuotation }) => {
         );
       }).length;
 
-
-
-
-      // UNIQUE CLIENTS
-      const uniqueClients = new Set();
-      quotations.forEach(q => {
-        if (q.client) uniqueClients.add(q.client);
-      });
-
       // LATEST 3
       const latestThree = [...quotations].reverse().slice(0, 3);
       setRecentQuotations(latestThree);
 
-      // SET STATS
+      // STATS
       setStats([
         { title: 'My Quotations', value: quotations.length.toString(), color: 'from-blue-500 to-blue-600', icon: '📋', change: '' },
         { title: 'Pending Approval', value: pending.toString(), color: 'from-yellow-500 to-orange-500', icon: '⏳', change: '' },
         { title: 'Approved This Month', value: approvedThisMonth.toString(), color: 'from-green-500 to-emerald-500', icon: '✅', change: '' },
-        { title: 'My Clients', value: uniqueClients.size.toString(), color: 'from-purple-500 to-pink-500', icon: '👥', change: '' }
+        { title: 'My Clients', value: totalClients.toString(), color: 'from-purple-500 to-pink-500', icon: '👥', change: '' }
       ]);
 
     } catch (err) {
@@ -69,8 +68,9 @@ const EmployeeDashboard = ({ onCreateQuotation }) => {
     }
   };
 
+
   loadEmployeeDashboard();
-}, [currentEmpId]);
+  }, [currentEmpId]);
 
   return (
     <div className="space-y-4 sm:space-y-6 lg:space-y-8 p-4 sm:p-6">
