@@ -35,12 +35,7 @@ const MyInvoice = () => {
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">My Invoices</h2>
           <p className="text-gray-500 mt-1 text-sm">Employee ID: {currentEmpId}</p>
         </div>
-        <button 
-          onClick={() => navigate('/generate-invoice')}
-          className="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors shadow-md"
-        >
-          + New Invoice
-        </button>
+  
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
