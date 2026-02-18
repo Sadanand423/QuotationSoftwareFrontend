@@ -13,63 +13,58 @@ const Dashboard = () => {
     draft: 0,
     monthlyRevenue: []
   });
+  const [recentQuotations, setRecentQuotations] = useState([]);
+
 
   useEffect(() => {
-    // Load data from localStorage and calculate stats
-    const quotations = JSON.parse(localStorage.getItem('quotations') || '[]');
-    const clients = JSON.parse(localStorage.getItem('clients') || '[]');
-    const employees = JSON.parse(localStorage.getItem('employees') || '[]');
-    const invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
+  const loadDashboardData = async () => {
+    try {
+      const res = await fetch("http://localhost:8080/api/quotations");
+      const quotations = await res.json();
 
-    // Calculate quotation stats
-    const approvedQuotations = quotations.filter(q => q.status === 'Approved').length;
-    const pendingQuotations = quotations.filter(q => q.status === 'Pending').length;
+      // GET LATEST 3 QUOTATIONS (recently added)
+      const latestThree = [...quotations].reverse().slice(0, 3);
+      setRecentQuotations(latestThree);
 
-    // Calculate total revenue from approved quotations and paid invoices
-    const quotationRevenue = quotations
-      .filter(q => q.status === 'Approved')
-      .reduce((sum, q) => sum + (q.amount || 0), 0);
-    
-    const invoiceRevenue = invoices
-      .filter(i => i.status === 'Paid')
-      .reduce((sum, i) => sum + (i.amount || 0), 0);
-    
-    const totalRevenue = quotationRevenue + invoiceRevenue;
+      // STATUS COUNTS
+      const approvedQuotations = quotations.filter(q => q.status === "Approved").length;
+      const pendingQuotations = quotations.filter(q => q.status === "Pending").length;
+      const draftQuotations = quotations.filter(q => !q.status || q.status === "Draft").length;
 
-    // Get unique clients from quotations
-    const uniqueClients = new Set();
-    quotations.forEach(q => {
-      if (q.clientName) uniqueClients.add(q.clientName);
-    });
-    clients.forEach(c => {
-      if (c.name) uniqueClients.add(c.name);
-    });
+      // TOTAL REVENUE
+      const totalRevenue = quotations
+        .filter(q => q.status === "Approved")
+        .reduce((sum, q) => sum + (q.totalCost || 0), 0);
 
-    setStats([
-      { title: 'Total Quotations', value: quotations.length.toString(), color: 'from-blue-500 to-blue-600', icon: '📋', change: '+12%' },
-      { title: 'Approved Quotations', value: approvedQuotations.toString(), color: 'from-green-500 to-emerald-500', icon: '✅', change: '+18%' },
-      { title: 'Pending Quotations', value: pendingQuotations.toString(), color: 'from-yellow-500 to-orange-500', icon: '⏳', change: '+5%' },
-      { title: 'Draft Quotations', value: quotations.filter(q => (q.status || 'Draft') === 'Draft').length.toString(), color: 'from-gray-500 to-gray-700', icon: '📝', change: '+5%'},      
-      { title: 'Total Clients', value: uniqueClients.size.toString(), color: 'from-indigo-500 to-purple-500', icon: '👥', change: '+8%' },
-      { title: 'Total Revenue', value: `$${totalRevenue.toLocaleString()}`, color: 'from-green-500 to-emerald-500', icon: '💰', change: '+25%' }
-    ]);
+      // UNIQUE CLIENTS
+      const uniqueClients = new Set();
+      quotations.forEach(q => {
+        if (q.client) uniqueClients.add(q.client);
+      });
 
-    // Set chart data
-    const draftQuotations = quotations.filter(q => q.status === 'Draft').length;
-    
-    setChartData({
-      approved: approvedQuotations,
-      pending: pendingQuotations,
-      draft: draftQuotations,
-      monthlyRevenue: [12000, 15000, 18000, 22000, 25000, 28000]
-    });
-  }, []);
+      setStats([
+        { title: 'Total Quotations', value: quotations.length.toString(), color: 'from-blue-500 to-blue-600', icon: '📋', change: '+12%' },
+        { title: 'Approved Quotations', value: approvedQuotations.toString(), color: 'from-green-500 to-emerald-500', icon: '✅', change: '+18%' },
+        { title: 'Pending Quotations', value: pendingQuotations.toString(), color: 'from-yellow-500 to-orange-500', icon: '⏳', change: '+5%' },
+        { title: 'Draft Quotations', value: draftQuotations.toString(), color: 'from-gray-500 to-gray-700', icon: '📝', change: '+5%' },
+        { title: 'Total Clients', value: uniqueClients.size.toString(), color: 'from-indigo-500 to-purple-500', icon: '👥', change: '+8%' },
+        { title: 'Total Revenue', value: `₹${totalRevenue.toLocaleString()}`, color: 'from-green-500 to-emerald-500', icon: '💰', change: '+25%' }
+      ]);
 
-  const recentQuotations = [
-    { id: 'Q-2024-001', client: 'ABC Corp', amount: '$15,000', status: 'Pending', priority: 'high' },
-    { id: 'Q-2024-002', client: 'XYZ Ltd', amount: '$8,500', status: 'Approved', priority: 'medium' },
-    { id: 'Q-2024-003', client: 'Tech Solutions', amount: '$22,000', status: 'Draft', priority: 'low' }
-  ];
+      setChartData({
+        approved: approvedQuotations,
+        pending: pendingQuotations,
+        draft: draftQuotations,
+        monthlyRevenue: [12000,15000,18000,22000,25000,28000]
+      });
+
+    } catch (err) {
+      console.error("Dashboard fetch error:", err);
+    }
+  };
+
+  loadDashboardData();
+}, []);
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -217,25 +212,56 @@ const Dashboard = () => {
           </div>
           <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
             {recentQuotations.map((quote) => (
-              <div key={quote.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200 gap-2 sm:gap-4">
+              <div
+                key={quote.id}
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200 gap-2 sm:gap-4"
+              >
                 <div className="flex items-center space-x-3 sm:space-x-4">
-                  <div className={`w-3 h-3 rounded-full ${
-                    quote.priority === 'high' ? 'bg-red-400' :
-                    quote.priority === 'medium' ? 'bg-yellow-400' : 'bg-green-400'
-                  }`}></div>
+                  {/* STATUS DOT */}
+                  <div
+                    className={`w-3 h-3 rounded-full ${
+                      quote.status === "Approved"
+                        ? "bg-green-400"
+                        : quote.status === "Pending"
+                        ? "bg-yellow-400"
+                        : quote.status === "Rejected"
+                        ? "bg-red-400"
+                        : "bg-gray-400"
+                    }`}
+                  ></div>
+
                   <div>
-                    <p className="font-semibold text-gray-800 text-sm sm:text-base">{quote.id}</p>
-                    <p className="text-xs sm:text-sm text-gray-500">{quote.client}</p>
+                    {/* QUOTATION NUMBER */}
+                    <p className="font-semibold text-gray-800 text-sm sm:text-base">
+                      {quote.quotationNumber}
+                    </p>
+
+                    {/* CLIENT */}
+                    <p className="text-xs sm:text-sm text-gray-500">
+                      {quote.client}
+                    </p>
                   </div>
                 </div>
+
                 <div className="text-left sm:text-right ml-6 sm:ml-0">
-                  <p className="font-bold text-gray-800 text-sm sm:text-base">{quote.amount}</p>
-                  <span className={`text-xs px-2 sm:px-3 py-1 rounded-full font-medium ${
-                    quote.status === 'Approved' ? 'bg-green-100 text-green-700' :
-                    quote.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-gray-100 text-gray-700'
-                  }`}>
-                    {quote.status}
+                  {/* AMOUNT */}
+                  <p className="font-bold text-gray-800 text-sm sm:text-base">
+                    ₹{quote.totalCost?.toLocaleString()}
+                  </p>
+
+                  {/* STATUS BADGE */}
+                  <span
+                    className={`text-xs px-2 sm:px-3 py-1 rounded-full font-medium ${
+                      quote.status === "Approved"
+                        ? "bg-green-100 text-green-700"
+                        : quote.status === "Pending"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : quote.status === "Rejected"
+                        ? "bg-red-100 text-red-700"
+                        : "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {quote.status || "Draft"}
                   </span>
                 </div>
               </div>

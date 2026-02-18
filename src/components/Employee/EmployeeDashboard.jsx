@@ -1,18 +1,76 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+
 
 const EmployeeDashboard = ({ onCreateQuotation }) => {
-  const stats = [
-    { title: 'My Quotations', value: '24', color: 'from-blue-500 to-blue-600', icon: '📋', change: '+8%' },
-    { title: 'Pending Approval', value: '5', color: 'from-yellow-500 to-orange-500', icon: '⏳', change: '+2%' },
-    { title: 'Approved This Month', value: '18', color: 'from-green-500 to-emerald-500', icon: '✅', change: '+15%' },
-    { title: 'My Clients', value: '12', color: 'from-purple-500 to-pink-500', icon: '👥', change: '+10%' }
-  ];
+  const [stats, setStats] = useState([]);
+  const [recentQuotations, setRecentQuotations] = useState([]);
+  const currentEmpId = localStorage.getItem("empId") || "EMP-001";
 
-  const recentQuotations = [
-    { id: 'Q-2024-045', client: 'ABC Corp', amount: '$15,000', status: 'Pending', priority: 'high' },
-    { id: 'Q-2024-044', client: 'XYZ Ltd', amount: '$8,500', status: 'Approved', priority: 'medium' },
-    { id: 'Q-2024-043', client: 'Tech Solutions', amount: '$22,000', status: 'Draft', priority: 'low' }
-  ];
+  useEffect(() => {
+  const loadEmployeeDashboard = async () => {
+    try {
+      const res = await fetch(
+        `http://localhost:8080/api/quotations/employee/id/${currentEmpId}`
+      );
+      const quotations = await res.json();
+
+      // STATUS COUNTS
+      const pending = quotations.filter(
+        q => (q.status || "").toLowerCase() === "pending").length;
+
+      const approved = quotations.filter(
+        q => (q.status || "").toLowerCase() === "approved").length;
+
+
+      // THIS MONTH APPROVED
+      const approvedThisMonth = quotations.filter(q => {
+        if ((q.status || "").toLowerCase() !== "approved" || !q.date) return false;
+
+        // parse dd/MM/yyyy or dd-MM-yyyy
+        const parts = q.date.includes("/")
+          ? q.date.split("/")
+          : q.date.split("-");
+
+        if (parts.length !== 3) return false;
+
+        const [day, month, year] = parts;
+        const d = new Date(`${year}-${month}-${day}`);
+
+        const now = new Date();
+        return (
+          d.getMonth() === now.getMonth() &&
+          d.getFullYear() === now.getFullYear()
+        );
+      }).length;
+
+
+
+
+      // UNIQUE CLIENTS
+      const uniqueClients = new Set();
+      quotations.forEach(q => {
+        if (q.client) uniqueClients.add(q.client);
+      });
+
+      // LATEST 3
+      const latestThree = [...quotations].reverse().slice(0, 3);
+      setRecentQuotations(latestThree);
+
+      // SET STATS
+      setStats([
+        { title: 'My Quotations', value: quotations.length.toString(), color: 'from-blue-500 to-blue-600', icon: '📋', change: '' },
+        { title: 'Pending Approval', value: pending.toString(), color: 'from-yellow-500 to-orange-500', icon: '⏳', change: '' },
+        { title: 'Approved This Month', value: approvedThisMonth.toString(), color: 'from-green-500 to-emerald-500', icon: '✅', change: '' },
+        { title: 'My Clients', value: uniqueClients.size.toString(), color: 'from-purple-500 to-pink-500', icon: '👥', change: '' }
+      ]);
+
+    } catch (err) {
+      console.error("Employee dashboard error:", err);
+    }
+  };
+
+  loadEmployeeDashboard();
+}, [currentEmpId]);
 
   return (
     <div className="space-y-4 sm:space-y-6 lg:space-y-8 p-4 sm:p-6">
@@ -60,25 +118,47 @@ const EmployeeDashboard = ({ onCreateQuotation }) => {
         </div>
         <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
           {recentQuotations.map((quote) => (
-            <div key={quote.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200 gap-2 sm:gap-0">
+            <div
+              key={quote.id}
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200 gap-2 sm:gap-0"
+            >
               <div className="flex items-center space-x-3 sm:space-x-4">
-                <div className={`w-3 h-3 rounded-full ${
-                  quote.priority === 'high' ? 'bg-red-400' :
-                  quote.priority === 'medium' ? 'bg-yellow-400' : 'bg-green-400'
-                }`}></div>
+                <div
+                  className={`w-3 h-3 rounded-full ${
+                    quote.status === "Approved"
+                      ? "bg-green-400"
+                      : quote.status === "Pending"
+                      ? "bg-yellow-400"
+                      : quote.status === "Rejected"
+                      ? "bg-red-400"
+                      : "bg-gray-400"
+                  }`}
+                ></div>
+
                 <div>
-                  <p className="font-semibold text-gray-800 text-sm sm:text-base">{quote.id}</p>
-                  <p className="text-xs sm:text-sm text-gray-500">{quote.client}</p>
+                  <p className="font-semibold text-gray-800 text-sm sm:text-base">
+                    {quote.quotationNumber}
+                  </p>
+                  <p className="text-xs sm:text-sm text-gray-500">
+                    {quote.client}
+                  </p>
                 </div>
               </div>
+
               <div className="text-left sm:text-right flex sm:flex-col items-center sm:items-end gap-2 sm:gap-1">
-                <p className="font-bold text-gray-800 text-sm sm:text-base">{quote.amount}</p>
-                <span className={`text-xs px-2 sm:px-3 py-1 rounded-full font-medium ${
-                  quote.status === 'Approved' ? 'bg-green-100 text-green-700' :
-                  quote.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
-                  'bg-gray-100 text-gray-700'
-                }`}>
-                  {quote.status}
+                <p className="font-bold text-gray-800 text-sm sm:text-base">
+                  ₹{quote.totalCost?.toLocaleString()}
+                </p>
+                <span
+                  className={`text-xs px-2 sm:px-3 py-1 rounded-full font-medium ${
+                    quote.status === "Approved"
+                      ? "bg-green-100 text-green-700"
+                      : quote.status === "Pending"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  {quote.status || "Draft"}
                 </span>
               </div>
             </div>
