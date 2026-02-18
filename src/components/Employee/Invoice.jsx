@@ -12,6 +12,7 @@ const Invoice = () => {
 
   // ✅ Get Employee ID
   const currentEmpId = localStorage.getItem("empId") || "EMP-001";
+  const [currentEmpName, setCurrentEmpName] = useState("");
 
   const [invoiceData, setInvoiceData] = useState({
     invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
@@ -37,35 +38,57 @@ const Invoice = () => {
   });
 
   // ✅ 1. Fetch Approved Quotations for this Employee
-  useEffect(() => {
-    const fetchQuotations = async () => {
-      try {
-        const response = await fetch(`http://localhost:8080/api/quotations/employee/id/${currentEmpId}`);
-        if (response.ok) {
-          const data = await response.json();
-          // Filter only 'Approved' status
-          const approved = data.filter(q => q.status === 'Approved');
-          setApprovedQuotations(approved);
+  // ✅ 1. Fetch Approved Quotations for this Employee
+useEffect(() => {
+  const fetchData = async () => {
+    setIsLoading(true); // Start loading spinner
+    try {
+      // ✅ STEP 1: Fetch Employee Name
+      const empResponse = await fetch(`http://localhost:8080/api/admin/employees/id/${currentEmpId}`);
+      if (empResponse.ok) {
+        const empData = await empResponse.json();
+        if (empData.name) {
+          setCurrentEmpName(empData.name);
+          localStorage.setItem("empName", empData.name);
         }
-      } catch (error) {
-        console.error("Error loading quotations:", error);
-      } finally {
-        setIsLoading(false);
       }
-    };
-    fetchQuotations();
-  }, [currentEmpId]);
 
+      // ✅ STEP 2: Fetch Approved Quotations (Crucial for showing the list!)
+      const quotResponse = await fetch(`http://localhost:8080/api/quotations/employee/id/${currentEmpId}`);
+      if (quotResponse.ok) {
+        const quotData = await quotResponse.json();
+        // Filter only 'Approved' ones so they are ready for invoice
+        const approved = quotData.filter(q => q.status === 'Approved');
+        setApprovedQuotations(approved);
+      }
+    } catch (error) {
+      console.error("Error loading data:", error);
+    } finally {
+      setIsLoading(false); // Stop loading spinner
+    }
+  };
+
+  if (currentEmpId) {
+    fetchData();
+  }
+}, [currentEmpId]);
+   
   // ✅ 2. Save Invoice to Backend
   const handleSaveInvoice = async () => {
     try {
-      // Ensure we are sending the current employee ID and clean data
+      // Get the freshest name from localStorage or state
+      const savedName = localStorage.getItem("empName") || currentEmpName;
+
+      // Ensure we are sending the correct name, NOT the ID
       const payload = {
         ...invoiceData,
         employeeId: currentEmpId,
+        employeeName: savedName, // Use the variable we just checked
         status: 'Sent',
-        date: new Date().toLocaleDateString('en-IN') // Standardizing date
+        date: new Date().toLocaleDateString('en-IN')
       };
+
+      console.log("Saving Payload:", payload); // Debug to check before sending
 
       const response = await fetch(`http://localhost:8080/api/invoices/create`, {
         method: 'POST',
@@ -75,8 +98,7 @@ const Invoice = () => {
 
       if (response.ok) {
         alert("Invoice generated and saved successfully! ✅");
-        // 3. Redirect to the MyInvoice page after success
-        navigate('./MyInvoice'); 
+        navigate('./MyInvoice'); // Or wherever your dashboard is
       } else {
         const errorData = await response.json();
         alert(`Failed to save: ${errorData.message || 'Unknown error'}`);
@@ -86,6 +108,7 @@ const Invoice = () => {
       alert("Server connection error ❌");
     }
   };
+  
 
   const handlePrintInvoice = () => {
     window.print();
