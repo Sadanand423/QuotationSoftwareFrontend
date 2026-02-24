@@ -9,8 +9,7 @@ const EmployeeDashboard = ({ onCreateQuotation }) => {
   useEffect(() => {
   const loadEmployeeDashboard = async () => {
     try {
-      const res = await fetch(
-        `http://localhost:8080/api/quotations/employee/id/${currentEmpId}`
+      const res = await fetch(`http://localhost:8080/api/quotations/employee/id/${currentEmpId}`
       );
       const quotations = await res.json();
 
