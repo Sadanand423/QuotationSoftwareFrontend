@@ -278,7 +278,7 @@ const handleSendForApproval = async () => {
 </html>`;
 
     const response = await fetch(
-      `http://localhost:8080/api/quotations/${formData.id}/send-approval-html`,
+      `http://localhost:8080/api/quotations/${formData.id}/send-approval-pdf`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
