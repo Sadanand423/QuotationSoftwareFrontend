@@ -185,24 +185,65 @@ const Dashboard = () => {
             <p className="text-blue-100 text-xs sm:text-sm mt-1">Last 6 months</p>
           </div>
           <div className="p-4 sm:p-6">
-            <div className="h-32 sm:h-40 flex items-end justify-between space-x-1 sm:space-x-2">
-              {chartData.monthlyRevenue.map((value, index) => {
-                const maxValue = Math.max(...chartData.monthlyRevenue);
-                const height = (value / maxValue) * 100;
-                return (
-                  <div key={index} className="flex-1 flex flex-col items-center">
-                    <div className="text-xs text-gray-500 mb-1 sm:mb-2">${(value/1000).toFixed(0)}k</div>
-                    <div 
-                      className="w-full bg-gradient-to-t from-blue-500 to-cyan-400 rounded-t transition-all duration-1000 ease-out"
-                      style={{ height: `${height}%` }}
-                    ></div>
-                    <div className="text-xs text-gray-400 mt-1 sm:mt-2">
-                      {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'][index]}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+          
+          <div className="h-40 w-full relative">
+  <svg viewBox="0 0 300 150" className="w-full h-full">
+    {/* GRID LINES */}
+    {[0, 1, 2, 3, 4].map(i => (
+      <line
+        key={i}
+        x1="0"
+        y1={30 * i}
+        x2="300"
+        y2={30 * i}
+        stroke="#e5e7eb"
+        strokeWidth="1"
+      />
+    ))}
+
+    {/* LINE PATH */}
+    <polyline
+      fill="none"
+      stroke="#3b82f6"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      points={
+        chartData.monthlyRevenue
+          .map((v, i, arr) => {
+            const max = Math.max(...arr);
+            const x = (i / (arr.length - 1)) * 280 + 10;
+            const y = 140 - (v / max) * 120;
+            return `${x},${y}`;
+          })
+          .join(" ")
+      }
+    />
+
+    {/* POINTS */}
+    {chartData.monthlyRevenue.map((v, i, arr) => {
+      const max = Math.max(...arr);
+      const x = (i / (arr.length - 1)) * 280 + 10;
+      const y = 140 - (v / max) * 120;
+      return (
+        <circle
+          key={i}
+          cx={x}
+          cy={y}
+          r="4"
+          fill="#3b82f6"
+        />
+      );
+    })}
+  </svg>
+
+  {/* MONTH LABELS */}
+  <div className="flex justify-between text-xs text-gray-400 mt-2 px-1">
+    {['Jan','Feb','Mar','Apr','May','Jun'].map(m => (
+      <span key={m}>{m}</span>
+    ))}
+  </div>
+</div>
           </div>
         </div>
         
