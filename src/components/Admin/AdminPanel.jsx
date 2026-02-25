@@ -53,7 +53,13 @@ const AdminPanel = () => {
     }
   };
 
+  // initial
   fetchNotifications();
+
+  // auto refresh
+  const interval = setInterval(fetchNotifications, 5000);
+
+  return () => clearInterval(interval);
 }, []);
 
   // Close dropdown on outside click

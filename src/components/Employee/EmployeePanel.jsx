@@ -64,7 +64,13 @@ const EmployeePanel = () => {
     }
   };
 
+  // initial load
   fetchNotifications();
+
+  // 🔄 auto refresh every 5 sec
+  const interval = setInterval(fetchNotifications, 5000);
+
+  return () => clearInterval(interval);
 }, []);
 
   const renderContent = () => {
