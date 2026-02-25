@@ -48,13 +48,14 @@ const EmployeePanel = () => {
     navigate('/');
   };
 
-  useEffect(() => {
+// REPLACE your current fetchNotifications useEffect with this:
+useEffect(() => {
   const fetchNotifications = async () => {
     try {
       const empId = localStorage.getItem("empId");
-      const res = await fetch(
-        `http://localhost:8080/api/notifications/employee/${empId}`
-      );
+      if (!empId) return; // Guard clause
+
+      const res = await fetch(`http://localhost:8080/api/notifications/employee/${empId}`);
       if (res.ok) {
         const data = await res.json();
         setNotifications(data);
@@ -65,7 +66,20 @@ const EmployeePanel = () => {
   };
 
   fetchNotifications();
+  const interval = setInterval(fetchNotifications, 30000); // REFRESH EVERY 30 SECONDS
+  return () => clearInterval(interval);
 }, []);
+
+// NEW FUNCTION: Add this below the useEffect
+const toggleNotifications = async () => {
+  const newShowState = !showNotifications;
+  setShowNotifications(newShowState);
+  
+  const empId = localStorage.getItem("empId");
+  if (newShowState && notifications.length > 0 && empId) {
+    await fetch(`http://localhost:8080/api/notifications/mark-read/${empId}`, { method: 'POST' });
+  }
+};
 
   const renderContent = () => {
     switch (activeModule) {
@@ -139,7 +153,7 @@ const EmployeePanel = () => {
   {/* 🔔 PREMIUM BELL */}
   <div className="relative">
     <button
-      onClick={() => setShowNotifications(!showNotifications)}
+      onClick={toggleNotifications}
       className="w-10 h-10 flex items-center justify-center rounded-full 
                  bg-gradient-to-r from-indigo-500 to-purple-600
                  text-white shadow-lg hover:scale-105 transition-transform"
@@ -167,13 +181,14 @@ const EmployeePanel = () => {
           </div>
         ) : (
           notifications.slice(0, 8).map((n) => (
-            <div
-              key={n.id}
-              className="px-4 py-3 border-b hover:bg-gray-50 text-sm"
-            >
-              {n.message}
-            </div>
-          ))
+  <div key={n.id} className="px-4 py-3 border-b hover:bg-gray-50 text-sm">
+    <div className="font-medium text-gray-800">{n.message}</div>
+    {/* ADD THIS LINE BELOW */}
+    <div className="text-[10px] text-gray-400 mt-1">
+      {new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+    </div>
+  </div>
+))
         )}
       </div>
     )}

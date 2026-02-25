@@ -38,7 +38,6 @@ const Invoice = () => {
   });
 
   // ✅ 1. Fetch Approved Quotations for this Employee
-  // ✅ 1. Fetch Approved Quotations for this Employee
 useEffect(() => {
   const fetchData = async () => {
     setIsLoading(true); // Start loading spinner

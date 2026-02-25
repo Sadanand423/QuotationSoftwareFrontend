@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import headerImg from "../../assets/header.jpg";
 import footerImg from "../../assets/footer.jpg";
 import html2pdf from "html2pdf.js";
@@ -7,6 +7,7 @@ import html2pdf from "html2pdf.js";
 
 
 const QuotationPreview = ({ formData, onClose }) => {
+  const fileInputRef = useRef(null);
   console.log("Preview formData:", formData);
   if (!formData) return null;
 
@@ -169,140 +170,51 @@ ${Array.from(document.styleSheets)
 
 
 
-const handleSendForApproval = async () => {
-  const getBase64Image = async (url) => {
-    try {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    } catch (e) {
-      return null;
-    }
+const handleSendForApprovalClick = () => {
+    fileInputRef.current.click();
   };
 
-  try {
-    const [headerBase64, footerBase64] = await Promise.all([
-      getBase64Image(headerImg),
-      getBase64Image(footerImg)
-    ]);
+  // 3. This runs as soon as you select the PDF from your computer
+  const handleFileChange = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
 
-    const contentElement = document.querySelector("#print-section .content");
-    
-    // 1. ADVANCED CLEANING: This solves the "The entity name must immediately follow the '&'" error
-    const cleanXHTML = (html) => {
-      return html
-        .replace(/&nbsp;/g, '&#160;')
-        .replace(/&(?!(amp|lt|gt|quot|apos|#\d+);)/g, "&amp;") // Fixes the '&' crash
-        .replace(/<img([^>]+)>/g, '<img$1 />')               // Closes img tags
-        .replace(/<br\s*\/?>/gi, '<br />')                   // Closes br tags
-        .replace(/<hr\s*\/?>/gi, '<hr />')                   // Closes hr tags
-        .replace(/checkbox checked/g, 'checkbox')            // Cleanup for some PDF engines
-        .replace(/style="([^"]*)"/g, (match, p1) => {        // Fixes '&' inside inline styles
-           return `style="${p1.replace(/&/g, "&amp;")}"`;
-        });
-    };
+    const data = new FormData();
+    data.append("file", file);
 
-    const cleanContent = cleanXHTML(contentElement.innerHTML);
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/quotations/${formData.id}/send-approval-pdf`,
+        {
+          method: "POST",
+          body: data,
+        }
+      );
 
-    const fullStyledHtml = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-  <style>
-    @page { size: A4; margin: 0; }
-    body { margin: 0; padding: 0; font-family: Arial, sans-serif; font-size: 12px; color: #333; }
-
-    /* FIXED IMAGES */
-    .header-fixed { position: fixed; top: 0; left: 0; width: 100%; z-index: 100; }
-    .footer-fixed { position: fixed; bottom: 0; left: 0; width: 100%; z-index: 100; }
-    .header-img, .footer-img { width: 100%; display: block; }
-
-    /* REPEATING SPACER LOGIC - This fixes page 2 overlap */
-    table.master-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    thead { display: table-header-group; }
-    tfoot { display: table-footer-group; }
-
-    /* ADJUST THESE PIXELS TO MATCH YOUR IMAGE HEIGHT */
-    .header-spacer { height: 180px; } 
-    .footer-spacer { height: 100px; }
-
-    .page-content-td { padding: 0 45px; vertical-align: top; }
-
-    /* REPLICATING YOUR UI STYLES */
-    h3 { font-size: 18px; font-weight: bold; color: #111; margin: 20px 0 10px; }
-    .bg-orange-50 { background-color: #fff7ed; border: 1px solid #fdba74; padding: 20px; border-radius: 8px; }
-    .bg-yellow-50 { background-color: #fefce8; border: 1px solid #fef08a; padding: 15px; border-radius: 8px; }
-    .text-orange-700 { color: #c2410c; }
-    
-    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    th { background-color: #f3f4f6; border: 1px solid #e5e7eb; padding: 10px; text-align: left; }
-    td { border: 1px solid #e5e7eb; padding: 10px; }
-    
-    .grid { display: block; width: 100%; }
-    /* Simple two-column layout for PDF */
-    .grid-cols-2 { display: table; width: 100%; }
-    .grid-cols-2 > div { display: table-cell; width: 50%; padding: 10px; }
-
-    tr { page-break-inside: avoid; }
-  </style>
-</head>
-<body>
-  <div class="header-fixed">
-    <img src="${headerBase64}" class="header-img" />
-  </div>
-  <div class="footer-fixed">
-    <img src="${footerBase64}" class="footer-img" />
-  </div>
-
-  <table class="master-table">
-    <thead>
-      <tr><td class="header-spacer">&#160;</td></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td class="page-content-td">
-          ${cleanContent}
-        </td>
-      </tr>
-    </tbody>
-    <tfoot>
-      <tr><td class="footer-spacer">&#160;</td></tr>
-    </tfoot>
-  </table>
-</body>
-</html>`;
-
-    const response = await fetch(
-      `http://localhost:8080/api/quotations/${formData.id}/send-approval-html`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ htmlContent: fullStyledHtml })
+      if (response.ok) {
+        alert("PDF uploaded and email sent to client! ✅");
+        onClose();
+      } else {
+        alert("Failed to send email. Check backend.");
       }
-    );
-
-    if (response.ok) {
-      alert("Email sent successfully ✅");
-    } else {
-      const errorMsg = await response.text();
-      console.error("Backend Error:", errorMsg);
-      alert("Error: Check console for details.");
+    } catch (error) {
+      console.error("Upload Error:", error);
+      alert("Connection error ❌");
     }
-  } catch (error) {
-    alert("Connection error ❌");
-  }
-};
+  };
 
 
   return (
   <div className="fixed inset-0 bg-black/50 z-50 overflow-y-auto p-6 print:static print:bg-white print:p-0">
 
-
+       {/* 4. THE HIDDEN FILE INPUT */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        className="hidden" 
+        accept="application/pdf"
+        onChange={handleFileChange}
+      />
     
     <div
       id="print-section"
@@ -507,8 +419,8 @@ const handleSendForApproval = async () => {
 
         
   <button
-    onClick={handleSendForApproval}
-    className="bg-blue-600 text-white px-6 py-2 rounded"
+    onClick={handleSendForApprovalClick}
+    className="bg-green-600 text-white px-6 py-2 rounded"
   >
     Send for Approval
   </button>
