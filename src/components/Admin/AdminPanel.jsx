@@ -40,10 +40,12 @@ const AdminPanel = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
-  useEffect(() => {
+// REPLACE your current fetchNotifications useEffect with this:
+useEffect(() => {
   const fetchNotifications = async () => {
     try {
-      const res = await fetch("http://localhost:8080/api/notifications");
+      // Added /admin to the URL
+      const res = await fetch("http://localhost:8080/api/notifications/admin");
       if (res.ok) {
         const data = await res.json();
         setNotifications(data);
@@ -53,14 +55,27 @@ const AdminPanel = () => {
     }
   };
 
-  // initial
   fetchNotifications();
-
-  // auto refresh
-  const interval = setInterval(fetchNotifications, 5000);
-
+  const interval = setInterval(fetchNotifications, 30000); // REFRESH EVERY 30 SECONDS
   return () => clearInterval(interval);
 }, []);
+
+// NEW FUNCTION: Add this below the useEffect
+const toggleNotifications = async () => {
+  const newShowState = !showNotifications;
+  setShowNotifications(newShowState);
+
+  // If we are opening the window and have notifications, tell backend to mark them read
+  if (newShowState && notifications.length > 0) {
+    try {
+      await fetch("http://localhost:8080/api/notifications/mark-read/ADMIN", { method: 'POST' });
+      // We don't clear the list immediately so the user can read them, 
+      // but the next refresh will show 0 or "read" status.
+    } catch (e) {
+      console.error("Error marking read", e);
+    }
+  }
+};
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -136,7 +151,7 @@ const AdminPanel = () => {
               {/* 🔔 PREMIUM BELL */}
               <div className="relative">
                 <button
-                  onClick={() => setShowNotifications(!showNotifications)}
+                  onClick={toggleNotifications}
                   className="w-10 h-10 flex items-center justify-center rounded-full 
                             bg-gradient-to-r from-indigo-500 to-purple-600
                             text-white shadow-lg hover:scale-105 transition-transform"
@@ -164,10 +179,14 @@ const AdminPanel = () => {
                       </div>
                     ) : (
                       notifications.slice(0, 8).map((n) => (
-                        <div key={n.id} className="px-4 py-3 border-b hover:bg-gray-50 text-sm">
-                          {n.message}
-                        </div>
-                      ))
+  <div key={n.id} className="px-4 py-3 border-b hover:bg-gray-50 text-sm">
+    <div className="font-medium text-gray-800">{n.message}</div>
+    {/* ADD THIS LINE BELOW */}
+    <div className="text-[10px] text-gray-400 mt-1">
+      {new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+    </div>
+  </div>
+))
                     )}
                   </div>
                 )}
