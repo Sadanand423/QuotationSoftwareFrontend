@@ -1,303 +1,353 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import Sidebar from "./Sidebar";
-import Dashboard from "./Dashboard";
-import QuotationManagement from "./QuotationManagement";
-import InvoiceGenerator from "./InvoiceGenerator";
-import ClientManagement from "./ClientManagement";
-import EmployeeManagement from "./EmployeeManagement";
-import Reports from "./Reports";
-import EditProfile from "./EditProfile";
-import AllNotifications from "./AllNotifications";
+    import React, { useState, useEffect, useRef } from "react";
+    import { useNavigate } from "react-router-dom";
+    import Sidebar from "./Sidebar";
+    import Dashboard from "./Dashboard";
+    import QuotationManagement from "./QuotationManagement";
+    import InvoiceGenerator from "./InvoiceGenerator";
+    import ClientManagement from "./ClientManagement";
+    import EmployeeManagement from "./EmployeeManagement";
+    import Reports from "./Reports";
+    import EditProfile from "./EditProfile";
+    import AllNotifications from "./AllNotifications";
 
-const AdminPanel = () => {
-  const [notifications, setNotifications] = useState([]);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showAllNotifications, setShowAllNotifications] = useState(false);
-  const [activeModule, setActiveModule] = useState("dashboard");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
+    const AdminPanel = () => {
+      const [notifications, setNotifications] = useState([]);
+      const [showNotifications, setShowNotifications] = useState(false);
+      const [showAllNotifications, setShowAllNotifications] = useState(false);
+      const [activeModule, setActiveModule] = useState("dashboard");
+      const [sidebarOpen, setSidebarOpen] = useState(false);
+      const [showDropdown, setShowDropdown] = useState(false);
 
-  const bellRef = useRef(null);
-  const dropdownRef = useRef(null);
-  const navigate = useNavigate();
+      const bellRef = useRef(null);
+      const dropdownRef = useRef(null);
+      const navigate = useNavigate();
 
-  // ================= FETCH NOTIFICATIONS =================
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const res = await fetch("http://localhost:8080/api/notifications/admin");
-        if (res.ok) {
-          const data = await res.json();
-          setNotifications(data);
+      // ================= FETCH NOTIFICATIONS =================
+      useEffect(() => {
+      const fetchNotifications = async () => {
+        try {
+          const res = await fetch("http://localhost:8080/api/notifications/admin");
+          if (!res.ok) return;
+
+          const incoming = await res.json();
+
+          setNotifications(prev => {
+            const prevMap = new Map(prev.map(n => [n.id, n]));
+
+            return incoming.map(n => {
+      const existing = prevMap.get(n.id);
+
+      // if already in state → keep read status
+      if (existing) return existing;
+
+      // if backend already says read → keep it
+      if (n.read === true) return n;
+
+      // otherwise new → unread
+      return { ...n, read: false };
+    });
+          });
+
+        } catch (e) {
+          console.error("Notification fetch error", e);
         }
-      } catch (e) {
-        console.error("Notification fetch error", e);
-      }
-    };
+      };
 
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
-  }, []);
+      fetchNotifications();
 
-  // ================= TOGGLE NOTIFICATIONS =================
-  const toggleNotifications = async () => {
-    const newState = !showNotifications;
-    setShowNotifications(newState);
+      // auto refresh every 5 seconds
+      const interval = setInterval(fetchNotifications, 5000);
 
-    if (newState && notifications.length > 0) {
-      try {
-        await fetch("http://localhost:8080/api/notifications/mark-read/ADMIN", {
-          method: "POST",
-        });
-      } catch (e) {
-        console.error("Mark read error", e);
-      }
-    }
-  };
+      return () => clearInterval(interval);
+    }, []);
 
-  // ================= CLOSE ON OUTSIDE CLICK =================
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (bellRef.current && !bellRef.current.contains(e.target)) {
+      // ================= TOGGLE NOTIFICATIONS =================
+      const toggleNotifications = () => {
+      const newState = !showNotifications;
+
+      // closing
+      if (!newState && showNotifications) {
         setShowNotifications(false);
+
+        setNotifications(prev =>
+          prev.map(n =>
+            !n.read ? { ...n, read: true } : n
+          )
+        );
+
+        fetch("http://localhost:8080/api/notifications/mark-read/ADMIN", {
+          method: "POST",
+        }).catch(() => {});
+        return;
       }
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setShowDropdown(false);
-      }
+
+      setShowNotifications(true);
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+      // ================= CLOSE ON OUTSIDE CLICK =================
+      useEffect(() => {
+      const handleClickOutside = (e) => {
+        if (bellRef.current && !bellRef.current.contains(e.target)) {
+          if (showNotifications) {
 
-  // ================= NAVIGATION =================
-  const handleProfile = () => {
-    setActiveModule("profile");
-    setShowDropdown(false);
-  };
+            // 1️⃣ close instantly
+            setShowNotifications(false);
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate("/");
-  };
+            // 2️⃣ update UI instantly
+            setNotifications(prev =>
+              prev.map(n =>
+                !n.read ? { ...n, read: true } : n
+              )
+            );
 
-  const renderContent = () => {
-    switch (activeModule) {
-      case "dashboard":
-        return <Dashboard />;
-      case "quotations":
-        return <QuotationManagement />;
-      case "invoices":
-        return <InvoiceGenerator />;
-      case "clients":
-        return <ClientManagement />;
-      case "employees":
-        return <EmployeeManagement />;
-      case "reports":
-        return <Reports />;
-      case "profile":
-        return <EditProfile />;
-      case "allNotifications":
-      return <AllNotifications notifications={notifications} />;
-      default:
-        return <Dashboard />;
-    }
-  };
+            // 3️⃣ call API in background
+            fetch("http://localhost:8080/api/notifications/mark-read/ADMIN", {
+              method: "POST",
+            }).catch(() => {});
+          }
+        }
 
-  return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
-      <Sidebar
-        activeModule={activeModule}
-        setActiveModule={setActiveModule}
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-      />
+        if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+          setShowDropdown(false);
+        }
+      };
 
-      <div className="flex-1 overflow-auto">
-        <header className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-gray-200 px-3 sm:px-6 py-4 sticky top-0 z-10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden mr-3 p-2 rounded-md text-gray-600 hover:text-gray-800 hover:bg-gray-100"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [showNotifications]);
 
-              <div>
-                <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  <span className="hidden sm:inline">Quotation Management System</span>
-                  <span className="sm:hidden">QMS</span>
-                </h1>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1 hidden sm:block">
-                  Professional Business Solutions
-                </p>
-              </div>
-            </div>
+      // ================= NAVIGATION =================
+      const handleProfile = () => {
+        setActiveModule("profile");
+        setShowDropdown(false);
+      };
 
-            {/* ================= RIGHT SIDE ================= */}
-            <div className="flex items-center gap-3">
-              {/* 🔔 NOTIFICATION */}
-              {/* 🔔 BELL */}
-              <div className="relative" ref={bellRef}>
-                <button
-                  onClick={toggleNotifications}
-                  className="w-10 h-10 flex items-center justify-center rounded-full 
-                            bg-gradient-to-r from-indigo-500 to-purple-600
-                            text-white shadow-lg hover:scale-105 transition-transform"
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2a7 7 0 00-7 7v4.586l-.707.707A1 1 0 005 17h14a1 1 0 00.707-1.707L19 13.586V9a7 7 0 00-7-7zm0 20a3 3 0 003-3H9a3 3 0 003 3z"/>
-                  </svg>
+      const handleLogout = () => {
+        localStorage.clear();
+        navigate("/");
+      };
 
-                  {notifications.length > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full shadow">
-                      {notifications.length}
-                    </span>
-                  )}
-                </button>
+      const renderContent = () => {
+        switch (activeModule) {
+          case "dashboard":
+            return <Dashboard />;
+          case "quotations":
+            return <QuotationManagement />;
+          case "invoices":
+            return <InvoiceGenerator />;
+          case "clients":
+            return <ClientManagement />;
+          case "employees":
+            return <EmployeeManagement />;
+          case "reports":
+            return <Reports />;
+          case "profile":
+            return <EditProfile />;
+          case "allNotifications":
+          return <AllNotifications notifications={notifications} />;
+          default:
+            return <Dashboard />;
+        }
+      };
 
-                {/* ===== DROPDOWN ===== */}
-                {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-80 z-50">
-                    <div className="absolute -top-2 right-6 w-4 h-4 bg-white rotate-45 shadow-md"></div>
+      const unreadNotifications = notifications.filter(n => !n.read);
+      const unreadCount = unreadNotifications.length;
 
-                    <div className="bg-white border rounded-2xl shadow-2xl overflow-hidden">
-                      <div className="px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold">
-                        Notifications
-                      </div>
+      return (
+        <div className="flex h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
+          <Sidebar
+            activeModule={activeModule}
+            setActiveModule={setActiveModule}
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
+          />
 
-                      <div className="max-h-80 overflow-auto">
-                        {notifications.length === 0 ? (
-                          <div className="p-6 text-sm text-gray-500 text-center">
-                            No notifications
-                          </div>
-                        ) : (
-                          notifications.slice(0, 8).map((n) => (
-                            <div
-                              key={n.id}
-                              className={`px-4 py-3 border-b border-gray-100 hover:bg-indigo-50 transition ${
-                                !n.read ? "bg-indigo-50/40" : ""
-                              }`}
-                            >
-                              <div className="text-sm font-medium text-gray-800">
-                                {n.message}
-                              </div>
+          <div className="flex-1 overflow-auto">
+            <header className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-gray-200 px-3 sm:px-6 py-4 sticky top-0 z-10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <button
+                    onClick={() => setSidebarOpen(!sidebarOpen)}
+                    className="lg:hidden mr-3 p-2 rounded-md text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                  </button>
 
-                              {n.timestamp && (
-                                <div className="text-[10px] text-gray-400 mt-1">
-                                  {new Date(n.timestamp).toLocaleTimeString([], {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          ))
-                        )}
-                      </div>
-
-                      {/* VIEW ALL */}
-                      <div
-                        onClick={() => {
-                        setActiveModule("allNotifications");
-                          setShowNotifications(false);
-                        }}
-                        className="px-4 py-3 text-center text-sm font-semibold text-indigo-600 hover:bg-indigo-50 cursor-pointer"
-                      >
-                        View All Notifications →
-                      </div>
-                    </div>
+                  <div>
+                    <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                      <span className="hidden sm:inline">Quotation Management System</span>
+                      <span className="sm:hidden">QMS</span>
+                    </h1>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1 hidden sm:block">
+                      Professional Business Solutions
+                    </p>
                   </div>
-                )}
-
-                {/* ===== FULL PANEL ===== */}
-                {showAllNotifications && (
-                  <div className="fixed inset-0 z-[60] flex justify-end">
-                    <div
-                      className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-                      onClick={() => setShowAllNotifications(false)}
-                    />
-
-                    <div className="relative w-[420px] h-full bg-white shadow-2xl border-l flex flex-col animate-slideIn">
-                      <div className="px-6 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white flex justify-between items-center">
-                        <div className="text-lg font-semibold">
-                          All Notifications
-                        </div>
-                        <button
-                          onClick={() => setShowAllNotifications(false)}
-                          className="text-xl"
-                        >
-                          ✕
-                        </button>
-                      </div>
-
-                      <div className="flex-1 overflow-auto">
-                        {notifications.map((n) => (
-                          <div
-                            key={n.id}
-                            className={`px-6 py-4 border-b hover:bg-indigo-50 ${
-                              !n.read ? "bg-indigo-50/40" : ""
-                            }`}
-                          >
-                            <div className="text-sm font-medium">
-                              {n.message}
-                            </div>
-                            {n.timestamp && (
-                              <div className="text-xs text-gray-400 mt-1">
-                                {new Date(n.timestamp).toLocaleString()}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* 👤 ADMIN */}
-              <div className="relative" ref={dropdownRef}>
-                <div
-                  onClick={() => setShowDropdown(!showDropdown)}
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium cursor-pointer"
-                >
-                  👤 Admin Panel
                 </div>
 
-                {showDropdown && (
-                  <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-xl border z-50">
+                {/* ================= RIGHT SIDE ================= */}
+                <div className="flex items-center gap-3">
+                  {/* 🔔 NOTIFICATION */}
+                  {/* 🔔 BELL */}
+                  <div className="relative" ref={bellRef}>
                     <button
-                      onClick={handleProfile}
-                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                      onClick={toggleNotifications}
+                      className="w-10 h-10 flex items-center justify-center rounded-full 
+                                bg-gradient-to-r from-indigo-500 to-purple-600
+                                text-white shadow-lg hover:scale-105 transition-transform"
                     >
-                      Profile
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2a7 7 0 00-7 7v4.586l-.707.707A1 1 0 005 17h14a1 1 0 00.707-1.707L19 13.586V9a7 7 0 00-7-7zm0 20a3 3 0 003-3H9a3 3 0 003 3z"/>
+                      </svg>
+
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full shadow">
+                          {unreadCount}
+                        </span>
+                      )}
                     </button>
 
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                    >
-                      Logout
-                    </button>
+                    {/* ===== DROPDOWN ===== */}
+                    {showNotifications && (
+                      <div className="absolute right-0 mt-2 w-80 z-50">
+                        <div className="absolute -top-2 right-6 w-4 h-4 bg-white rotate-45 shadow-md"></div>
+
+                        <div className="bg-white border rounded-2xl shadow-2xl overflow-hidden">
+                          <div className="px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold">
+                            Notifications
+                          </div>
+
+                          <div className="max-h-80 overflow-auto no-scrollbar">
+                            {notifications.length === 0 ? (
+                              <div className="p-6 text-sm text-gray-500 text-center">
+                                No notifications
+                              </div>
+                            ) : (
+                              notifications.slice(0, 8).map((n) => (
+                                <div
+                                key={n.id}
+                                className={`px-4 py-3 border-b border-gray-200 ${
+                                  !n.read ? "bg-indigo-100" : "bg-white hover:bg-gray-50"
+                                }`}
+                              >
+                                <div
+                                  className={`text-sm ${
+                                    !n.read ? "font-semibold text-gray-900" : "text-gray-700"
+                                  }`}
+                                >
+                                  {n.message}
+                                </div>
+                                {n.timestamp && (
+                                  <div className="text-[11px] mt-1 text-gray-500">
+                                    {new Date(n.timestamp).toLocaleTimeString([], {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                              ))
+                            )}
+                          </div>
+
+                          {/* VIEW ALL */}
+                          <div
+                            onClick={() => {
+                            setActiveModule("allNotifications");
+                              setShowNotifications(false);
+                            }}
+                            className="px-4 py-3 text-center text-sm font-semibold text-indigo-600 hover:bg-indigo-50 cursor-pointer"
+                          >
+                            View All Notifications →
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ===== FULL PANEL ===== */}
+                    {showAllNotifications && (
+                      <div className="fixed inset-0 z-[60] flex justify-end">
+                        <div
+                          className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+                          onClick={() => setShowAllNotifications(false)}
+                        />
+
+                        <div className="relative w-[420px] h-full bg-white shadow-2xl border-l flex flex-col animate-slideIn">
+                          <div className="px-6 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white flex justify-between items-center">
+                            <div className="text-lg font-semibold">
+                              All Notifications
+                            </div>
+                            <button
+                              onClick={() => setShowAllNotifications(false)}
+                              className="text-xl"
+                            >
+                              ✕
+                            </button>
+                          </div>
+
+                          <div className="flex-1 overflow-auto">
+                            {notifications.map((n) => (
+                              <div
+                                key={n.id}
+                                className={`px-6 py-4 border-b hover:bg-indigo-50 ${
+                                  !n.read ? "bg-indigo-50/40" : ""
+                                }`}
+                              >
+                                <div className="text-sm font-medium">
+                                  {n.message}
+                                </div>
+                                {n.timestamp && (
+                                  <div className="text-xs text-gray-400 mt-1">
+                                    {new Date(n.timestamp).toLocaleString()}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
+
+                  {/* 👤 ADMIN */}
+                  <div className="relative" ref={dropdownRef}>
+                    <div
+                      onClick={() => setShowDropdown(!showDropdown)}
+                      className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium cursor-pointer"
+                    >
+                      👤 Admin Panel
+                    </div>
+
+                    {showDropdown && (
+                      <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-xl border z-50">
+                        <button
+                          onClick={handleProfile}
+                          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                        >
+                          Profile
+                        </button>
+
+                        <button
+                          onClick={handleLogout}
+                          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                        >
+                          Logout
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
+            </header>
+
+            {/* ================= MAIN ================= */}
+            <main className="p-6">
+              <div className="max-w-7xl mx-auto">{renderContent()}</div>
+            </main>
           </div>
-        </header>
+        </div>
+      );
+    };
 
-        {/* ================= MAIN ================= */}
-        <main className="p-6">
-          <div className="max-w-7xl mx-auto">{renderContent()}</div>
-        </main>
-      </div>
-    </div>
-  );
-};
-
-export default AdminPanel;
+    export default AdminPanel;
