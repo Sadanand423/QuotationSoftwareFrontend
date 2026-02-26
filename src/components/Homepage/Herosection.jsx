@@ -1,96 +1,121 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 
 const HeroSection = ({ onGetStarted }) => {
-  const [scrollY, setScrollY] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
+  const [stage, setStage] = useState('orbiting'); 
+  const text = "Smart Matrix";
+  const characters = text.split("");
+
+  // Create a large pool of particles. 
+  // Each particle will eventually "home" in on a specific letter.
+  const particles = useMemo(() => {
+    return Array.from({ length: 250 }).map((_, i) => {
+      const charIndex = i % characters.length;
+      const angle = Math.random() * Math.PI * 2;
+      const orbitRadius = 200 + Math.random() * 100;
+      
+      return {
+        id: i,
+        charIndex,
+        // Starting position in the 5-second circle
+        startX: Math.cos(angle) * orbitRadius,
+        startY: Math.sin(angle) * orbitRadius,
+        // Random offset within the letter's area to "draw" the shape
+        offsetX: (Math.random() - 0.5) * 40, 
+        offsetY: (Math.random() - 0.5) * 60,
+        size: Math.random() * 3 + 1,
+        delay: Math.random() * 0.8, // Creates the "slowly slowly" effect
+      };
+    });
+  }, [characters.length]);
 
   useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY);
-    window.addEventListener('scroll', handleScroll);
-    
-    // Reset scroll position on page load
-    window.scrollTo(0, 0);
-    
-    // Trigger animation on page load
-    const timer = setTimeout(() => {
-      setIsVisible(true);
-    }, 300);
-    
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      clearTimeout(timer);
-    };
+    const timer = setTimeout(() => setStage('assembling'), 5000);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
-    <section className="relative bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 min-h-screen md:min-h-screen sm:min-h-[70vh] flex items-center justify-center px-4">
-      {/* Parallax Background Elements */}
-      <div className="absolute inset-0">
-        <div 
-          className="absolute top-10 left-10 w-72 h-72 bg-gradient-to-r from-blue-400/20 to-purple-600/20 rounded-full blur-3xl"
-          style={{ transform: `translateY(${scrollY * 0.3}px)` }}
-        ></div>
-        <div 
-          className="absolute top-1/2 right-10 w-96 h-96 bg-gradient-to-r from-purple-400/20 to-pink-600/20 rounded-full blur-3xl"
-          style={{ transform: `translateY(${scrollY * -0.2}px)` }}
-        ></div>
-        <div 
-          className="absolute bottom-10 left-1/3 w-64 h-64 bg-gradient-to-r from-cyan-400/20 to-blue-600/20 rounded-full blur-3xl"
-          style={{ transform: `translateY(${scrollY * 0.4}px)` }}
-        ></div>
-      </div>
+    <section className="relative bg-[#050816] min-h-screen flex items-center justify-center px-4 overflow-hidden">
+      <div className="text-center relative z-10 w-full max-w-7xl">
+        
+        {/* WELCOME TEXT - Fades in only after assembly starts */}
+        <div className={`mb-4 transition-opacity duration-1000 ${stage === 'assembling' ? 'opacity-60' : 'opacity-0'}`}>
+          <span className="text-blue-400 font-bold tracking-[0.5em] uppercase text-sm">Welcome To</span>
+        </div>
 
-      {/* Floating Geometric Shapes */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div 
-          className="absolute top-1/4 left-1/4 w-4 h-4 bg-blue-500/30 rotate-45"
-          style={{ transform: `translateY(${scrollY * 0.1}px) rotate(45deg)` }}
-        ></div>
-        <div 
-          className="absolute top-3/4 right-1/4 w-6 h-6 border-2 border-purple-500/30 rounded-full"
-          style={{ transform: `translateY(${scrollY * -0.3}px)` }}
-        ></div>
-        <div 
-          className="absolute top-1/2 left-3/4 w-3 h-3 bg-indigo-500/40 rounded-full"
-          style={{ transform: `translateY(${scrollY * 0.5}px)` }}
-        ></div>
-      </div>
-      
-      {/* Centered Content with Pop-up Animation */}
-      <div className="text-center relative z-10 max-w-4xl mx-auto">
-        <div className={`transition-all duration-1000 ease-out transform ${
-          isVisible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-10 opacity-0 scale-95'
-        }`}>
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-gray-900 leading-tight mb-8">
-            <span className="block mb-2 sm:mb-4">Welcome To</span>
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600">
-              Smart Matrix
-            </span>
-          </h1>
+        <div className="relative flex justify-center items-center flex-wrap gap-x-2 sm:gap-x-4 min-h-[150px]">
           
-          {/* Buttons with delayed animation */}
-          <div className={`transition-all duration-1000 delay-500 ease-out transform ${
-            isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
-          }`}>
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center mt-8 sm:mt-12">
-              <button 
-                onClick={onGetStarted}
-                className="group w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-2xl hover:from-blue-700 hover:to-indigo-700 transform hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-2xl"
+          {characters.map((char, charIdx) => (
+            <div key={charIdx} className="relative inline-block">
+              {/* THE TARGET LETTER: Becomes visible slowly as dots arrive */}
+              <span 
+                className={`text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-blue-500 transition-opacity duration-[2500ms] ${stage === 'assembling' ? 'opacity-100' : 'opacity-0'} ${char === " " ? "w-8" : ""}`}
+                style={{ transitionDelay: `${charIdx * 0.1}s` }}
               >
-                <span className="flex items-center justify-center gap-2">
-                  Get Started
-                  <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </span>
-              </button>
-              <button className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 border-2 border-gray-300 text-gray-700 font-semibold rounded-2xl hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-300">
-                Watch Demo
-              </button>
+                {char}
+              </span>
+
+              {/* THE DOTS ASSIGNED TO THIS SPECIFIC LETTER */}
+              {char !== " " && particles.filter(p => p.charIndex === charIdx).map((p) => (
+                <div
+                  key={p.id}
+                  className="absolute rounded-full bg-blue-400 shadow-[0_0_8px_#60a5fa]"
+                  style={{
+                    width: `${p.size}px`,
+                    height: `${p.size}px`,
+                    top: '50%',
+                    left: '50%',
+                    '--startX': `${p.startX}px`,
+                    '--startY': `${p.startY}px`,
+                    '--endX': `${p.offsetX}px`,
+                    '--endY': `${p.offsetY}px`,
+                    animation: stage === 'orbiting' 
+                      ? `orbit-circle 5s linear infinite` 
+                      : `fly-to-letter 2s cubic-bezier(0.19, 1, 0.22, 1) forwards`,
+                    animationDelay: stage === 'assembling' ? `${p.delay + (charIdx * 0.1)}s` : '0s',
+                  }}
+                />
+              ))}
             </div>
+          ))}
+        </div>
+
+        {/* BUTTONS */}
+        <div className={`mt-16 transition-all duration-1000 delay-[3s] ${stage === 'assembling' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+            <button onClick={onGetStarted} className="px-12 py-4 bg-blue-600 text-white font-bold rounded-full hover:shadow-[0_0_30px_rgba(37,99,235,0.8)] transition-all uppercase tracking-widest text-sm">
+              Get Started
+            </button>
+            <button className="px-12 py-4 border border-white/20 text-white font-bold rounded-full hover:bg-white/5 transition-all uppercase tracking-widest text-sm">
+              Watch Demo
+            </button>
           </div>
         </div>
       </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        /* Phase 1: Dots rotate in a big circle for 5s */
+        @keyframes orbit-circle {
+          0% { transform: rotate(0deg) translate(var(--startX), var(--startY)); }
+          100% { transform: rotate(360deg) translate(var(--startX), var(--startY)); }
+        }
+
+        /* Phase 2: Dots fly "Slowly Slowly" to their letter positions */
+        @keyframes fly-to-letter {
+          0% { 
+            transform: rotate(360deg) translate(var(--startX), var(--startY));
+            opacity: 1;
+          }
+          70% {
+            opacity: 1;
+          }
+          100% { 
+            transform: translate(var(--endX), var(--endY)) scale(0.5); 
+            opacity: 0;
+          }
+        }
+
+        body { background-color: #f0f0f4fb; }
+      `}} />
     </section>
   );
 };
