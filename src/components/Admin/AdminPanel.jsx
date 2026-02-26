@@ -1,114 +1,108 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Sidebar from './Sidebar';
-import Dashboard from './Dashboard';
-import QuotationManagement from './QuotationManagement';
-import InvoiceGenerator from './InvoiceGenerator';
-import ClientManagement from './ClientManagement';
-import EmployeeManagement from './EmployeeManagement';
-import Reports from './Reports';
-import EditProfile from './EditProfile';
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import Sidebar from "./Sidebar";
+import Dashboard from "./Dashboard";
+import QuotationManagement from "./QuotationManagement";
+import InvoiceGenerator from "./InvoiceGenerator";
+import ClientManagement from "./ClientManagement";
+import EmployeeManagement from "./EmployeeManagement";
+import Reports from "./Reports";
+import EditProfile from "./EditProfile";
+import AllNotifications from "./AllNotifications";
 
 const AdminPanel = () => {
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [activeModule, setActiveModule] = useState('dashboard');
+  const [showAllNotifications, setShowAllNotifications] = useState(false);
+  const [activeModule, setActiveModule] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isNavbarVisible, setIsNavbarVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const navigate = useNavigate();
+  const bellRef = useRef(null);
   const dropdownRef = useRef(null);
+  const navigate = useNavigate();
 
-  // Scroll hide/show navbar
+  // ================= FETCH NOTIFICATIONS =================
   useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-
-      if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        setIsNavbarVisible(false);
-      } else {
-        setIsNavbarVisible(true);
+    const fetchNotifications = async () => {
+      try {
+        const res = await fetch("http://localhost:8080/api/notifications/admin");
+        if (res.ok) {
+          const data = await res.json();
+          setNotifications(data);
+        }
+      } catch (e) {
+        console.error("Notification fetch error", e);
       }
-
-      setLastScrollY(currentScrollY);
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
-// REPLACE your current fetchNotifications useEffect with this:
-useEffect(() => {
-  const fetchNotifications = async () => {
-    try {
-      // Added /admin to the URL
-      const res = await fetch("http://localhost:8080/api/notifications/admin");
-      if (res.ok) {
-        const data = await res.json();
-        setNotifications(data);
+  // ================= TOGGLE NOTIFICATIONS =================
+  const toggleNotifications = async () => {
+    const newState = !showNotifications;
+    setShowNotifications(newState);
+
+    if (newState && notifications.length > 0) {
+      try {
+        await fetch("http://localhost:8080/api/notifications/mark-read/ADMIN", {
+          method: "POST",
+        });
+      } catch (e) {
+        console.error("Mark read error", e);
       }
-    } catch (e) {
-      console.error("Notification fetch error", e);
     }
   };
 
-  fetchNotifications();
-  const interval = setInterval(fetchNotifications, 30000); // REFRESH EVERY 30 SECONDS
-  return () => clearInterval(interval);
-}, []);
-
-// NEW FUNCTION: Add this below the useEffect
-const toggleNotifications = async () => {
-  const newShowState = !showNotifications;
-  setShowNotifications(newShowState);
-
-  // If we are opening the window and have notifications, tell backend to mark them read
-  if (newShowState && notifications.length > 0) {
-    try {
-      await fetch("http://localhost:8080/api/notifications/mark-read/ADMIN", { method: 'POST' });
-      // We don't clear the list immediately so the user can read them, 
-      // but the next refresh will show 0 or "read" status.
-    } catch (e) {
-      console.error("Error marking read", e);
-    }
-  }
-};
-
-  // Close dropdown on outside click
+  // ================= CLOSE ON OUTSIDE CLICK =================
   useEffect(() => {
     const handleClickOutside = (e) => {
+      if (bellRef.current && !bellRef.current.contains(e.target)) {
+        setShowNotifications(false);
+      }
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setShowDropdown(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // ================= NAVIGATION =================
   const handleProfile = () => {
-    setActiveModule('profile');
+    setActiveModule("profile");
     setShowDropdown(false);
   };
 
   const handleLogout = () => {
     localStorage.clear();
-    navigate('/');
+    navigate("/");
   };
 
   const renderContent = () => {
     switch (activeModule) {
-      case 'dashboard': return <Dashboard />;
-      case 'quotations': return <QuotationManagement />;
-      case 'invoices': return <InvoiceGenerator />;
-      case 'clients': return <ClientManagement />;
-      case 'employees': return <EmployeeManagement />;
-      case 'reports': return <Reports />;
-      case 'profile': return <EditProfile />;
-      default: return <Dashboard />;
+      case "dashboard":
+        return <Dashboard />;
+      case "quotations":
+        return <QuotationManagement />;
+      case "invoices":
+        return <InvoiceGenerator />;
+      case "clients":
+        return <ClientManagement />;
+      case "employees":
+        return <EmployeeManagement />;
+      case "reports":
+        return <Reports />;
+      case "profile":
+        return <EditProfile />;
+      case "allNotifications":
+      return <AllNotifications notifications={notifications} />;
+      default:
+        return <Dashboard />;
     }
   };
 
@@ -145,11 +139,11 @@ const toggleNotifications = async () => {
               </div>
             </div>
 
-            {/* 🔔 NOTIFICATION + ADMIN */}
+            {/* ================= RIGHT SIDE ================= */}
             <div className="flex items-center gap-3">
-
-              {/* 🔔 PREMIUM BELL */}
-              <div className="relative">
+              {/* 🔔 NOTIFICATION */}
+              {/* 🔔 BELL */}
+              <div className="relative" ref={bellRef}>
                 <button
                   onClick={toggleNotifications}
                   className="w-10 h-10 flex items-center justify-center rounded-full 
@@ -167,36 +161,110 @@ const toggleNotifications = async () => {
                   )}
                 </button>
 
+                {/* ===== DROPDOWN ===== */}
                 {showNotifications && (
-                  <div className="absolute right-0 mt-3 w-80 bg-white rounded-xl shadow-2xl border z-50 max-h-96 overflow-auto">
-                    <div className="p-3 border-b font-semibold text-gray-700">
-                      Notifications
-                    </div>
+                  <div className="absolute right-0 mt-2 w-80 z-50">
+                    <div className="absolute -top-2 right-6 w-4 h-4 bg-white rotate-45 shadow-md"></div>
 
-                    {notifications.length === 0 ? (
-                      <div className="p-4 text-sm text-gray-500">
-                        No notifications
+                    <div className="bg-white border rounded-2xl shadow-2xl overflow-hidden">
+                      <div className="px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold">
+                        Notifications
                       </div>
-                    ) : (
-                      notifications.slice(0, 8).map((n) => (
-  <div key={n.id} className="px-4 py-3 border-b hover:bg-gray-50 text-sm">
-    <div className="font-medium text-gray-800">{n.message}</div>
-    {/* ADD THIS LINE BELOW */}
-    <div className="text-[10px] text-gray-400 mt-1">
-      {new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-    </div>
-  </div>
-))
-                    )}
+
+                      <div className="max-h-80 overflow-auto">
+                        {notifications.length === 0 ? (
+                          <div className="p-6 text-sm text-gray-500 text-center">
+                            No notifications
+                          </div>
+                        ) : (
+                          notifications.slice(0, 8).map((n) => (
+                            <div
+                              key={n.id}
+                              className={`px-4 py-3 border-b border-gray-100 hover:bg-indigo-50 transition ${
+                                !n.read ? "bg-indigo-50/40" : ""
+                              }`}
+                            >
+                              <div className="text-sm font-medium text-gray-800">
+                                {n.message}
+                              </div>
+
+                              {n.timestamp && (
+                                <div className="text-[10px] text-gray-400 mt-1">
+                                  {new Date(n.timestamp).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {/* VIEW ALL */}
+                      <div
+                        onClick={() => {
+                        setActiveModule("allNotifications");
+                          setShowNotifications(false);
+                        }}
+                        className="px-4 py-3 text-center text-sm font-semibold text-indigo-600 hover:bg-indigo-50 cursor-pointer"
+                      >
+                        View All Notifications →
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ===== FULL PANEL ===== */}
+                {showAllNotifications && (
+                  <div className="fixed inset-0 z-[60] flex justify-end">
+                    <div
+                      className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+                      onClick={() => setShowAllNotifications(false)}
+                    />
+
+                    <div className="relative w-[420px] h-full bg-white shadow-2xl border-l flex flex-col animate-slideIn">
+                      <div className="px-6 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white flex justify-between items-center">
+                        <div className="text-lg font-semibold">
+                          All Notifications
+                        </div>
+                        <button
+                          onClick={() => setShowAllNotifications(false)}
+                          className="text-xl"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      <div className="flex-1 overflow-auto">
+                        {notifications.map((n) => (
+                          <div
+                            key={n.id}
+                            className={`px-6 py-4 border-b hover:bg-indigo-50 ${
+                              !n.read ? "bg-indigo-50/40" : ""
+                            }`}
+                          >
+                            <div className="text-sm font-medium">
+                              {n.message}
+                            </div>
+                            {n.timestamp && (
+                              <div className="text-xs text-gray-400 mt-1">
+                                {new Date(n.timestamp).toLocaleString()}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* 👤 ADMIN BUTTON + DROPDOWN */}
+              {/* 👤 ADMIN */}
               <div className="relative" ref={dropdownRef}>
                 <div
                   onClick={() => setShowDropdown(!showDropdown)}
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg cursor-pointer"
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium cursor-pointer"
                 >
                   👤 Admin Panel
                 </div>
@@ -207,27 +275,25 @@ const toggleNotifications = async () => {
                       onClick={handleProfile}
                       className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                     >
-                      👤 Profile
+                      Profile
                     </button>
 
                     <button
                       onClick={handleLogout}
                       className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                     >
-                      🚪 Logout
+                      Logout
                     </button>
                   </div>
                 )}
               </div>
             </div>
-
           </div>
         </header>
 
-        <main className="p-3 sm:p-6">
-          <div className="max-w-7xl mx-auto">
-            {renderContent()}
-          </div>
+        {/* ================= MAIN ================= */}
+        <main className="p-6">
+          <div className="max-w-7xl mx-auto">{renderContent()}</div>
         </main>
       </div>
     </div>

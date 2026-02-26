@@ -8,6 +8,8 @@ import CreateQuotation from './CreateQuotation';
 import Invoice from './Invoice';
 import MyInvoice from './MyInvoice';
 import MyProfile from './MyProfile';
+import AllNotifications from "./AllNotifications";
+
 
 
 const EmployeePanel = () => {
@@ -20,6 +22,8 @@ const EmployeePanel = () => {
 
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
+  const bellRef = useRef(null);
+const [showAllNotifications, setShowAllNotifications] = useState(false);
 
   const handleCreateQuotation = (client = null) => {
     setSelectedClient(client);
@@ -37,6 +41,17 @@ const EmployeePanel = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+  const handleClickOutside = (e) => {
+    if (bellRef.current && !bellRef.current.contains(e.target)) {
+      setShowNotifications(false);
+    }
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => document.removeEventListener("mousedown", handleClickOutside);
+}, []);
 
   const handleProfile = () => {
     setActiveModule('profile');
@@ -65,6 +80,7 @@ useEffect(() => {
     }
   };
 
+  // initial load
   fetchNotifications();
   const interval = setInterval(fetchNotifications, 30000); // REFRESH EVERY 30 SECONDS
   return () => clearInterval(interval);
@@ -90,6 +106,7 @@ const toggleNotifications = async () => {
       case 'invoice': return <Invoice />;
       case 'myinvoice': return <MyInvoice />;
       case 'profile': return <MyProfile />;
+      case "allNotifications": return <AllNotifications notifications={notifications} />;
       default: return <EmployeeDashboard />;
     }
   };
@@ -137,9 +154,9 @@ const toggleNotifications = async () => {
               </button>
 
               <div>
-                <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-                  <span className="sm:hidden">QuoteApp</span>
+                <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   <span className="hidden sm:inline">Quotation Management System</span>
+                  <span className="sm:hidden">QMS</span>
                 </h1>
                 <p className="text-xs sm:text-sm text-gray-500 mt-1 hidden sm:block">
                   Professional Business Solutions
@@ -147,82 +164,153 @@ const toggleNotifications = async () => {
               </div>
             </div>
 
-            {/* 🔔 NOTIFICATION + EMPLOYEE */}
-<div className="flex items-center gap-3">
+           {/* 🔔 NOTIFICATION + EMPLOYEE */}
+            <div className="flex items-center gap-3">
 
-  {/* 🔔 PREMIUM BELL */}
-  <div className="relative">
-    <button
-      onClick={toggleNotifications}
-      className="w-10 h-10 flex items-center justify-center rounded-full 
-                 bg-gradient-to-r from-indigo-500 to-purple-600
-                 text-white shadow-lg hover:scale-105 transition-transform"
-    >
-      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M12 2a7 7 0 00-7 7v4.586l-.707.707A1 1 0 005 17h14a1 1 0 00.707-1.707L19 13.586V9a7 7 0 00-7-7zm0 20a3 3 0 003-3H9a3 3 0 003 3z"/>
-      </svg>
+              {/* 🔔 BELL */}
+              <div className="relative" ref={bellRef}>
+                <button
+                  onClick={toggleNotifications}
+                  className="w-10 h-10 flex items-center justify-center rounded-full 
+                            bg-gradient-to-r from-indigo-500 to-purple-600
+                            text-white shadow-lg hover:scale-105 transition-transform"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2a7 7 0 00-7 7v4.586l-.707.707A1 1 0 005 17h14a1 1 0 00.707-1.707L19 13.586V9a7 7 0 00-7-7zm0 20a3 3 0 003-3H9a3 3 0 003 3z"/>
+                  </svg>
 
-      {notifications.length > 0 && (
-        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full shadow">
-          {notifications.length}
-        </span>
-      )}
-    </button>
+                  {notifications.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full shadow">
+                      {notifications.length}
+                    </span>
+                  )}
+                </button>
 
-    {showNotifications && (
-      <div className="absolute right-0 mt-3 w-80 bg-white rounded-xl shadow-2xl border z-50 max-h-96 overflow-auto">
-        <div className="p-3 border-b font-semibold text-gray-700">
-          Notifications
-        </div>
+                {/* 🔽 DROPDOWN */}
+                {showNotifications && (
+                  <div className="absolute right-0 mt-2 w-80 z-50">
+                    <div className="absolute -top-2 right-6 w-4 h-4 bg-white rotate-45 shadow-md"></div>
 
-        {notifications.length === 0 ? (
-          <div className="p-4 text-sm text-gray-500">
-            No notifications
-          </div>
-        ) : (
-          notifications.slice(0, 8).map((n) => (
-  <div key={n.id} className="px-4 py-3 border-b hover:bg-gray-50 text-sm">
-    <div className="font-medium text-gray-800">{n.message}</div>
-    {/* ADD THIS LINE BELOW */}
-    <div className="text-[10px] text-gray-400 mt-1">
-      {new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-    </div>
-  </div>
-))
-        )}
-      </div>
-    )}
-  </div>
+                    <div className="bg-white border rounded-2xl shadow-2xl overflow-hidden">
+                      <div className="px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold">
+                        Notifications
+                      </div>
 
-      {/* 👤 EMPLOYEE BUTTON + DROPDOWN */}
-      <div className="relative" ref={dropdownRef}>
-        <div
-          onClick={() => setShowDropdown(!showDropdown)}
-          className="bg-gradient-to-r from-green-400 to-blue-500 text-white px-2 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-medium shadow-lg cursor-pointer"
-        >
-          <span className="sm:hidden">👤</span>
-          <span className="hidden sm:inline">👤 Employee Panel</span>
-        </div>
+                      <div className="max-h-80 overflow-auto">
+                        {notifications.length === 0 ? (
+                          <div className="p-6 text-sm text-gray-500 text-center">
+                            No notifications
+                          </div>
+                        ) : (
+                          notifications.slice(0, 8).map((n) => (
+                            <div
+                              key={n.id}
+                              className={`px-4 py-3 border-b border-gray-100 hover:bg-indigo-50 transition ${
+                                !n.read ? "bg-indigo-50/40" : ""
+                              }`}
+                            >
+                              <div className="text-sm font-medium text-gray-800">
+                                {n.message}
+                              </div>
 
-        {showDropdown && (
-          <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-xl border z-50">
-            <button
-              onClick={handleProfile}
-              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-            >
-              👤 Profile
-            </button>
+                              {n.timestamp && (
+                                <div className="text-[10px] text-gray-400 mt-1">
+                                  {new Date(n.timestamp).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
 
-            <button
-              onClick={handleLogout}
-              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-            >
-              🚪 Logout
-            </button>
-          </div>
-        )}
-      </div>
+                      {/* VIEW ALL */}
+                      <div
+                        onClick={() => {
+                          setActiveModule("allNotifications");
+                          setShowNotifications(false);
+                        }}
+                        className="px-4 py-3 text-center text-sm font-semibold text-indigo-600 hover:bg-indigo-50 cursor-pointer"
+                      >
+                        View All Notifications →
+                      </div>
+                    </div>
+                  </div>
+                )}
 
+                {/* 🔷 FULL PANEL */}
+                {showAllNotifications && (
+                  <div className="fixed inset-0 z-[60] flex justify-end">
+                    <div
+                      className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+                      onClick={() => setShowAllNotifications(false)}
+                    />
+
+                    <div className="relative w-[420px] h-full bg-white shadow-2xl border-l flex flex-col animate-slideIn">
+                      <div className="px-6 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white flex justify-between items-center">
+                        <div className="text-lg font-semibold">All Notifications</div>
+                        <button
+                          onClick={() => setShowAllNotifications(false)}
+                          className="text-white/80 hover:text-white text-xl"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      <div className="flex-1 overflow-auto">
+                        {notifications.map((n) => (
+                          <div
+                            key={n.id}
+                            className={`px-6 py-4 border-b hover:bg-indigo-50 transition ${
+                              !n.read ? "bg-indigo-50/40" : ""
+                            }`}
+                          >
+                            <div className="text-sm font-medium text-gray-800">
+                              {n.message}
+                            </div>
+
+                            {n.timestamp && (
+                              <div className="text-xs text-gray-400 mt-1">
+                                {new Date(n.timestamp).toLocaleString()}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 👤 EMPLOYEE BUTTON */}
+              <div className="relative" ref={dropdownRef}>
+                <div
+                  onClick={() => setShowDropdown(!showDropdown)}
+                  className="bg-gradient-to-r from-green-400 to-blue-500 text-white px-2 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-medium shadow-lg cursor-pointer"
+                >
+                  👤 Employee Panel
+                </div>
+
+                {showDropdown && (
+                  <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-xl border z-50">
+                    <button
+                      onClick={handleProfile}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                    >
+                      👤 Profile
+                    </button>
+
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                    >
+                      🚪 Logout
+                    </button>
+                  </div>
+                )}
+              </div>
     </div>
 
           </div>
