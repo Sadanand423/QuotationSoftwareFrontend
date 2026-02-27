@@ -1,15 +1,16 @@
 import React from 'react';
+import { LayoutDashboard, FileText, Receipt, Users, UserCog, BarChart3, User } from "lucide-react";
 
 const Sidebar = ({ activeModule, setActiveModule, sidebarOpen, setSidebarOpen }) => {
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊', gradient: 'from-blue-500 to-blue-600' },
-    { id: 'quotations', label: 'Quotations', icon: '📋', gradient: 'from-green-500 to-green-600' },
-    { id: 'invoices', label: 'Invoices', icon: '📄', gradient: 'from-indigo-500 to-indigo-600' },
-    { id: 'clients', label: 'Clients', icon: '👥', gradient: 'from-purple-500 to-purple-600' },
-    { id: 'employees', label: 'Employee', icon: '👨‍💼', gradient: 'from-orange-500 to-orange-600' },
-    { id: 'reports', label: 'Reports', icon: '📈', gradient: 'from-indigo-500 to-indigo-600' },
-    { id: 'profile', label: 'Profile', icon: '👤', gradient: 'from-gray-500 to-gray-600' }
-  ];
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, gradient: 'from-blue-500 to-blue-600' },
+  { id: 'quotations', label: 'Quotations', icon: FileText, gradient: 'from-green-500 to-green-600' },
+  { id: 'invoices', label: 'Invoices', icon: Receipt, gradient: 'from-indigo-500 to-indigo-600' },
+  { id: 'clients', label: 'Clients', icon: Users, gradient: 'from-purple-500 to-purple-600' },
+  { id: 'employees', label: 'Employee', icon: UserCog, gradient: 'from-orange-500 to-orange-600' },
+  { id: 'reports', label: 'Reports', icon: BarChart3, gradient: 'from-indigo-500 to-indigo-600' },
+  { id: 'profile', label: 'Profile', icon: User, gradient: 'from-gray-500 to-gray-600' }
+];
   return (
     <>
       {/* Mobile overlay */}
@@ -61,8 +62,9 @@ const Sidebar = ({ activeModule, setActiveModule, sidebarOpen, setSidebarOpen })
                   : 'hover:bg-gray-700/50 hover:transform hover:scale-105'
               }`}
             >
-              <span className="text-xl sm:text-2xl mr-3 sm:mr-4 group-hover:animate-pulse">{item.icon}</span>
-              <span className="font-medium text-sm sm:text-base">{item.label}</span>
+<span className="text-xl sm:text-2xl mr-3 sm:mr-4 group-hover:animate-pulse">
+  {React.createElement(item.icon)}
+</span>              <span className="font-medium text-sm sm:text-base">{item.label}</span>
               {activeModule === item.id && (
                 <div className="ml-auto w-2 h-2 bg-white rounded-full animate-pulse"></div>
               )}

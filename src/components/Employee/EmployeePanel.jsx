@@ -363,7 +363,7 @@
               </div>
             </header>
 
-            <main className="p-3 sm:p-6">
+            <main className="pt-2 pb-3 px-3 sm:pt-4 sm:px-6 sm:pb-6">
               <div className="max-w-7xl mx-auto">
                 {renderContent()}
               </div>

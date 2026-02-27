@@ -72,13 +72,13 @@ const EmployeeDashboard = ({ onCreateQuotation }) => {
   }, [currentEmpId]);
 
   return (
-    <div className="space-y-4 sm:space-y-6 lg:space-y-8 p-4 sm:p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-6 sm:space-y-8 mt-1 sm:mt-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
             Dashboard Overview
           </h2>
-          <p className="text-gray-500 mt-1 sm:mt-2 text-sm sm:text-base">Welcome back! Here's what's happening with your work today.</p>
+          <p className="text-gray-500 mt-2 text-sm sm:text-base">Welcome back! Here's what's happening with your work today.</p>
         </div>
         <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105 self-start sm:self-auto">
           <span className="font-semibold text-sm sm:text-base">📅 {new Date().toLocaleDateString()}</span>
