@@ -19,6 +19,7 @@ const AllNotifications = ({ notifications, setNotifications }) => {
   
 
 // ================= DELETE SINGLE =================
+
 const deleteNotification = async (id) => {
   if (!id || id === "undefined") {
     console.error("Cannot delete: ID is invalid", id);
@@ -121,23 +122,18 @@ const deleteNotification = async (id) => {
                   </span>
 
 
-                 
-              
-
-
                <button
-  onClick={() => {
-    // We trust AdminPanel gave us a clean n.id
-    if (!n.id) {
-      console.error("Critical: No ID found on object", n);
-      return;
-    }
-    deleteNotification(n.id);
-  }}
-  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
->
-  <Trash size={18} />
-</button>
+                  onClick={() => {
+                    // We trust AdminPanel gave us a clean n.id
+                    if (!n.id) {
+                      console.error("Critical: No ID found on object", n);
+                      return;
+                    }
+                    deleteNotification(n.id);
+                  }}
+                  className="p-2 text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
+                  <Trash size={18} />
+                </button>
                 </div>
               </div>
             ))}
