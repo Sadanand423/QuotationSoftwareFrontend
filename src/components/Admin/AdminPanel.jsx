@@ -21,100 +21,98 @@
       const bellRef = useRef(null);
       const dropdownRef = useRef(null);
       const navigate = useNavigate();
+      const readInSession = useRef(new Set());
 
-      // ================= FETCH NOTIFICATIONS =================
-      useEffect(() => {
-      const fetchNotifications = async () => {
-        try {
-          const res = await fetch("http://localhost:8080/api/notifications/admin");
-          if (!res.ok) return;
+      // ================= FETCH NOTIFICATIONS ================
 
-          const incoming = await res.json();
 
-          setNotifications(prev => {
-            const prevMap = new Map(prev.map(n => [n.id, n]));
+useEffect(() => {
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch("http://localhost:8080/api/notifications/admin");
+      if (!res.ok) return;
+      const incoming = await res.json();
 
-            return incoming.map(n => {
-      const existing = prevMap.get(n.id);
+      // This will show you exactly what is inside the data
+     // console.log("First item check:", incoming[0]); 
 
-      // if already in state → keep read status
-      if (existing) return existing;
-
-      // if backend already says read → keep it
-      if (n.read === true) return n;
-
-      // otherwise new → unread
-      return { ...n, read: false };
-    });
-          });
-
-        } catch (e) {
-          console.error("Notification fetch error", e);
+      const formatted = incoming.map((n, index) => {
+        // MAPPING LOGIC:
+        // 1. Try n.id (Standard)
+        // 2. Try n._id (MongoDB default)
+        // 3. Try n._id.$oid (MongoDB Object format)
+        let actualId = null;
+        
+        if (n.id) {
+          actualId = n.id;
+        } else if (n._id) {
+          actualId = typeof n._id === 'object' ? n._id.$oid : n._id;
         }
-      };
 
-      fetchNotifications();
+        return {
+          id: actualId, // If this is null, the delete button will show 'Critical Error'
+          message: n.message,
+          timestamp: n.timestamp,
+          type: n.type,
+          read: n.read === true || n.isRead === true || readInSession.current.has(actualId)
+        };
+      });
 
-      // auto refresh every 5 seconds
-      const interval = setInterval(fetchNotifications, 5000);
+      setNotifications(formatted);
+    } catch (e) {
+      console.error("Notification fetch error", e);
+    }
+  };
 
-      return () => clearInterval(interval);
-    }, []);
+  fetchNotifications();
+  const interval = setInterval(fetchNotifications, 5000);
+  return () => clearInterval(interval);
+}, []);
 
       // ================= TOGGLE NOTIFICATIONS =================
       const toggleNotifications = () => {
-      const newState = !showNotifications;
+  if (showNotifications) {
+    // If it's currently open and we are CLOSING it:
+    markAllAsRead();
+    setShowNotifications(false);
+  } else {
+    // Opening it
+    setShowNotifications(true);
+  }
+};
 
-      // closing
-      if (!newState && showNotifications) {
-        setShowNotifications(false);
+// Helper function to handle the API call and local state update
+const markAllAsRead = () => {
+  if (unreadCount === 0) return; // Don't call API if nothing is unread
 
-        setNotifications(prev =>
-          prev.map(n =>
-            !n.read ? { ...n, read: true } : n
-          )
-        );
+  // Add current unread IDs to the session shield
+  notifications.forEach(n => {
+    const id = n.id || n._id;
+    if (id) readInSession.current.add(id);
+  });
 
-        fetch("http://localhost:8080/api/notifications/mark-read/ADMIN", {
-          method: "POST",
-        }).catch(() => {});
-        return;
-      }
+  // Update UI immediately
+  setNotifications(prev => prev.map(n => ({ ...n, read: true })));
 
-      setShowNotifications(true);
-    };
+  // Persist to database
+  fetch("http://localhost:8080/api/notifications/mark-read/ADMIN", {
+    method: "POST",
+  }).catch((err) => console.error("Failed to mark read", err));
+};
 
       // ================= CLOSE ON OUTSIDE CLICK =================
-      useEffect(() => {
-      const handleClickOutside = (e) => {
-        if (bellRef.current && !bellRef.current.contains(e.target)) {
-          if (showNotifications) {
-
-            // 1️⃣ close instantly
-            setShowNotifications(false);
-
-            // 2️⃣ update UI instantly
-            setNotifications(prev =>
-              prev.map(n =>
-                !n.read ? { ...n, read: true } : n
-              )
-            );
-
-            // 3️⃣ call API in background
-            fetch("http://localhost:8080/api/notifications/mark-read/ADMIN", {
-              method: "POST",
-            }).catch(() => {});
-          }
-        }
-
-        if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-          setShowDropdown(false);
-        }
-      };
-
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [showNotifications]);
+     useEffect(() => {
+  const handleClickOutside = (e) => {
+    if (bellRef.current && !bellRef.current.contains(e.target)) {
+      if (showNotifications) {
+        markAllAsRead(); // ✅ This handles marking read when clicking outside
+        setShowNotifications(false);
+      }
+    }
+  };
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => document.removeEventListener("mousedown", handleClickOutside);
+}, [showNotifications, notifications]); // 👈 Added notifications here
 
       // ================= NAVIGATION =================
       const handleProfile = () => {
@@ -144,7 +142,7 @@
           case "profile":
             return <EditProfile />;
           case "allNotifications":
-          return <AllNotifications notifications={notifications} />;
+          return <AllNotifications notifications={notifications} setNotifications={setNotifications} />;
           default:
             return <Dashboard />;
         }
@@ -226,7 +224,7 @@
                             ) : (
                               notifications.slice(0, 8).map((n) => (
                                 <div
-                                key={n.id}
+                                key={n.id || n._id || Math.random()}
                                 className={`px-4 py-3 border-b border-gray-200 ${
                                   !n.read ? "bg-indigo-100" : "bg-white hover:bg-gray-50"
                                 }`}
@@ -252,15 +250,16 @@
                           </div>
 
                           {/* VIEW ALL */}
-                          <div
-                            onClick={() => {
-                            setActiveModule("allNotifications");
-                              setShowNotifications(false);
-                            }}
-                            className="px-4 py-3 text-center text-sm font-semibold text-indigo-600 hover:bg-indigo-50 cursor-pointer"
-                          >
-                            View All Notifications →
-                          </div>
+<div
+  onClick={() => {
+    markAllAsRead(); // 👈 Add this call here
+    setActiveModule("allNotifications");
+    setShowNotifications(false);
+  }}
+  className="px-4 py-3 text-center text-sm font-semibold text-indigo-600 hover:bg-indigo-50 cursor-pointer"
+>
+  View All Notifications →
+</div>
                         </div>
                       </div>
                     )}
@@ -289,7 +288,7 @@
                           <div className="flex-1 overflow-auto">
                             {notifications.map((n) => (
                               <div
-                                key={n.id}
+                                key={n.id || n._id}
                                 className={`px-6 py-4 border-b hover:bg-indigo-50 ${
                                   !n.read ? "bg-indigo-50/40" : ""
                                 }`}
