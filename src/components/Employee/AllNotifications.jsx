@@ -75,7 +75,7 @@ const AllNotifications = ({ notifications, setNotifications }) => {
           <button
             onClick={deleteAllNotifications}
             disabled={isDeletingAll}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-xl transition-all font-semibold text-sm disabled:opacity-50 shadow-sm"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-xl transition-all font-semibold text-sm disabled:opacity-50"
           >
             <Trash2 size={16} />
             {isDeletingAll ? "Clearing..." : "Clear All"}
@@ -115,21 +115,10 @@ const AllNotifications = ({ notifications, setNotifications }) => {
                     {n.type?.replace("QUOTATION_", "") || "INFO"}
                   </span>
 
-                  {/* Read/New Status Badge */}
-                  {!n.read ? (
-                    <span className="px-3 py-1 text-xs rounded-full bg-indigo-100 text-indigo-700 font-semibold animate-pulse">
-                      New
-                    </span>
-                  ) : (
-                    <span className="px-3 py-1 text-xs rounded-full bg-gray-100 text-gray-600">
-                      Read
-                    </span>
-                  )}
-
                   {/* Delete Action - Only visible clearly on hover or for Admin */}
                   <button
                     onClick={() => deleteNotification(n.id)}
-                    className="p-2 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all ml-2"
+                    className="p-2 text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                     title="Delete Notification"
                   >
                     <Trash size={18} />
