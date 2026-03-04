@@ -1,11 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import mainlogo from "../../assets/mainlogo.webp";
+
 
 const Invoice = () => {
-  const navigate = useNavigate();
-  const [showForm, setShowForm] = useState(false);
-  const [selectedQuotation, setSelectedQuotation] = useState(null);
   
+  const navigate = useNavigate();
+  const [signature, setSignature] = useState(null);
+  const [selectedQuotation, setSelectedQuotation] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  
+  const [showPreview, setShowPreview] = useState(false);
+  const printRef = useRef();
+  // Create a policy to "trust" the HTML we generate for printing
+const printPolicy = window.trustedTypes?.createPolicy("printPolicy", {
+  createHTML: (string) => string,
+});
+
   // ✅ Dynamic State for Backend Data
   const [approvedQuotations, setApprovedQuotations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -109,10 +120,6 @@ useEffect(() => {
   };
   
 
-  const handlePrintInvoice = () => {
-    window.print();
-  };
-
   const generateInvoice = (quotation) => {
   const rawAmount = typeof quotation.totalCost === 'string' 
     ? parseFloat(quotation.totalCost.replace(/[₹,]/g, '')) 
@@ -135,6 +142,71 @@ useEffect(() => {
   });
   setSelectedQuotation(quotation);
   setShowForm(true);
+};
+
+
+const handleInvoicePrint = () => {
+  const printContent = printRef.current.innerHTML;
+
+  // Collect all styles to ensure the preview isn't blank
+  const styles = Array.from(document.styleSheets)
+    .map(sheet => {
+      try {
+        if (sheet.href) return `<link rel="stylesheet" href="${sheet.href}">`;
+        if (sheet.ownerNode) return `<style>${sheet.ownerNode.innerHTML}</style>`;
+      } catch (e) { return ""; }
+      return "";
+    }).join("");
+
+  const fullHTML = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Invoice - ${invoiceData.invoiceNumber}</title>
+        ${styles}
+        <style>
+          /* Set the page size to A4 and remove default browser margins */
+          @page { 
+            size: A4; 
+            margin: 10mm; /* Gives the printer some breathing room */
+          }
+          
+          body { 
+            margin: 0; 
+            padding: 0; 
+            -webkit-print-color-adjust: exact !important; 
+            print-color-adjust: exact !important;
+          }
+
+          /* This mimics your 'border-2 border-black' look from the preview */
+          .print-container { 
+            border: 2px solid black !important; 
+            padding: 20px;
+            min-height: 270mm; /* Ensures the border stretches down the A4 page */
+            box-sizing: border-box;
+          }
+          
+          /* Ensures images like the logo and signature load before printing */
+          img { max-width: 100%; display: block; }
+        </style>
+      </head>
+      <body>
+        <div class="print-container">${printContent}</div>
+        <script>
+          window.onload = () => {
+            // Give extra time for the signature blob and logo to render
+            setTimeout(() => { 
+              window.print(); 
+              window.onafterprint = () => window.close();
+            }, 800);
+          };
+        </script>
+      </body>
+    </html>`;
+
+  const blob = new Blob([fullHTML], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
 };
 
   return (
@@ -307,7 +379,7 @@ useEffect(() => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Tax Rate (%):</label>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">GST (%):</label>
                   <input 
                     type="number" 
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm sm:text-base"
@@ -326,6 +398,26 @@ useEffect(() => {
                 </div>
               </div>
             </div>
+
+            {/* Signature Upload */}
+<div>
+  <label className="block text-sm font-semibold text-gray-700 mb-2">
+    Upload Signature:
+  </label>
+
+  <input
+    type="file"
+    accept="image/*"
+    className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+    onChange={(e) => {
+      const file = e.target.files[0];
+      if (file) {
+        setSignature(URL.createObjectURL(file));
+      }
+    }}
+  />
+
+</div>
 
             {/* Payment Terms */}
             <div>
@@ -346,10 +438,10 @@ useEffect(() => {
                 Generate Invoice
               </button>
               <button 
-                onClick={handlePrintInvoice}
-                className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-lg hover:from-blue-600 hover:to-blue-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base">
-                Preview Invoice
-              </button>
+  onClick={() => setShowPreview(true)}
+  className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-lg hover:from-blue-600 hover:to-blue-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base">
+  Preview Invoice
+</button>
               <button 
                 onClick={() => setShowForm(false)}
                 className="bg-gradient-to-r from-gray-500 to-gray-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-lg hover:from-gray-600 hover:to-gray-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base"
@@ -360,7 +452,258 @@ useEffect(() => {
           </div>
         </div>
       )}
-    </div>
+    
+{showPreview && (
+<div className="fixed inset-0 bg-black/40 overflow-y-auto z-50 p-10 flex flex-col items-center">
+
+{/* A4 PAGE */}
+<div className="bg-white w-[794px] min-h-[900px] p-8 shadow-xl">
+
+{/* SINGLE BORDER */}
+<div ref={printRef} className="border-2 border-black h-full p-6 text-[14px] flex flex-col justify-between">
+
+
+{/* HEADER */}
+<div>
+
+<div className="flex justify-between items-start border-b-2 border-black pb-4">
+
+<div className="flex gap-4">
+
+<img src={mainlogo} className="w-20 border p-1"/>
+
+<div>
+
+<h2 className="text-lg font-bold tracking-wide">
+SMARTMATRIX Digital Services
+</h2>
+
+<p className="text-xs">
+First Floor, Survey No. 21, Ganesham Commercial-A, Office No 102-A,<br />
+Aundh-Ravet BRTS Rd, Pimple Saudagar, Pune 411027
+</p>
+
+<p className="text-xs mt-1">
+Phone: 9112108484
+</p>
+
+</div>
+
+</div>
+
+<h1 className="text-2xl font-bold tracking-widest">
+INVOICE
+</h1>
+
+</div>
+
+
+{/* TAX TITLE */}
+<div className="text-center text-gray-500 font-bold text-base py-3 border-b">
+TAX INVOICE
+</div>
+
+
+{/* BILL + DETAILS */}
+<div className="grid grid-cols-2 border-b">
+
+<div className="p-3 border-r">
+
+<h3 className="font-bold mb-2">BILL TO:</h3>
+
+<p><b>Client Name:</b> {invoiceData.clientName}</p>
+<p><b>Phone:</b> {invoiceData.clientPhone}</p>
+<p><b>Email:</b> {invoiceData.clientEmail}</p>
+<p><b>Address:</b> {invoiceData.clientAddress}</p>
+
+</div>
+
+
+<div className="p-3 text-sm">
+
+<div className="flex justify-between border-b py-1">
+<span>Invoice No:</span>
+<span>{invoiceData.invoiceNumber}</span>
+</div>
+
+<div className="flex justify-between border-b py-1">
+<span>Invoice Date:</span>
+<span>{invoiceData.invoiceDate}</span>
+</div>
+
+<div className="flex justify-between border-b py-1">
+<span>Salesperson:</span>
+<span>{currentEmpName}</span>
+</div>
+
+<div className="flex justify-between border-b py-1">
+<span>Payment Method:</span>
+<span className="text-green-600 font-semibold">Cash</span>
+</div>
+
+<div className="flex justify-between py-1">
+<span>Payment Status:</span>
+<span className="text-red-600 font-semibold">Paid</span>
+</div>
+
+</div>
+
+</div>
+
+
+{/* PRODUCT TABLE */}
+<table className="w-full border text-sm mt-4">
+
+<thead className="bg-gray-200 font-semibold">
+
+<tr>
+<th className="border p-2">Sr No.</th>
+<th className="border p-2">Name of Project/Service</th>
+
+<th className="border p-2">Price</th>
+
+<th className="border p-2">Total</th>
+</tr>
+
+</thead>
+
+<tbody>
+
+<tr>
+
+<td className="border text-center">1</td>
+
+<td className="border p-2">
+{invoiceData.projectName}
+</td>
+
+
+
+<td className="border text-center">
+₹{Number(invoiceData.totalAmount).toLocaleString("en-IN")}
+</td>
+
+
+
+<td className="border text-right pr-2">
+₹{Number(invoiceData.finalAmount).toLocaleString("en-IN")}
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+
+{/* TOTAL SECTION */}
+<div className="grid grid-cols-2 border mt-6">
+
+<div className="p-3 border-r">
+
+<p className="font-semibold">
+Total in words:
+</p>
+
+<p className="font-bold mt-2 uppercase">
+{Number(invoiceData.finalAmount).toLocaleString("en-IN")} RUPEES ONLY
+</p>
+
+</div>
+
+
+<div className="p-3">
+
+<div className="flex justify-between py-1">
+<span>Taxable Amount:</span>
+<span>₹{invoiceData.totalAmount}</span>
+</div>
+
+<div className="flex justify-between py-1">
+<span>GST :</span>
+<span>₹0.00</span>
+</div>
+
+<div className="flex justify-between font-bold py-2 border-t">
+<span>Total Amount:</span>
+<span>₹{invoiceData.finalAmount}</span>
+</div>
+
+<div className="flex justify-between py-1">
+<span>Paid Amount:</span>
+<span>₹{invoiceData.finalAmount}</span>
+</div>
+
+<div className="flex justify-between border-t pt-2 font-bold text-orange-600">
+<span>Balance Amount:</span>
+<span>₹0.00</span>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+{/* SIGNATURE */}
+
+<div className="flex justify-end mt-10">
+
+  <div className="text-center">
+
+    {signature ? (
+      <img
+        src={signature}
+        alt="Signature"
+        className="h-16 mx-auto mb-2"
+      />
+    ) : (
+      <div className="w-44 border-t border-black"></div>
+    )}
+
+    <p className="mt-1 text-sm font-semibold">
+      Authorized Signature
+    </p>
+
+  </div>
+
+</div>
+
+</div>
+
+</div>
+
+{/* BUTTONS BELOW PAGE */}
+
+<div className="flex gap-6">
+
+<button
+onClick={handleInvoicePrint}
+className="bg-blue-600 text-white px-6 py-2 rounded shadow hover:bg-blue-700"
+>
+Print
+</button>
+
+<button
+onClick={() => setShowPreview(false)}
+className="bg-gray-600 text-white px-6 py-2 rounded shadow hover:bg-gray-700"
+>
+Close
+</button>
+
+</div>
+
+</div>
+
+
+
+)}
+
+
+    </div> 
+    
+    
   );
 };
 
