@@ -498,7 +498,7 @@ const getStrength = () => {
   return (
     <div className="p-4 sm:p-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">👥 Employee Management</h2>
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800"> Employee Management</h2>
         <div className="flex gap-3">
           <div className="relative">
             <input
@@ -516,7 +516,7 @@ const getStrength = () => {
             onClick={ handleAddEmployee}
             className="bg-blue-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-sm sm:text-base font-medium hover:bg-blue-700"
           >
-            ✨ Add Employee
+            + Add Employee
           </button>
         </div>
       </div>
@@ -535,7 +535,7 @@ const getStrength = () => {
               onClick={handleAddEmployee}
               className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg font-medium text-sm"
             >
-              ✨ Add First Employee
+              + Add First Employee
             </button>
           )}
         </div>
@@ -570,11 +570,11 @@ const getStrength = () => {
               
               <div className="space-y-1 sm:space-y-2 mb-3 sm:mb-4 text-xs sm:text-sm">
                 <div className="flex items-center text-gray-600">
-                  <span>📧</span>
+                  
                   <span className="ml-2 truncate flex-1">{employee.email}</span>
                 </div>
                 <div className="flex items-center text-gray-600">
-                  <span>📱</span>
+                  
                   <span className="ml-2">{employee.phone}</span>
                 </div>
               </div>
@@ -584,19 +584,19 @@ const getStrength = () => {
                   onClick={() => handleViewEmployee(employee)}
                   className="flex-1 bg-green-500 text-white py-2 px-2 sm:px-3 rounded text-xs sm:text-sm font-medium hover:bg-green-600"
                 >
-                  👁️ View
+                   View
                 </button>
                 <button
                   onClick={() => handleEditEmployee(employee)}
                   className="flex-1 bg-blue-500 text-white py-2 px-2 sm:px-3 rounded text-xs sm:text-sm font-medium hover:bg-blue-600"
                 >
-                  ✏️ Edit
+                  Edit
                 </button>
                 <button
                   onClick={() => deleteEmployee(employee.id)}
                   className="flex-1 bg-red-500 text-white py-2 px-2 sm:px-3 rounded text-xs sm:text-sm font-medium hover:bg-red-600"
                 >
-                  🗑️ Delete
+                   Delete
                 </button>
               </div>
             </div>

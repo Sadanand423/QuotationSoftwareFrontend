@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-
+// ✅ 1. Import Lucide icons
+import { 
+  FileText, 
+  Clock, 
+  CheckCircle2, 
+  Users, 
+  History 
+} from 'lucide-react';
 
 const EmployeeDashboard = ({ onCreateQuotation }) => {
   const [stats, setStats] = useState([]);
@@ -7,68 +14,52 @@ const EmployeeDashboard = ({ onCreateQuotation }) => {
   const currentEmpId = localStorage.getItem("empId") || "EMP-001";
 
   useEffect(() => {
-  const loadEmployeeDashboard = async () => {
-    try {
-      const res = await fetch(`http://localhost:8080/api/quotations/employee/id/${currentEmpId}`
-      );
-      const quotations = await res.json();
+    const loadEmployeeDashboard = async () => {
+      try {
+        const res = await fetch(`http://localhost:8080/api/quotations/employee/id/${currentEmpId}`);
+        const quotations = await res.json();
 
-      // ✅ FETCH ALL CLIENTS
-      const clientRes = await fetch("http://localhost:8080/api/clients");
-      let clients = [];
-      if (clientRes.ok) {
-        clients = await clientRes.json();
+        const clientRes = await fetch("http://localhost:8080/api/clients");
+        let clients = [];
+        if (clientRes.ok) {
+          clients = await clientRes.json();
+        }
+        const totalClients = clients.length;
+
+        const pending = quotations.filter(
+          q => (q.status || "").toLowerCase() === "pending"
+        ).length;
+
+        const approvedThisMonth = quotations.filter(q => {
+          if ((q.status || "").toLowerCase() !== "approved" || !q.date) return false;
+          const parts = q.date.includes("/") ? q.date.split("/") : q.date.split("-");
+          if (parts.length !== 3) return false;
+          const [day, month, year] = parts;
+          const d = new Date(`${year}-${month}-${day}`);
+          const now = new Date();
+          return (
+            d.getMonth() === now.getMonth() &&
+            d.getFullYear() === now.getFullYear()
+          );
+        }).length;
+
+        const latestThree = [...quotations].reverse().slice(0, 3);
+        setRecentQuotations(latestThree);
+
+        // ✅ 2. Update stats using component names (No quotes around the icons)
+        setStats([
+          { title: 'My Quotations', value: quotations.length.toString(), color: 'from-blue-500 to-blue-600', icon: FileText, change: '' },
+          { title: 'Pending Approval', value: pending.toString(), color: 'from-yellow-500 to-orange-500', icon: Clock, change: '' },
+          { title: 'Approved This Month', value: approvedThisMonth.toString(), color: 'from-green-500 to-emerald-500', icon: CheckCircle2, change: '' },
+          { title: 'My Clients', value: totalClients.toString(), color: 'from-purple-500 to-pink-500', icon: Users, change: '' }
+        ]);
+
+      } catch (err) {
+        console.error("Employee dashboard error:", err);
       }
-      const totalClients = clients.length;
+    };
 
-      // STATUS COUNTS
-      const pending = quotations.filter(
-        q => (q.status || "").toLowerCase() === "pending"
-      ).length;
-
-      const approved = quotations.filter(
-        q => (q.status || "").toLowerCase() === "approved"
-      ).length;
-
-      // APPROVED THIS MONTH (your working parser)
-      const approvedThisMonth = quotations.filter(q => {
-        if ((q.status || "").toLowerCase() !== "approved" || !q.date) return false;
-
-        const parts = q.date.includes("/")
-          ? q.date.split("/")
-          : q.date.split("-");
-
-        if (parts.length !== 3) return false;
-
-        const [day, month, year] = parts;
-        const d = new Date(`${year}-${month}-${day}`);
-
-        const now = new Date();
-        return (
-          d.getMonth() === now.getMonth() &&
-          d.getFullYear() === now.getFullYear()
-        );
-      }).length;
-
-      // LATEST 3
-      const latestThree = [...quotations].reverse().slice(0, 3);
-      setRecentQuotations(latestThree);
-
-      // STATS
-      setStats([
-        { title: 'My Quotations', value: quotations.length.toString(), color: 'from-blue-500 to-blue-600', icon: '📋', change: '' },
-        { title: 'Pending Approval', value: pending.toString(), color: 'from-yellow-500 to-orange-500', icon: '⏳', change: '' },
-        { title: 'Approved This Month', value: approvedThisMonth.toString(), color: 'from-green-500 to-emerald-500', icon: '✅', change: '' },
-        { title: 'My Clients', value: totalClients.toString(), color: 'from-purple-500 to-pink-500', icon: '👥', change: '' }
-      ]);
-
-    } catch (err) {
-      console.error("Employee dashboard error:", err);
-    }
-  };
-
-
-  loadEmployeeDashboard();
+    loadEmployeeDashboard();
   }, [currentEmpId]);
 
   return (
@@ -86,31 +77,37 @@ const EmployeeDashboard = ({ onCreateQuotation }) => {
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {stats.map((stat, index) => (
-          <div key={index} className="group relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-white to-gray-50 rounded-2xl shadow-lg group-hover:shadow-2xl transition-all duration-300 transform group-hover:scale-105"></div>
-            <div className="relative bg-white p-4 sm:p-6 rounded-2xl border border-gray-100">
-              <div className="flex items-center justify-between mb-3 sm:mb-4">
-                <div className={`w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-r ${stat.color} rounded-xl flex items-center justify-center shadow-lg`}>
-                  <span className="text-white text-lg sm:text-2xl">{stat.icon}</span>
+        {stats.map((stat, index) => {
+          // ✅ 3. Assign icon to a Capitalized variable to render as a component
+          const IconComponent = stat.icon;
+          return (
+            <div key={index} className="group relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-white to-gray-50 rounded-2xl shadow-lg group-hover:shadow-2xl transition-all duration-300 transform group-hover:scale-105"></div>
+              <div className="relative bg-white p-4 sm:p-6 rounded-2xl border border-gray-100">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <div className={`w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-r ${stat.color} rounded-xl flex items-center justify-center shadow-lg text-white`}>
+                    {/* ✅ 4. Render icon component */}
+                    <IconComponent size={24} strokeWidth={2.5} />
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs sm:text-sm font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                      {stat.change}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-xs sm:text-sm font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                    {stat.change}
-                  </span>
-                </div>
+                <h3 className="text-gray-500 text-xs sm:text-sm font-medium mb-1">{stat.title}</h3>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-800">{stat.value}</p>
               </div>
-              <h3 className="text-gray-500 text-xs sm:text-sm font-medium mb-1">{stat.title}</h3>
-              <p className="text-2xl sm:text-3xl font-bold text-gray-800">{stat.value}</p>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 sm:p-6">
           <h3 className="text-lg sm:text-xl font-bold text-white flex items-center">
-            <span className="mr-2">📈</span>
+            {/* ✅ Updated Recent Quotations header icon */}
+            <History className="mr-2" size={24} />
             Recent Quotations
           </h3>
           <p className="text-blue-100 text-xs sm:text-sm mt-1">Latest quotation activities</p>
@@ -168,4 +165,4 @@ const EmployeeDashboard = ({ onCreateQuotation }) => {
   );
 };
 
-export default EmployeeDashboard;
+export default EmployeeDashboard;   
