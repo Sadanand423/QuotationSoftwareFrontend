@@ -23,6 +23,15 @@ const QuotationPreview = ({ formData, onClose }) => {
     }
   };
 
+  // GST calculation for preview
+const gstPercent = formData.gstPercent || 0;
+
+const gstAmount = gstPercent
+  ? Math.round((formData.totalCost * gstPercent) / 100)
+  : 0;
+
+const finalAmount = formData.totalCost + gstAmount;
+
   
 const handlePrint = () => {
   const printContent = document.querySelector("#print-section .content").innerHTML;
@@ -48,6 +57,7 @@ ${Array.from(document.styleSheets)
       return "";
     }
   })
+
   .join("")}
 <style>
   /* 1. Kill browser default margins completely */
@@ -253,7 +263,7 @@ const handleSendForApprovalClick = () => {
             <p><strong>Version:</strong> {formData.version}</p>
             <p><strong>Currency:</strong> {formData.currency}</p>
             <p className="text-lg font-bold text-orange-700 mt-2">
-              Total Cost: {formatIndianCurrency(formData.totalCost)}
+               Final Amount: {formatIndianCurrency(gstPercent > 0 ? finalAmount : formData.totalCost)}
             </p>
           </div>
    
@@ -300,6 +310,31 @@ const handleSendForApprovalClick = () => {
                     {formatIndianCurrency(formData.totalCost)}
                   </td>
                 </tr>
+
+                {/* Show GST only if GST > 0 */}
+{gstPercent > 0 && (
+  <tr className="bg-gray-100 font-semibold">
+    <td colSpan="3" className="border p-3 text-right">
+      GST ({gstPercent}%)
+    </td>
+    <td className="border p-3 text-center text-blue-700">
+      {formatIndianCurrency(gstAmount)}
+    </td>
+  </tr>
+)}
+
+{/* Show Final Amount only if GST applied */}
+{gstPercent > 0 && (
+  <tr className="bg-green-100 font-bold">
+    <td colSpan="3" className="border p-3 text-right">
+      FINAL AMOUNT
+    </td>
+    <td className="border p-3 text-center text-green-700 text-lg">
+      {formatIndianCurrency(finalAmount)}
+    </td>
+  </tr>
+)}
+
               </tbody>
             </table>
           </div>
