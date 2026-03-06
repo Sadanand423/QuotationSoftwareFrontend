@@ -121,30 +121,41 @@ const Invoice = () => {
     if (currentEmpId) fetchData();
   }, [currentEmpId]);
 
-  const generateInvoice = (quotation) => {
-    const rawAmount = typeof quotation.totalCost === 'string'
-      ? parseFloat(quotation.totalCost.replace(/[₹,]/g, ''))
-      : (quotation.totalCost || 0);
+ const generateInvoice = (quotation) => {
 
-    const taxRateVal = parseFloat(invoiceData.taxRate) || 0;
-    const taxAmount = (rawAmount * taxRateVal) / 100;
-    const finalTotal = rawAmount + taxAmount;
+  const rawAmount =
+    typeof quotation.totalCost === "string"
+      ? parseFloat(quotation.totalCost.replace(/[₹,]/g, ""))
+      : quotation.totalCost || 0;
 
-    setInvoiceData(prev => ({
-      ...prev,
-      quotationId: quotation.quotationNumber || quotation.id,
-      clientName: quotation.client || '',
-      clientEmail: quotation.clientEmail || '',
-      clientPhone: quotation.clientPhone || '',
-      clientAddress: quotation.clientAddress || '',
-      projectName: quotation.project || '',
-      totalAmount: rawAmount,
-      taxAmount: taxAmount,
-      finalAmount: finalTotal
-    }));
-    setSelectedQuotation(quotation);
-    setShowForm(true);
-  };
+  const gstPercent = quotation.gstPercent || 0;
+  const gstAmount = quotation.gstAmount || 0;
+
+  // If finalAmount exists use it, otherwise calculate
+  const finalTotal =
+    quotation.finalAmount || rawAmount + gstAmount;
+
+  setInvoiceData((prev) => ({
+    ...prev,
+    quotationId: quotation.quotationNumber || quotation.id,
+    clientName: quotation.client || "",
+    clientEmail: quotation.clientEmail || "",
+    clientPhone: quotation.clientPhone || "",
+    clientAddress: quotation.clientAddress || "",
+    projectName: quotation.project || "",
+
+    totalAmount: rawAmount,
+
+    // 🔥 Fetch GST directly from DB
+    taxRate: gstPercent,
+    taxAmount: gstAmount,
+
+    finalAmount: finalTotal,
+  }));
+
+  setSelectedQuotation(quotation);
+  setShowForm(true);
+};
 
   const handleSaveInvoice = async () => {
     try {
@@ -601,10 +612,10 @@ TAX INVOICE
 </p>
   </div>
           <div className="p-0 text-sm">
-            <div className="flex justify-between p-2 border-b border-gray-300"><span>Taxable Amount:</span><span>₹{Number(invoiceData.totalAmount).toLocaleString("en-IN")}</span></div>
-            <div className="flex justify-between p-2 border-b border-gray-300 text-gray-600"><span>GST ({invoiceData.taxRate}%):</span><span>₹{Number(invoiceData.taxAmount).toLocaleString("en-IN")}</span></div>
-            <div className="flex justify-between p-2 font-black text-base"><span>Total Amount:</span><span>₹{Number(invoiceData.finalAmount).toLocaleString("en-IN")}</span></div>
-            <div className="flex justify-between p-2 text-gray-700 bg-gray-50"><span>Paid Amount:</span><span className="font-bold">₹{Number(invoiceData.totalPaidAmount).toLocaleString("en-IN")}</span></div>
+            <div className="flex justify-between p-2 border-b border-gray-300"><span>Total Project Amount:</span><span>₹{Number(invoiceData.totalAmount).toLocaleString("en-IN")}</span></div>
+            <div className="flex justify-between p-2 border-b border-gray-300 text-gray-900"><span>GST ({invoiceData.taxRate}%):</span><span>₹{Number(invoiceData.taxAmount).toLocaleString("en-IN")}</span></div>
+            <div className="flex justify-between p-2 font-black text-base"><span>Final Amount:</span><span>₹{Number(invoiceData.finalAmount).toLocaleString("en-IN")}</span></div>
+            <div className="flex justify-between p-2 text-green-900 font-bold bg-green-100"><span>Paid Amount:</span><span className="font-bold">₹{Number(invoiceData.totalPaidAmount).toLocaleString("en-IN")}</span></div>
             <div className="flex justify-between p-2 border-t-2 border-orange-500 bg-orange-50 font-bold text-orange-700">
               <span>Balance Amount:</span>
               <span>₹{Number(invoiceData.balanceAmount).toLocaleString("en-IN")}</span>
