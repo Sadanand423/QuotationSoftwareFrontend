@@ -1,467 +1,247 @@
-import React, { useRef } from "react";
-import headerImg from "../../assets/header.jpg";
-import footerImg from "../../assets/footer.jpg";
-import html2pdf from "html2pdf.js";
-
-
-
+import React from 'react';
 
 const QuotationPreview = ({ formData, onClose }) => {
-  const fileInputRef = useRef(null);
-  console.log("Preview formData:", formData);
   if (!formData) return null;
 
-  const formatIndianCurrency = (amount) => {
-    if (!amount || amount === 0) return "₹ 0";
-
-    if (amount >= 10000000) {
-      return `₹ ${(amount / 10000000).toFixed(2)} Crores`;
-    } else if (amount >= 100000) {
-      return `₹ ${(amount / 100000).toFixed(2)} Lakhs`;
-    } else { 
-      return `₹ ${amount.toLocaleString("en-IN")}`;
-    }
-  };
-
-  // GST calculation for preview
-const gstPercent = formData.gstPercent || 0;
-
-const gstAmount = gstPercent
-  ? Math.round((formData.totalCost * gstPercent) / 100)
-  : 0;
-
-const finalAmount = formData.totalCost + gstAmount;
-
-  
-const handlePrint = () => {
-  const printContent = document.querySelector("#print-section .content").innerHTML;
-
-  const headerURL = new URL(headerImg, window.location.href).href;
-  const footerURL = new URL(footerImg, window.location.href).href;
-
-  const printWindow = window.open("", "", "width=1200,height=800");
-
-  printWindow.document.write(`
-<html>
-<head>
-<title>Quotation</title>
-${Array.from(document.styleSheets)
-  .map(sheet => {
-    try {
-      if (sheet.href) {
-        return `<link rel="stylesheet" href="${sheet.href}">`;
-      } else if (sheet.ownerNode && sheet.ownerNode.innerHTML) {
-        return `<style>${sheet.ownerNode.innerHTML}</style>`;
-      }
-    } catch (e) {
-      return "";
-    }
-  })
-
-  .join("")}
-<style>
-  /* 1. Kill browser default margins completely */
-  @page {
-    size: A4;
-    margin: 0;
-  }
-
-  html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    font-family: Arial, sans-serif;
-    -webkit-print-color-adjust: exact;
-  }
-
-  /* 2. REPEATING HEADER */
-  thead {
-    display: table-header-group;
-  }
-
-  /* 3. THE FIXED FOOTER FIX */
-  .footer-fixed {
-    position: fixed;
-    bottom: 0; /* Pinned to the very bottom */
-    left: 0;
-    width: 100%;
-    height: auto;
-    z-index: 9999;
-    line-height: 0; 
-    font-size: 0;    
-  }
-
-  .footer-fixed img {
-    width: 100%;
-    display: block; /* Removes inline spacing */
-    margin: 0;
-    padding: 0;
-  }
-
-  .page-header img {
-    width: 100%;
-    display: block;
-  }
-
-  /* Space under header */
-  .page-header td {
-    padding-bottom: 44px;
-  }
-
-  /* RESERVES SPACE AT BOTTOM SO TEXT DOESN'T OVERLAP IMAGE */
-  tfoot {
-    display: table-footer-group;
-  }
-
-  .footer-spacer {
-    height: 60px; /* Adjust this to match your footer height */
-  }
-
-  /* CONTENT AREA SPACING */
-  .page-content {
-    padding: 0 40px;
-    vertical-align: top;
-  }
-
- 
-  .page-content > div { margin-bottom: 26px; }
-  .page-content h3 { margin-bottom: 16px; font-weight: bold; font-size: 1.1rem; }
-  .page-content table { margin-top: 16px; margin-bottom: 24px; width: 100%; border-collapse: collapse; }
-  .page-content ul { margin-top: 12px; margin-bottom: 30px; }
-  .page-content th, .page-content td { padding: 10px; border: 1px solid #e5e7eb; }
-
-  tr { page-break-inside: avoid; }
-</style>
-</head>
-
-<body>
-  <div class="footer-fixed">
-    <img src="${footerURL}" />
-  </div>
-
-  <table style="width: 100%; border-collapse: collapse; margin: 0;">
-    <thead class="page-header">
-      <tr>
-        <td>
-          <img src="${headerURL}" />
-        </td>
-      </tr>
-    </thead>
-
-    <tbody>
-      <tr>
-        <td class="page-content">
-          ${printContent}
-        </td>
-      </tr>
-    </tbody>
-
-    <tfoot>
-      <tr>
-        <td class="footer-spacer"></td>
-      </tr>
-    </tfoot>
-  </table>
-
-  <script>
-    window.onload = () => {
-      setTimeout(() => {
-        window.print();
-      }, 700);
-    };
-  </script>
-</body>
-</html>
-`);
-
-  printWindow.document.close();
-};
-
-
-
-const handleSendForApprovalClick = () => {
-    fileInputRef.current.click();
-  };
-
-  // 3. This runs as soon as you select the PDF from your computer
-  const handleFileChange = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const data = new FormData();
-    data.append("file", file);
-
-    try {
-      const response = await fetch(
-        `http://localhost:8080/api/quotations/${formData.id}/send-approval-pdf`,
-        {
-          method: "POST",
-          body: data,
-        }
-      );
-
-      if (response.ok) {
-        alert("PDF uploaded and email sent to client! ✅");
-        onClose();
-      } else {
-        alert("Failed to send email. Check backend.");
-      }
-    } catch (error) {
-      console.error("Upload Error:", error);
-      alert("Connection error ❌");
-    }
-  };
-
-
   return (
-  <div className="fixed inset-0 bg-black/50 z-50 overflow-y-auto p-6 print:static print:bg-white print:p-0">
-
-       {/* 4. THE HIDDEN FILE INPUT */}
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        className="hidden" 
-        accept="application/pdf"
-        onChange={handleFileChange}
-      />
-    
-    <div
-      id="print-section"
-      className="bg-white w-full max-w-6xl mx-auto rounded-xl shadow-2xl print:shadow-none print:rounded-none"
-    >
-
-      {/* HEADER */}
-      <div className="header">
-        <img src={headerImg} alt="Header" className="w-full" />
-      </div>
-
-        {/* BODY */}
-        <div className="content p-8 space-y-8 text-gray-800">
-
-          {/* Quotation Info */}
-          <div className="grid grid-cols-2 gap-6 text-sm">
-            <div>
-              <p><strong>Quotation No:</strong> {formData.quotationNumber}</p>
-              <p><strong>Date:</strong> {formData.date}</p>
-              <p><strong>Valid Until:</strong> {formData.validUntil}</p>
-            </div>
-            <div>
-              <p><strong>Client:</strong> {formData.client}</p>
-              <p><strong>Email:</strong> {formData.clientEmail}</p>
-              <p><strong>Phone:</strong> {formData.clientPhone}</p>
-              <p><strong>Address:</strong> {formData.clientAddress}</p>
-            </div>
-          </div>
-
-          {/* Project Info */}
-          <div className="bg-orange-50 border border-orange-300 p-6 rounded-lg">
-            <h3 className="text-lg font-bold text-orange-700 mb-4">
-              Project Details
-            </h3>
-            <p><strong>Project:</strong> {formData.project}</p>
-            <p><strong>Version:</strong> {formData.version}</p>
-            <p><strong>Currency:</strong> {formData.currency}</p>
-            <p className="text-lg font-bold text-orange-700 mt-2">
-               Final Amount: {formatIndianCurrency(gstPercent > 0 ? finalAmount : formData.totalCost)}
-            </p>
-          </div>
-   
-          {/* About Project */}
-{formData.aboutProject && (
-  <div className="bg-yellow-50 border border-yellow-300 p-4 rounded-lg mb-6">
-    
-    <p className="text-sm text-gray-800 whitespace-pre-line">{formData.aboutProject}</p>
-  </div>
-)}
-
-
-          {/* Cost Breakdown */}
-          <div>
-            <h3 className="text-xl font-bold mb-4">
-              1. Cost Breakdown
-            </h3>
-
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border p-3">Sr</th>
-                  <th className="border p-3">Development Area</th>
-                  <th className="border p-3">Scope</th>
-                  <th className="border p-3">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {formData.costBreakdown.map((item, index) => (
-                  <tr key={index}>
-                    <td className="border p-3 text-center">{item.srNo}</td>
-                    <td className="border p-3">{item.area}</td>
-                    <td className="border p-3">{item.scope}</td>
-                    <td className="border p-3 text-center font-semibold text-orange-600">
-                      {item.amount}
-                    </td>
-                  </tr>
-                ))}
-                <tr className="bg-orange-100 font-bold">
-                  <td colSpan="3" className="border p-3 text-right">
-                    TOTAL PROJECT COST
-                  </td>
-                  <td className="border p-3 text-center text-orange-700">
-                    {formatIndianCurrency(formData.totalCost)}
-                  </td>
-                </tr>
-
-                {/* Show GST only if GST > 0 */}
-{gstPercent > 0 && (
-  <tr className="bg-gray-100 font-semibold">
-    <td colSpan="3" className="border p-3 text-right">
-      GST ({gstPercent}%)
-    </td>
-    <td className="border p-3 text-center text-blue-700">
-      {formatIndianCurrency(gstAmount)}
-    </td>
-  </tr>
-)}
-
-{/* Show Final Amount only if GST applied */}
-{gstPercent > 0 && (
-  <tr className="bg-green-100 font-bold">
-    <td colSpan="3" className="border p-3 text-right">
-      FINAL AMOUNT
-    </td>
-    <td className="border p-3 text-center text-green-700 text-lg">
-      {formatIndianCurrency(finalAmount)}
-    </td>
-  </tr>
-)}
-
-              </tbody>
-            </table>
-          </div>
-
-          
-
-          {/* Includes */}
-          <div>
-            <h3 className="text-xl font-bold mb-3 text-gray-800">
-              2. What This Cost Includes
-            </h3>
-
-            <ul className="space-y-1 text-sm">
-              {formData.includes.map((item, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <span className="text-green-600 text-lg font-bold">✔</span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Timeline */}
-          <div>
-            <h3 className="text-xl font-bold mb-4 text-gray-800">
-              3. Development Timeline
-            </h3>
-
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="bg-blue-50">
-                  <th className="border p-3">Phase</th>
-                  <th className="border p-3">Duration</th>
-                  <th className="border p-3">Deliverables</th>
-                </tr>
-              </thead>
-              <tbody>
-                {formData.timeline.map((phase, index) => (
-                  <tr key={index}>
-                    <td className="border p-3">{phase.phase}</td>
-                    <td className="border p-3">{phase.duration}</td>
-                    <td className="border p-3">{phase.deliverables}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <p className="mt-3 font-semibold">
-              Total Timeline: {formData.totalTimeline}
-            </p>
-          </div>
-
-          {/* Commercial Terms */}
-          <div>
-            <h3 className="text-xl font-bold mb-3 text-gray-800">
-              4. Commercial Terms
-            </h3>
-
-            <ul className="list-disc ml-6 space-y-2 text-sm">
-              <li><strong>Pricing Model:</strong> {formData.terms.pricingModel}</li>
-              <li><strong>Payment Milestones:</strong> {formData.terms.paymentMilestones}</li>
-              <li><strong>Taxes:</strong> {formData.terms.taxes}</li>
-              <li><strong>Domain & Server:</strong> {formData.terms.domainServer}</li>
-              <li><strong>Change Requests:</strong> {formData.terms.changeRequests}</li>
-            </ul>
-          </div>
-
-          {/* Signatures */}
-          <div className="grid grid-cols-2 gap-12 mt-10">
-            <div className="text-center">
-              {formData.projectManagerSignature && (
-                <img
-                  src={formData.projectManagerSignature}
-                  alt="PM Sign"
-                  className="w-32 h-20 mx-auto mb-3"
-                />
-              )}
-              <p className="font-bold">{formData.projectManager}</p>
-              <p className="text-sm text-gray-500">Project Manager</p>
-            </div>
-
-            <div className="text-center">
-              {formData.operationManagerSignature && (
-                <img
-                  src={formData.operationManagerSignature}
-                  alt="OM Sign"
-                  className="w-32 h-20 mx-auto mb-3"
-                />
-              )}
-              <p className="font-bold">{formData.operationManager}</p>
-              <p className="text-sm text-gray-500">Operation Manager</p>
-            </div>
-          </div>
-
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <style jsx>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .print-container, .print-container * {
+            visibility: visible;
+          }
+          .print-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            margin: 0;
+          }
+          .no-print {
+            display: none !important;
+          }
+          .print-page-1, .print-page-2 {
+            background-color: #1f2937 !important;
+            color: white !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            page-break-inside: avoid;
+          }
+          .print-page-1 {
+            page-break-after: always;
+          }
+          .print-page-2 {
+            page-break-before: always;
+          }
+        }
+      `}</style>
+      
+      <div className="bg-white rounded-lg max-w-xs sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b px-3 sm:px-6 py-3 sm:py-4 flex justify-between items-center no-print">
+          <h2 className="text-lg sm:text-xl font-bold">Quotation Preview</h2>
+          <button 
+            onClick={onClose}
+            className="bg-gray-500 text-white px-3 sm:px-4 py-2 rounded hover:bg-gray-600 text-sm sm:text-base"
+          >
+            Close
+          </button>
         </div>
-
- {/* FOOTER */}
-      <div className="footer">
-        <img src={footerImg} alt="Footer" className="w-full" />
-      </div>
-
-      {/* BUTTONS */}
-      <div className="bg-gray-100 border-t p-4 flex justify-center gap-6 print:hidden">
-        <button
-          onClick={onClose}
-          className="bg-gray-600 text-white px-6 py-2 rounded"
-        >
-          Close
-        </button>
-
-        <button
-          onClick={handlePrint}
-          className="bg-blue-600 text-white px-6 py-2 rounded"
-        >
-          Print / Save PDF
-        </button>
-
         
-  <button
-    onClick={handleSendForApprovalClick}
-    className="bg-green-600 text-white px-6 py-2 rounded"
-  >
-    Send for Approval
-  </button>
+        <div className="print-container">
+          {/* Page 1 */}
+          <div className="print-page-1 bg-gray-800 text-white">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-3 sm:p-4 md:p-6 relative overflow-hidden">
+              <div className="absolute right-0 top-0 opacity-20 hidden sm:block">
+                <div className="grid grid-cols-6 sm:grid-cols-8 gap-1 p-2 sm:p-4">
+                  {[...Array(40)].map((_, i) => (
+                    <div key={i} className="w-3 h-3 sm:w-4 sm:h-4 border border-white transform rotate-45"></div>
+                  ))}
+                </div>
+              </div>
+              <div className="relative flex items-center">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-lg flex items-center justify-center mr-3 sm:mr-4">
+                  <span className="text-orange-500 font-bold text-lg sm:text-2xl">SRES</span>
+                </div>
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold">SRES</h1>
+                  <p className="text-orange-200 text-sm sm:text-base">SMARTMATRIX</p>
+                </div>
+              </div>
+            </div>
 
+            <div className="p-3 sm:p-4 md:p-6">
+              {/* Quotation Title */}
+              <div className="text-center mb-4 sm:mb-6">
+                <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">QUOTATION</h2>
+                <div className="text-left space-y-1 text-sm sm:text-base">
+                  <p><strong>Project:</strong> {formData.project}</p>
+                  <p><strong>Client:</strong> {formData.client}</p>
+                  <p><strong>Prepared By:</strong> {formData.preparedBy}</p>
+                  <p><strong>Document Type:</strong> {formData.documentType}</p>
+                  <p><strong>Version:</strong> {formData.version}</p>
+                  <p><strong>Currency:</strong> {formData.currency}</p>
+                  <p><strong>Total Fixed Project Cost:</strong> {formData.totalCost}</p>
+                </div>
+              </div>
 
-      </div>
+              {/* Cost Breakdown */}
+              <div className="mb-4 sm:mb-6">
+                <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 border-b border-gray-600 pb-2">1. Cost Breakdown (Fixed Price – ₹2.5 Cr)</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs sm:text-sm min-w-[600px]">
+                    <thead>
+                      <tr className="border-b border-gray-600">
+                        <th className="text-left p-1 sm:p-2 w-12 sm:w-16">Sr. No</th>
+                        <th className="text-left p-1 sm:p-2">Development Area</th>
+                        <th className="text-left p-1 sm:p-2">Scope Includes</th>
+                        <th className="text-left p-1 sm:p-2 w-20 sm:w-24">Amount (₹ Lakhs)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {formData.costBreakdown.map((item, index) => (
+                        <tr key={index} className="border-b border-gray-700">
+                          <td className="p-1 sm:p-2 text-center">{item.srNo}</td>
+                          <td className="p-1 sm:p-2 font-medium">{item.area}</td>
+                          <td className="p-1 sm:p-2 text-xs sm:text-sm">{item.scope}</td>
+                          <td className="p-1 sm:p-2 text-center font-bold">{item.amount}</td>
+                        </tr>
+                      ))}
+                      <tr className="border-t-2 border-orange-500 font-bold">
+                        <td className="p-1 sm:p-2" colSpan="2">TOTAL PROJECT COST</td>
+                        <td className="p-1 sm:p-2">Fixed Enterprise Cost</td>
+                        <td className="p-1 sm:p-2 text-center text-orange-400">₹250 Lakhs (₹2.5 Crores)</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* What This Cost Includes */}
+              <div className="mb-4 sm:mb-6">
+                <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 border-b border-gray-600 pb-2">2. What This Cost Includes</h3>
+                <div className="space-y-2">
+                  {formData.includes.map((item, index) => (
+                    <div key={index} className="flex items-start">
+                      <span className="text-green-400 mr-2 mt-1">✓</span>
+                      <span className="text-xs sm:text-sm">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Page 2 */}
+          <div className="print-page-2 bg-gray-800 text-white">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-3 sm:p-4 md:p-6 relative overflow-hidden">
+              <div className="absolute right-0 top-0 opacity-20 hidden sm:block">
+                <div className="grid grid-cols-6 sm:grid-cols-8 gap-1 p-2 sm:p-4">
+                  {[...Array(40)].map((_, i) => (
+                    <div key={i} className="w-3 h-3 sm:w-4 sm:h-4 border border-white transform rotate-45"></div>
+                  ))}
+                </div>
+              </div>
+              <div className="relative flex items-center">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-lg flex items-center justify-center mr-3 sm:mr-4">
+                  <span className="text-orange-500 font-bold text-lg sm:text-2xl">SRES</span>
+                </div>
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold">SRES</h1>
+                  <p className="text-orange-200 text-sm sm:text-base">SMARTMATRIX</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 sm:p-4 md:p-6">
+              {/* Development Timeline */}
+              <div className="mb-4 sm:mb-6">
+                <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 border-b border-gray-600 pb-2">3. Development Timeline</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs sm:text-sm mb-3 sm:mb-4 min-w-[500px]">
+                    <thead>
+                      <tr className="border-b border-gray-600">
+                        <th className="text-left p-1 sm:p-2">Phase</th>
+                        <th className="text-left p-1 sm:p-2">Duration</th>
+                        <th className="text-left p-1 sm:p-2">Deliverables</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {formData.timeline.map((phase, index) => (
+                        <tr key={index} className="border-b border-gray-700">
+                          <td className="p-1 sm:p-2 font-medium">{phase.phase}</td>
+                          <td className="p-1 sm:p-2">{phase.duration}</td>
+                          <td className="p-1 sm:p-2 text-xs sm:text-sm">{phase.deliverables}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="font-bold text-sm sm:text-base">Total Estimated Timeline: {formData.totalTimeline}</p>
+              </div>
+
+              {/* Commercial Terms */}
+              <div className="mb-6 sm:mb-8">
+                <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 border-b border-gray-600 pb-2">4. Commercial Terms</h3>
+                <ul className="space-y-2 text-xs sm:text-sm">
+                  <li><strong>Pricing Model:</strong> {formData.terms.pricingModel}</li>
+                  <li><strong>Payment Milestones:</strong> {formData.terms.paymentMilestones}</li>
+                  <li><strong>Taxes:</strong> {formData.terms.taxes}</li>
+                  <li><strong>Domain & Server Cost:</strong> {formData.terms.domainServer}</li>
+                  <li><strong>Change Requests:</strong> {formData.terms.changeRequests}</li>
+                </ul>
+              </div>
+
+              {/* Company Name */}
+              <div className="text-center mb-4 sm:mb-6">
+                <h3 className="text-lg sm:text-xl font-bold">Smartmatrix Digital Services</h3>
+              </div>
+
+              {/* Signatures */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8">
+                <div className="text-center">
+                  <div className="w-20 h-12 sm:w-24 sm:h-16 border-2 border-gray-600 mx-auto mb-2 flex items-center justify-center">
+                    {formData.projectManagerSignature ? (
+                      <img src={formData.projectManagerSignature} alt="PM Signature" className="max-w-full max-h-full" />
+                    ) : (
+                      <span className="text-gray-400 text-xs">Signature</span>
+                    )}
+                  </div>
+                  <p className="font-bold text-sm sm:text-base">{formData.projectManager}</p>
+                  <p className="text-xs sm:text-sm text-gray-400">Project Manager</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-20 h-12 sm:w-24 sm:h-16 border-2 border-gray-600 mx-auto mb-2 flex items-center justify-center">
+                    {formData.operationManagerSignature ? (
+                      <img src={formData.operationManagerSignature} alt="OM Signature" className="max-w-full max-h-full" />
+                    ) : (
+                      <span className="text-gray-400 text-xs">Signature</span>
+                    )}
+                  </div>
+                  <p className="font-bold text-sm sm:text-base">{formData.operationManager}</p>
+                  <p className="text-xs sm:text-sm text-gray-400">Operation Manager</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Print Button */}
+        <div className="bg-white border-t px-3 sm:px-6 py-3 sm:py-4 text-center no-print">
+          <button 
+            onClick={() => window.print()}
+            className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 sm:px-8 py-2 sm:py-3 rounded-lg hover:from-blue-600 hover:to-blue-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center mx-auto text-sm sm:text-base"
+          >
+            <span className="mr-2 text-base sm:text-lg">🖨️</span> Print Quotation
+          </button>
+        </div>
       </div>
     </div>
   );

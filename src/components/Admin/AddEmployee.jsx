@@ -7,68 +7,65 @@ const AddEmployee = () => {
     phone: '',
     empId: '',
     joinDate: '',
-    password: '',
-    department: '',
-    photo: ''
+    password: ''
   });
-
   const [employees, setEmployees] = useState([]);
   const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
+    // Auto-generate Employee ID starting with EMP001
     const generateEmpId = () => {
       const randomNum = Math.floor(Math.random() * 999) + 1;
       return `EMP${randomNum.toString().padStart(3, '0')}`;
     };
-
+    
+    // Set current date as join date
+    const currentDate = new Date().toISOString().split('T')[0];
+    
     setFormData(prev => ({
       ...prev,
       empId: generateEmpId(),
-      joinDate: new Date().toISOString().split('T')[0]
+      joinDate: currentDate
     }));
 
+    // Load existing employees from localStorage
     const savedEmployees = localStorage.getItem('employees');
     if (savedEmployees) {
       setEmployees(JSON.parse(savedEmployees));
     }
   }, []);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handlePhotoChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFormData(prev => ({ ...prev, photo: reader.result }));
-    };
-    reader.readAsDataURL(file);
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
-
+    
+    // Add new employee to the list
     const newEmployee = { ...formData, id: Date.now() };
     const updatedEmployees = [...employees, newEmployee];
-
+    
+    // Save to localStorage
     localStorage.setItem('employees', JSON.stringify(updatedEmployees));
     setEmployees(updatedEmployees);
-
+    
+    // Show success message
     setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 2500);
-
+    setTimeout(() => setShowSuccess(false), 3000);
+    
+    // Reset form
+    const newEmpId = `EMP${(Math.floor(Math.random() * 999) + 1).toString().padStart(3, '0')}`;
     setFormData({
       name: '',
       email: '',
       phone: '',
-      empId: `EMP${(Math.floor(Math.random() * 999) + 1).toString().padStart(3, '0')}`,
+      empId: newEmpId,
       joinDate: new Date().toISOString().split('T')[0],
-      password: '',
-      department: '',
-      photo: ''
+      password: ''
+    });
+  };
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
     });
   };
 
@@ -79,176 +76,105 @@ const AddEmployee = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6 flex justify-center">
-      <div className="w-full max-w-4xl">
-        
-        <h2 className="text-3xl font-bold mb-6 text-gray-800">
-          👤 Add Employee
-        </h2>
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-6">Add Employee</h2>
+      
+      {showSuccess && (
+        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+          Employee added successfully!
+        </div>
+      )}
+      
+      <form onSubmit={handleSubmit} className="max-w-md space-y-4 mb-8">
+        <input
+          type="text"
+          name="name"
+          placeholder="Employee Name"
+          value={formData.name}
+          onChange={handleChange}
+          className="w-full p-3 border rounded-lg"
+          required
+        />
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={formData.email}
+          onChange={handleChange}
+          className="w-full p-3 border rounded-lg"
+          required
+        />
+        <input
+          type="tel"
+          name="phone"
+          placeholder="Phone"
+          value={formData.phone}
+          onChange={handleChange}
+          className="w-full p-3 border rounded-lg"
+          required
+        />
+        <input
+          type="text"
+          name="empId"
+          placeholder="Employee ID"
+          value={formData.empId}
+          className="w-full p-3 border rounded-lg bg-gray-100"
+          readOnly
+        />
+        <input
+          type="date"
+          name="joinDate"
+          value={formData.joinDate}
+          onChange={handleChange}
+          className="w-full p-3 border rounded-lg"
+          required
+        />
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={formData.password}
+          onChange={handleChange}
+          className="w-full p-3 border rounded-lg"
+          autoComplete="new-password"
+          required
+        />
+        <button
+          type="submit"
+          className="w-full bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600"
+        >
+          Add Employee
+        </button>
+      </form>
 
-        {/* SUCCESS */}
-        {showSuccess && (
-          <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
-            Employee added successfully!
+      {/* Employee List */}
+      <div>
+        <h3 className="text-xl font-bold mb-4">Employee List ({employees.length})</h3>
+        {employees.length === 0 ? (
+          <p className="text-gray-500">No employees added yet.</p>
+        ) : (
+          <div className="grid gap-4">
+            {employees.map((employee) => (
+              <div key={employee.id} className="border rounded-lg p-4 bg-white shadow">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-semibold text-lg">{employee.name}</h4>
+                    <p className="text-gray-600">ID: {employee.empId}</p>
+                    <p className="text-gray-600">Email: {employee.email}</p>
+                    <p className="text-gray-600">Phone: {employee.phone}</p>
+                    <p className="text-gray-600">Join Date: {employee.joinDate}</p>
+                  </div>
+                  <button
+                    onClick={() => deleteEmployee(employee.id)}
+                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
-
-        {/* FORM CARD */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-10">
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            {/* PHOTO SECTION */}
-            <div className="md:col-span-2 flex flex-col items-center gap-3">
-              <div className="w-28 h-28 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center border">
-                {formData.photo ? (
-                  <img
-                    src={formData.photo}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500 text-sm">Upload Photo</span>
-                )}
-              </div>
-
-              <label className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
-                Choose Photo
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoChange}
-                  className="hidden"
-                />
-              </label>
-            </div>
-
-            {/* INPUTS */}
-            <div>
-              <label className="block text-sm font-medium mb-1">Employee Name</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Email</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Phone</label>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Department</label>
-              <input
-                type="text"
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Employee ID</label>
-              <input
-                type="text"
-                value={formData.empId}
-                readOnly
-                className="w-full p-3 border rounded-lg bg-gray-100"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Join Date</label>
-              <input
-                type="date"
-                name="joinDate"
-                value={formData.joinDate}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg"
-                required
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-1">Password</label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg"
-                required
-              />
-            </div>
-
-            {/* BUTTON */}
-            <div className="md:col-span-2">
-              <button
-                type="submit"
-                className="w-full bg-blue-600 text-white py-3 rounded-lg text-lg font-semibold hover:bg-blue-700"
-              >
-                ➕ Add Employee
-              </button>
-            </div>
-
-          </form>
-        </div>
-
-        {/* EMPLOYEE LIST */}
-        <h3 className="text-2xl font-bold mb-4">Employee List</h3>
-
-        <div className="grid gap-4">
-          {employees.map(emp => (
-            <div key={emp.id} className="bg-white rounded-lg shadow p-4 flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-gray-200 overflow-hidden">
-                {emp.photo ? (
-                  <img src={emp.photo} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-blue-500 text-white font-bold">
-                    {emp.name.charAt(0).toUpperCase()}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex-1">
-                <p className="font-semibold">{emp.name}</p>
-                <p className="text-sm text-gray-600">{emp.empId}</p>
-              </div>
-
-              <button
-                onClick={() => deleteEmployee(emp.id)}
-                className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-              >
-                Delete
-              </button>
-            </div>
-          ))}
-        </div>
-
       </div>
     </div>
   );

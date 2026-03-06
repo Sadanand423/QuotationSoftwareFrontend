@@ -1,33 +1,26 @@
 @import "tailwindcss";
 
-/* Notification dropdown animation */
-@keyframes bellDropdown {
-  0% {
-    opacity: 0;
-    transform: translateY(-10px) scale(0.95);
+/* Prevent horizontal overflow */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* Hide scrollbar for desktop while keeping functionality */
+@media (min-width: 1024px) {
+  /* Hide scrollbar for webkit browsers (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
   }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+  
+  /* Hide scrollbar for Firefox */
+  html {
+    scrollbar-width: none;
+  }
+  
+  /* Ensure smooth scrolling */
+  html {
+    scroll-behavior: smooth;
   }
 }
-
-.bell-dropdown {
-  animation: bellDropdown 0.18s ease-out;
-  transform-origin: top right;
-}
-
-@keyframes bellBounce {
-  0%   { transform: scale(1); }
-  30%  { transform: scale(1.25) rotate(8deg); }
-  50%  { transform: scale(0.95) rotate(-6deg); }
-  70%  { transform: scale(1.1) rotate(4deg); }
-  100% { transform: scale(1); }
-}
-
-.bell-bounce {
-  animation: bellBounce 0.6s ease;
-}
-
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }

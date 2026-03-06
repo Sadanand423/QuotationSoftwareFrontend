@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react';
 
-
 const EmployeeManagement = () => {
- const [isFocused, setIsFocused] = useState(false);
-
   const [employees, setEmployees] = useState([]);
   const [currentView, setCurrentView] = useState('list');
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('All');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -18,108 +14,65 @@ const EmployeeManagement = () => {
     joinDate: '',
     password: '',
     status: 'Active',
-    department: 'Sales',
-    photo: ''
-
+    department: 'Sales'
   });
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  // ✅ FETCH FROM BACKEND (NO localStorage)
   useEffect(() => {
-    fetchEmployees();
-  }, []);
-
-  const fetchEmployees = async () => {
-    try {
-      const res = await fetch("http://localhost:8080/api/admin/employees");
-      const data = await res.json();
-      setEmployees(data);
-    } catch (err) {
-      console.error("Fetch error", err);
+    const savedEmployees = localStorage.getItem('employees');
+    if (savedEmployees) {
+      setEmployees(JSON.parse(savedEmployees));
     }
-  };
+  }, []);
 
   const generateEmpId = () => {
     const randomNum = Math.floor(Math.random() * 999) + 1;
     return `EMP${randomNum.toString().padStart(3, '0')}`;
   };
 
-    const handleAddEmployee = () => {
-    setSelectedEmployee(null);   // ✅ clear edit state
+  const handleAddEmployee = () => {
     setCurrentView('add');
-
     setFormData({
       name: '',
       email: '',
       phone: '',
       empId: generateEmpId(),
       joinDate: new Date().toISOString().split('T')[0],
-      password: '',
-      status: 'Active',
-      department: 'Sales',
-      photo: ''
+      password: ''
     });
   };
 
-
-const handleEditEmployee = (employee) => {
-  setCurrentView('edit');
-  setSelectedEmployee(employee);
-
-  setFormData({
-    name: employee.name ?? '',
-    email: employee.email ?? '',
-    phone: employee.phone ?? '',
-    empId: employee.empId ?? '',
-    joinDate: employee.joinDate ?? '',
-    password: employee.password ?? '',
-    status: employee.status ?? 'Active',
-    department: employee.department ?? 'Sales', 
-    photo: employee.photo ?? ''
-  });
-};
-
-
+  const handleEditEmployee = (employee) => {
+    setCurrentView('edit');
+    setSelectedEmployee(employee);
+    setFormData({ ...employee });
+  };
 
   const handleViewEmployee = (employee) => {
     setCurrentView('view');
     setSelectedEmployee(employee);
   };
 
-  // ✅ ADD + UPDATE (POST / PUT)
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-
-    // 🚨 Stop submission if password invalid
-   if (!isPasswordValid) return;
-
-  const isEdit = currentView === "edit";
-
-    const url = isEdit
-      ? `http://localhost:8080/api/admin/employees/${selectedEmployee.id}`
-      : "http://localhost:8080/api/admin/employees";
-
-    const method = isEdit ? "PUT" : "POST";
-
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await res.json();
-
-      if (isEdit) {
-        setEmployees(employees.map(emp => emp.id === data.id ? data : emp));
-      } else {
-        setEmployees([...employees, data]);
-      }
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 2000);
-      setCurrentView("list");
-    } catch (err) {
-      console.error(err);
+    
+    let updatedEmployees;
+    if (currentView === 'add') {
+      const newEmployee = { ...formData, id: Date.now() };
+      updatedEmployees = [...employees, newEmployee];
+    } else {
+      updatedEmployees = employees.map(emp => 
+        emp.id === selectedEmployee.id ? { ...formData, id: selectedEmployee.id } : emp
+      );
     }
+    
+    localStorage.setItem('employees', JSON.stringify(updatedEmployees));
+    setEmployees(updatedEmployees);
+    
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000);
+    
+    setCurrentView('list');
   };
 
   const handleChange = (e) => {
@@ -129,19 +82,11 @@ const handleEditEmployee = (employee) => {
     });
   };
 
-  // ✅ DELETE FROM BACKEND
-  const deleteEmployee = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this employee?')) return;
-
-    try {
-      await fetch(`http://localhost:8080/api/admin/employees/${id}`, {
-        method: "DELETE"
-      });
-
-      setEmployees(employees.filter(emp => emp.id !== id));
-      setCurrentView("list");
-    } catch (err) {
-      console.error("Delete failed", err);
+  const deleteEmployee = (id) => {
+    if (window.confirm('Are you sure you want to delete this employee?')) {
+      const updatedEmployees = employees.filter(emp => emp.id !== id);
+      setEmployees(updatedEmployees);
+      localStorage.setItem('employees', JSON.stringify(updatedEmployees));
     }
   };
 
@@ -149,42 +94,6 @@ const handleEditEmployee = (employee) => {
     setCurrentView('list');
     setSelectedEmployee(null);
   };
-
-  const handlePhotoChange = (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onloadend = () => {
-    setFormData(prev => ({
-      ...prev,
-      photo: reader.result // base64
-    }));
-  };
-  reader.readAsDataURL(file);
-};
-
-// 🔐 Password Validation
-const password = formData.password || "";
-
-const passwordRules = {
-  length: password.length >= 8,
-  capital: /[A-Z]/.test(password),
-  number: /[0-9]/.test(password),
-  special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
-};
-
-const validCount = Object.values(passwordRules).filter(Boolean).length;
-const isPasswordValid = validCount === 4;
-
-
-
-const getStrength = () => {
-  if (validCount <= 1) return { text: "Weak", color: "bg-red-500", width: "25%" };
-  if (validCount === 2 || validCount === 3)
-    return { text: "Medium", color: "bg-yellow-500", width: "60%" };
-  return { text: "Strong", color: "bg-green-500", width: "100%" };
-};
 
   // Add/Edit Form View
   if (currentView === 'add' || currentView === 'edit') {
@@ -212,7 +121,7 @@ const getStrength = () => {
             </div>
           )}
           
-          <form className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 overflow-visible">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">👤 Name</label>
               <input
@@ -231,7 +140,6 @@ const getStrength = () => {
               <input
                 type="email"
                 name="email"
-                autoComplete="new-email"
                 value={formData.email}
                 onChange={handleChange}
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
@@ -252,8 +160,31 @@ const getStrength = () => {
                 required
               />
             </div>
-
-             <div>
+            
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">🆔 Employee ID</label>
+              <input
+                type="text"
+                name="empId"
+                value={formData.empId}
+                className="w-full p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 text-xs sm:text-sm"
+                readOnly
+              />
+            </div>
+            
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">📅 Join Date</label>
+              <input
+                type="date"
+                name="joinDate"
+                value={formData.joinDate}
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
+                required
+              />
+            </div>
+            
+            <div>
               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">🏢 Department</label>
               <select
                 name="department"
@@ -272,91 +203,7 @@ const getStrength = () => {
             </div>
             
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">🆔 Employee ID</label>
-              <input
-                type="text"
-                name="empId"
-                value={formData.empId}
-                className="w-full p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 text-xs sm:text-sm"
-                readOnly
-              />
-            </div>
-
-          
-          <div className="relative">
-  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-    🔐 Password
-  </label>
-
-  <input
-    type="password"
-    name="password"
-    autoComplete="new-password"
-    value={formData.password}
-    onChange={handleChange}
-    onFocus={() => setIsFocused(true)}
-    onBlur={() => setIsFocused(false)}
-    className={`w-full p-2 rounded-lg text-xs sm:text-sm border transition-all duration-300 ${
-      isFocused && isPasswordValid
-        ? "border-green-500 bg-green-50 focus:ring-2 focus:ring-green-500"
-        : "border-gray-300 focus:ring-2 focus:ring-blue-500"
-    }`}
-    placeholder="Enter strong password"
-    required
-  />
-
-  {isFocused && formData.password.length > 0 && !isPasswordValid && (
-    <div
-      className="absolute left-0 top-full mt-2 w-full z-20 
-                 bg-red-50 border border-red-300 text-red-600 
-                 text-xs px-3 py-2 rounded-lg shadow-lg animate-slideFade 
-                 flex items-start gap-2"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-4 w-4 mt-0.5 flex-shrink-0"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={2}
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M12 9v2m0 4h.01M10.29 3.86l-7.2 12.48A1 1 0 004 18h16a1 1 0 00.91-1.66l-7.2-12.48a1 1 0 00-1.72 0z"
-        />
-      </svg>
-
-      <span>
-        Password must be at least 8 characters and include an uppercase letter, number and special character.
-      </span>
-    </div>
-  )}
-</div>
-
-
-
-
-
-
-            
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">📅 Join Date</label>
-              <input
-                type="date"
-                name="joinDate"
-                value={formData.joinDate}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
-                required
-              />
-            </div>
-            
-
-
-            
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">✅ Status</label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">🟢 Status</label>
               <select
                 name="status"
                 value={formData.status}
@@ -368,57 +215,14 @@ const getStrength = () => {
                 <option value="Inactive">Inactive</option>
               </select>
             </div>
-             
-             <div className="col-span-1 sm:col-span-2 flex items-center justify-between gap-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
-  
-  {/* Photo Preview */}
-  <div className="flex items-center gap-3">
-    <div className="w-14 h-14 rounded-full bg-blue-100 border-2 border-blue-400 overflow-hidden flex items-center justify-center">
-      {formData.photo ? (
-        <img
-          src={formData.photo}
-          alt="Employee"
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        <span className="text-blue-600 font-bold text-sm">IMG</span>
-      )}
-    </div>
-
-    <div>
-      <p className="text-sm font-semibold text-gray-700">Profile Photo</p>
-      <p className="text-xs text-gray-500">PNG / JPG up to 2MB</p>
-    </div>
-  </div>
-
-  {/* Upload Button */}
-  <label className="cursor-pointer">
-    <input
-      type="file"
-      accept="image/*"
-      onChange={handlePhotoChange}
-      className="hidden"
-    />
-    <span className="bg-green-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg text-xs sm:text-sm font-medium">
-      Upload
-    </span>
-  </label>
-
-</div>
-
+            
             <div className="col-span-1 sm:col-span-2 pt-3 sm:pt-4">
-             <button
+              <button
                 type="submit"
-                disabled={!isPasswordValid}
-                className={`w-full py-2.5 rounded-md text-sm font-medium transition-all duration-200
-                  ${isPasswordValid
-                    ? "bg-blue-600 hover:bg-blue-700 text-white"
-                    : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}
+                className="w-full bg-blue-600 text-white p-2 sm:p-3 rounded-lg font-semibold hover:bg-blue-700 text-sm"
               >
-                {currentView === 'add' ? 'Add Employee' : 'Update Employee'}
+                {currentView === 'add' ? '✨ Add Employee' : '💾 Update Employee'}
               </button>
-
-
             </div>
           </form>
         </div>
@@ -498,7 +302,7 @@ const getStrength = () => {
   return (
     <div className="p-4 sm:p-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800"> Employee Management</h2>
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">👥 Employee Management</h2>
         <div className="flex gap-3">
           <div className="relative">
             <input
@@ -513,10 +317,10 @@ const getStrength = () => {
             </svg>
           </div>
           <button
-            onClick={ handleAddEmployee}
+            onClick={handleAddEmployee}
             className="bg-blue-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-sm sm:text-base font-medium hover:bg-blue-700"
           >
-            + Add Employee
+            ✨ Add Employee
           </button>
         </div>
       </div>
@@ -535,7 +339,7 @@ const getStrength = () => {
               onClick={handleAddEmployee}
               className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg font-medium text-sm"
             >
-              + Add First Employee
+              ✨ Add First Employee
             </button>
           )}
         </div>
@@ -548,20 +352,14 @@ const getStrength = () => {
           ).map((employee, index) => (
             <div key={employee.id} className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 md:p-6 hover:shadow-md transition-shadow">
               <div className="flex items-center mb-3 sm:mb-4">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
-                      {employee.photo ? (
-                      <img
-                        src={employee.photo}
-                        alt={employee.name}
-                        className="w-full h-full object-cover"
-    />
-  ) : (
-    <span className="text-white font-bold text-xs sm:text-sm md:text-lg bg-blue-500 w-full h-full flex items-center justify-center">
-      {employee.name?.charAt(0).toUpperCase()}
-    </span>
-  )}
-</div>
-
+                <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-r ${
+                  index % 4 === 0 ? 'from-blue-400 to-blue-600' :
+                  index % 4 === 1 ? 'from-green-400 to-green-600' :
+                  index % 4 === 2 ? 'from-purple-400 to-purple-600' :
+                  'from-orange-400 to-orange-600'
+                } flex items-center justify-center text-white font-bold text-xs sm:text-sm md:text-lg`}>
+                  {employee.name.charAt(0).toUpperCase()}
+                </div>
                 <div className="ml-3 flex-1 min-w-0">
                   <h4 className="font-bold text-gray-800 text-sm sm:text-base md:text-lg truncate">{employee.name}</h4>
                   <p className="text-xs sm:text-sm text-gray-500">{employee.empId}</p>
@@ -570,11 +368,11 @@ const getStrength = () => {
               
               <div className="space-y-1 sm:space-y-2 mb-3 sm:mb-4 text-xs sm:text-sm">
                 <div className="flex items-center text-gray-600">
-                  
+                  <span>📧</span>
                   <span className="ml-2 truncate flex-1">{employee.email}</span>
                 </div>
                 <div className="flex items-center text-gray-600">
-                  
+                  <span>📱</span>
                   <span className="ml-2">{employee.phone}</span>
                 </div>
               </div>
@@ -584,19 +382,19 @@ const getStrength = () => {
                   onClick={() => handleViewEmployee(employee)}
                   className="flex-1 bg-green-500 text-white py-2 px-2 sm:px-3 rounded text-xs sm:text-sm font-medium hover:bg-green-600"
                 >
-                   View
+                  👁️ View
                 </button>
                 <button
                   onClick={() => handleEditEmployee(employee)}
                   className="flex-1 bg-blue-500 text-white py-2 px-2 sm:px-3 rounded text-xs sm:text-sm font-medium hover:bg-blue-600"
                 >
-                  Edit
+                  ✏️ Edit
                 </button>
                 <button
                   onClick={() => deleteEmployee(employee.id)}
                   className="flex-1 bg-red-500 text-white py-2 px-2 sm:px-3 rounded text-xs sm:text-sm font-medium hover:bg-red-600"
                 >
-                   Delete
+                  🗑️ Delete
                 </button>
               </div>
             </div>

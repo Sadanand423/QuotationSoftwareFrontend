@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const Reports = () => {
   const [activeReport, setActiveReport] = useState('overview');
@@ -6,98 +6,40 @@ const Reports = () => {
   const [quotations, setQuotations] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [clients, setClients] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  // ✅ Optimized Fetching with cleanup and error handling
   useEffect(() => {
-    let isMounted = true;
-    const fetchData = async () => {
-      try {
-        const [qRes, eRes, cRes] = await Promise.all([
-          fetch('http://localhost:8080/api/quotations'),
-          fetch('http://localhost:8080/api/admin/employees'),
-          fetch('http://localhost:8080/api/clients')
-        ]);
-
-        const qData = await qRes.json();
-        const eData = await eRes.json();
-        const cData = await cRes.json();
-
-        if (isMounted) {
-          const extractArray = (data) => {
-            if (Array.isArray(data)) return data;
-            if (data && typeof data === 'object') {
-              return data.employees || data.content || data.data || [];
-            }
-            return [];
-          };
-
-          setQuotations(extractArray(qData));
-          setEmployees(extractArray(eData));
-          setClients(extractArray(cData));
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error("Error fetching report data:", error);
-        if (isMounted) setLoading(false);
-      }
-    };
-    fetchData();
-    return () => { isMounted = false; };
+    setQuotations(JSON.parse(localStorage.getItem('quotations') || '[]'));
+    setEmployees(JSON.parse(localStorage.getItem('employees') || '[]'));
+    setClients(JSON.parse(localStorage.getItem('clients') || '[]'));
   }, []);
 
-  // ✅ MEMOIZED STATS: This only runs when 'quotations' changes.
-  // This prevents the "NaN" or "0" flicker and improves speed.
-  const stats = useMemo(() => {
-    const parseAmount = (val) => {
-      if (typeof val === 'number') return val;
-      if (!val) return 0;
-      return parseFloat(String(val).replace(/[₹$,\s]/g, '')) || 0;
-    };
+  const reportTabs = [
+    { id: 'overview', label: 'Overview', icon: '📊' }
+  ];
 
-    const formatRupees = (num) => 
-      new Intl.NumberFormat('en-IN', {
-        style: 'currency',
-        currency: 'INR',
-        maximumFractionDigits: 0,
-      }).format(num);
-
+  const getQuotationStats = () => {
     const total = quotations.length;
-    const approvedList = quotations.filter(q => q.status?.toLowerCase() === 'approved');
-    const pendingCount = quotations.filter(q => q.status?.toLowerCase() === 'pending').length;
-    const draftCount = quotations.filter(q => q.status?.toLowerCase() === 'draft' || !q.status).length;
-    const rejectedCount = quotations.filter(q => q.status?.toLowerCase() === 'rejected').length;
-
-    const totalValue = quotations.reduce((sum, q) => 
-      sum + parseAmount(q.totalCost || q.amount || q.totalAmount), 0);
-
-    const approvedValue = approvedList.reduce((sum, q) => 
-      sum + parseAmount(q.totalCost || q.amount || q.totalAmount), 0);
-
-    return {
-      total,
-      approved: approvedList.length,
-      pending: pendingCount,
-      draft: draftCount,
-      rejected: rejectedCount,
-      totalValueFormatted: formatRupees(totalValue),
-      approvedValueFormatted: formatRupees(approvedValue),
-      conversionRate: total > 0 ? ((approvedList.length / total) * 100).toFixed(1) : "0.0"
-    };
-  }, [quotations]);
-
-  // ✅ IMPROVED CSV EXPORT: Handles commas and quotes in data
-  const exportToCSV = (data, filename) => {
-    if (!data.length) return;
-    const headers = Object.keys(data[0]).join(",");
-    const csvRows = data.map(row => 
-      Object.values(row).map(value => {
-        const escaped = ('' + value).replace(/"/g, '""');
-        return `"${escaped}"`;
-      }).join(",")
-    );
+    const approved = quotations.filter(q => q.status === 'Approved').length;
+    const pending = quotations.filter(q => q.status === 'Pending').length;
+    const draft = quotations.filter(q => q.status === 'Draft').length;
+    const rejected = quotations.filter(q => q.status === 'Rejected').length;
+    const totalValue = quotations.reduce((sum, q) => {
+      const amount = q.amount ? String(q.amount).replace('$', '').replace(',', '') : '0';
+      return sum + parseFloat(amount) || 0;
+    }, 0);
+    const approvedValue = quotations.filter(q => q.status === 'Approved').reduce((sum, q) => {
+      const amount = q.amount ? String(q.amount).replace('$', '').replace(',', '') : '0';
+      return sum + parseFloat(amount) || 0;
+    }, 0);
     
-    const csvContent = "data:text/csv;charset=utf-8," + [headers, ...csvRows].join("\n");
+    return { total, approved, pending, draft, rejected, totalValue, approvedValue, conversionRate: total > 0 ? ((approved / total) * 100).toFixed(1) : 0 };
+  };
+
+  const stats = getQuotationStats();
+
+  const exportToCSV = (data, filename) => {
+    const csvContent = "data:text/csv;charset=utf-8," + 
+      data.map(row => Object.values(row).join(",")).join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -107,20 +49,8 @@ const Reports = () => {
     document.body.removeChild(link);
   };
 
-  const reportTabs = [
-    { id: 'overview', label: 'Overview', icon: '📊' }
-  ];
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-3 sm:p-4 md:p-6 animate-in fade-in duration-500">
+    <div className="p-3 sm:p-4 md:p-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
         <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
           Reports & Analytics
@@ -129,7 +59,7 @@ const Reports = () => {
           <select 
             value={dateRange} 
             onChange={(e) => setDateRange(e.target.value)}
-            className="border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+            className="border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           >
             <option value="thisMonth">This Month</option>
             <option value="lastMonth">Last Month</option>
@@ -138,13 +68,14 @@ const Reports = () => {
           </select>
           <button 
             onClick={() => exportToCSV(quotations, 'quotations-report.csv')}
-            className="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:shadow-lg active:scale-95 transition-all duration-300 font-medium text-sm"
+            className="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:shadow-lg transition-all duration-300 font-medium text-sm"
           >
             Export CSV
           </button>
         </div>
       </div>
 
+      {/* Tab Navigation */}
       <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         <div className="border-b border-gray-200">
           <nav className="flex space-x-2 sm:space-x-4 px-3 sm:px-6 overflow-x-auto">
@@ -167,7 +98,6 @@ const Reports = () => {
 
         <div className="p-3 sm:p-4 md:p-6">
           <div className="space-y-6">
-            {/* KPI Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
               <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-3 sm:p-4 rounded-lg sm:rounded-xl border border-blue-200">
                 <h3 className="text-xs sm:text-sm text-blue-600 mb-1 font-medium">Total Quotations</h3>
@@ -188,45 +118,30 @@ const Reports = () => {
             </div>
             
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-              {/* Status Distribution Card */}
+              {/* Pie Chart - Quotation Status */}
               <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
                 <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 sm:p-6">
                   <h3 className="text-lg sm:text-xl font-bold text-white flex items-center">
-                    <span className="mr-2">📊</span> Status Distribution
+                    <span className="mr-2">📊</span>
+                    Status Distribution
                   </h3>
                   <p className="text-indigo-100 text-xs sm:text-sm mt-1">Quotation breakdown</p>
                 </div>
                 <div className="p-6 flex flex-col items-center">
                   <div className="relative w-40 h-40 mb-6">
                     <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                      <circle cx="50" cy="50" r="40" fill="none" stroke="#e5e7eb" strokeWidth="8"/>
-                      <circle 
-                        cx="50" cy="50" r="40" fill="none" stroke="#10b981" strokeWidth="8" 
+                      <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" strokeWidth="8"/>
+                      <circle cx="50" cy="50" r="40" fill="none" stroke="#10b981" strokeWidth="8" 
                         strokeDasharray={`${(stats.approved / (stats.total || 1)) * 251.2} 251.2`} 
-                        strokeLinecap="round" 
-                        className="transition-all duration-1000 ease-out"
-                      />
-                      <circle 
-                        cx="50" cy="50" r="40" fill="none" stroke="#f59e0b" strokeWidth="8" 
+                        strokeLinecap="round" className="transition-all duration-1000"/>
+                      <circle cx="50" cy="50" r="40" fill="none" stroke="#f59e0b" strokeWidth="8" 
                         strokeDasharray={`${(stats.pending / (stats.total || 1)) * 251.2} 251.2`} 
                         strokeDashoffset={`-${(stats.approved / (stats.total || 1)) * 251.2}`}
-                        strokeLinecap="round" 
-                        className="transition-all duration-1000 ease-out"
-                      />
-                      <circle 
-                        cx="50" cy="50" r="40" fill="none" stroke="#6b7280" strokeWidth="8" 
+                        strokeLinecap="round" className="transition-all duration-1000"/>
+                      <circle cx="50" cy="50" r="40" fill="none" stroke="#6b7280" strokeWidth="8" 
                         strokeDasharray={`${(stats.draft / (stats.total || 1)) * 251.2} 251.2`} 
                         strokeDashoffset={`-${((stats.approved + stats.pending) / (stats.total || 1)) * 251.2}`}
-                        strokeLinecap="round" 
-                        className="transition-all duration-1000 ease-out"
-                      />
-                      <circle 
-                        cx="50" cy="50" r="40" fill="none" stroke="#ef4444" strokeWidth="8" 
-                        strokeDasharray={`${(stats.rejected / (stats.total || 1)) * 251.2} 251.2`} 
-                        strokeDashoffset={`-${((stats.approved + stats.pending + stats.draft) / (stats.total || 1)) * 251.2}`}
-                        strokeLinecap="round" 
-                        className="transition-all duration-1000 ease-out"
-                      />
+                        strokeLinecap="round" className="transition-all duration-1000"/>
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="text-center">
@@ -235,8 +150,7 @@ const Reports = () => {
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 w-full">
+                  <div className="grid grid-cols-3 gap-4 w-full">
                     <div className="text-center">
                       <div className="w-3 h-3 bg-green-500 rounded-full mx-auto mb-1"></div>
                       <span className="text-xs text-gray-600">Approved</span>
@@ -252,20 +166,16 @@ const Reports = () => {
                       <span className="text-xs text-gray-600">Draft</span>
                       <p className="font-bold text-sm">{stats.draft}</p>
                     </div>
-                    <div className="text-center">
-                      <div className="w-3 h-3 bg-red-500 rounded-full mx-auto mb-1"></div>
-                      <span className="text-xs text-gray-600">Rejected</span>
-                      <p className="font-bold text-sm">{stats.rejected}</p>
-                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Revenue Trend Card */}
+              {/* Line Chart - Revenue Trend */}
               <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
                 <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-4 sm:p-6">
                   <h3 className="text-lg sm:text-xl font-bold text-white flex items-center">
-                    <span className="mr-2">📈</span> Revenue Analytics
+                    <span className="mr-2">📈</span>
+                    Revenue Analytics
                   </h3>
                   <p className="text-blue-100 text-xs sm:text-sm mt-1">6-month trend</p>
                 </div>
@@ -273,14 +183,17 @@ const Reports = () => {
                   <div className="h-48 relative">
                     <svg className="w-full h-full" viewBox="0 0 300 120">
                       <defs>
-                        <linearGradient id="lineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
                           <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3"/>
                           <stop offset="100%" stopColor="#3b82f6" stopOpacity="0"/>
                         </linearGradient>
                       </defs>
+                      {/* Grid lines */}
                       {[0, 1, 2, 3, 4].map(i => (
-                        <line key={i} x1="30" y1={20 + i * 20} x2="270" y2={20 + i * 20} stroke="#f3f4f6" strokeWidth="1"/>
+                        <line key={i} x1="30" y1={20 + i * 20} x2="270" y2={20 + i * 20} 
+                          stroke="#f3f4f6" strokeWidth="1"/>
                       ))}
+                      {/* Data line */}
                       <polyline
                         fill="none"
                         stroke="#3b82f6"
@@ -288,53 +201,58 @@ const Reports = () => {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         points="50,80 90,65 130,55 170,45 210,35 250,25"
+                        className="animate-pulse"
                       />
+                      {/* Area fill */}
                       <polygon
-                        fill="url(#lineGrad)"
+                        fill="url(#gradient)"
                         points="50,80 90,65 130,55 170,45 210,35 250,25 250,100 50,100"
                       />
-                      {[50, 90, 130, 170, 210, 250].map((x, i) => (
-                        <circle key={i} cx={x} cy={[80, 65, 55, 45, 35, 25][i]} r="4" fill="#3b82f6" className="hover:scale-125 transition-transform cursor-pointer" />
-                      ))}
+                      {/* Data points */}
+                      {[50, 90, 130, 170, 210, 250].map((x, i) => {
+                        const y = [80, 65, 55, 45, 35, 25][i];
+                        return (
+                          <circle key={i} cx={x} cy={y} r="4" fill="#3b82f6" 
+                            className="hover:r-6 transition-all cursor-pointer">
+                            <title>${[12, 15, 18, 22, 25, 28][i]}k</title>
+                          </circle>
+                        );
+                      })}
                     </svg>
                     <div className="flex justify-between mt-2 px-4 text-xs text-gray-500">
-                      {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'].map(month => <span key={month}>{month}</span>)}
+                      {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'].map(month => (
+                        <span key={month}>{month}</span>
+                      ))}
                     </div>
                   </div>
                 </div>
               </div>
-
-              {/* System Summary Card */}
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                <div className="bg-gradient-to-r from-cyan-500 to-blue-600 p-5">
-                  <h3 className="text-lg font-bold text-white">📋 System Summary</h3>
-                </div>
-                <div className="p-6 space-y-4">
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-50">
-                    <span className="text-gray-600 text-sm font-medium">Total Employees</span>
-                    <span className="font-bold text-gray-800">{employees.length}</span>
+              
+              <div className="bg-gray-50 p-4 rounded-xl">
+                <h3 className="text-lg font-semibold mb-4 text-gray-800">System Summary</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Total Employees:</span>
+                    <span className="font-semibold">{employees.length}</span>
                   </div>
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-50">
-                    <span className="text-gray-600 text-sm font-medium">Total Clients</span>
-                    <span className="font-bold text-gray-800">{clients.length}</span>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Total Clients:</span>
+                    <span className="font-semibold">{clients.length}</span>
                   </div>
-                    
-                                    <div className="flex justify-between items-center pb-2 border-b border-gray-50">
-                    <span className="text-gray-600 text-sm font-medium">Active Clients</span>
-                    <span className="font-bold text-green-600">{clients.filter(c => c.status === 'Active').length}</span>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Active Clients:</span>
+                    <span className="font-semibold text-green-600">{clients.filter(c => c.status === 'Active').length}</span>
                   </div>
-
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-50">
-                    <span className="text-gray-600 text-sm font-medium">Total Quote Value</span>
-                    <span className="font-bold text-gray-900">{stats.totalValueFormatted}</span>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Total Quote Value:</span>
+                    <span className="font-semibold">${stats.totalValue.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600 text-sm font-medium">Approved Value</span>
-                    <span className="font-bold text-green-600">{stats.approvedValueFormatted}</span>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Approved Value:</span>
+                    <span className="font-semibold text-green-600">${stats.approvedValue.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
         </div>
