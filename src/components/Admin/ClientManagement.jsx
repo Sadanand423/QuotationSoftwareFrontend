@@ -12,28 +12,19 @@ const ClientManagement = () => {
 
   const statusFilters = ['All', 'Active', 'Inactive'];
 
-  useEffect(() => {
-    // Load clients from localStorage
-    const savedClients = localStorage.getItem('clients');
-    if (savedClients) {
-      setClients(JSON.parse(savedClients));
-    } else {
-      // Sample clients data
-      const sampleClients = [
-        { id: 'CLI-001', name: 'ABC Corp', email: 'contact@abccorp.com', phone: '+1-555-0123', status: 'Active', joinDate: '2024-01-15' },
-        { id: 'CLI-002', name: 'XYZ Ltd', email: 'info@xyzltd.com', phone: '+1-555-0124', status: 'Active', joinDate: '2024-01-14' },
-        { id: 'CLI-003', name: 'Tech Solutions', email: 'hello@techsol.com', phone: '+1-555-0125', status: 'Inactive', joinDate: '2024-01-13' }
-      ];
-      setClients(sampleClients);
-      localStorage.setItem('clients', JSON.stringify(sampleClients));
-    }
-  }, []);
+useEffect(() => {
+  fetch("http://localhost:8080/api/clients")
+    .then(res => res.json())
+    .then(data => setClients(data))
+    .catch(err => console.error(err));
+}, []);
+
 
   const filteredClients = clients.filter(client => {
     const matchesFilter = activeFilter === 'All' || client.status === activeFilter;
     const matchesSearch = client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         client.id?.toLowerCase().includes(searchTerm.toLowerCase());
+                         client.clientId?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
@@ -43,31 +34,46 @@ const ClientManagement = () => {
     setShowModal(true);
   };
 
-  const handleAddClient = () => {
-    const clientId = `CLI-${String(clients.length + 1).padStart(3, '0')}`;
-    const clientWithId = { ...newClient, id: clientId, joinDate: new Date().toISOString().split('T')[0] };
-    const updatedClients = [...clients, clientWithId];
-    setClients(updatedClients);
-    localStorage.setItem('clients', JSON.stringify(updatedClients));
-    setNewClient({ name: '', email: '', phone: '', status: 'Active' });
-    setShowAddForm(false);
-  };
+const handleAddClient = async () => {
+  const response = await fetch("http://localhost:8080/api/clients", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(newClient)
+  });
 
-  const handleStatusUpdate = (clientId, newStatus) => {
-    const updatedClients = clients.map(c => 
+  const savedClient = await response.json();
+  setClients([...clients, savedClient]);
+
+  setNewClient({ name: '', email: '', phone: '', status: 'Active' });
+  setShowAddForm(false);
+};
+
+
+const handleStatusUpdate = async (clientId, newStatus) => {
+  await fetch(`http://localhost:8080/api/clients/${clientId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: newStatus })
+  });
+
+  setClients(
+    clients.map(c =>
       c.id === clientId ? { ...c, status: newStatus } : c
-    );
-    setClients(updatedClients);
-    localStorage.setItem('clients', JSON.stringify(updatedClients));
-    setShowModal(false);
-  };
+    )
+  );
 
-  const handleDelete = (clientId) => {
-    const updatedClients = clients.filter(c => c.id !== clientId);
-    setClients(updatedClients);
-    localStorage.setItem('clients', JSON.stringify(updatedClients));
-    setShowModal(false);
-  };
+  setShowModal(false);
+};
+
+const handleDelete = async (clientId) => {
+  await fetch(`http://localhost:8080/api/clients/${clientId}`, {
+    method: "DELETE"
+  });
+
+  setClients(clients.filter(c => c.id !== clientId));
+  setShowModal(false);
+};
+
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -151,7 +157,7 @@ const ClientManagement = () => {
                   <td className="px-6 py-4 text-sm">
                     <div className="flex items-center">
                       <div className={`w-2 h-2 rounded-full mr-3 ${getStatusDot(client.status)}`}></div>
-                      <span className="font-medium text-gray-900">{client.id}</span>
+                      <span className="font-medium text-gray-900">{client.clientId}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">{client.name}</td>
@@ -257,80 +263,138 @@ const ClientManagement = () => {
         </div>
       )}
 
-      {/* Action Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
-            <div className="p-6">
-              <h3 className="text-lg font-semibold mb-4">
-                {modalType === 'view' && 'View Client'}
-                {modalType === 'edit' && 'Edit Client'}
-                {modalType === 'delete' && 'Delete Client'}
-              </h3>
-              
-              {modalType === 'view' && selectedClient && (
-                <div className="space-y-3">
-                  <p><strong>ID:</strong> {selectedClient.id}</p>
-                  <p><strong>Name:</strong> {selectedClient.name}</p>
-                  <p><strong>Email:</strong> {selectedClient.email}</p>
-                  <p><strong>Phone:</strong> {selectedClient.phone}</p>
-                  <p><strong>Status:</strong> {selectedClient.status}</p>
-                  <p><strong>Join Date:</strong> {selectedClient.joinDate}</p>
-                </div>
-              )}
-              
-              {modalType === 'edit' && selectedClient && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Status</label>
-                    <select 
-                      className="w-full border border-gray-300 rounded-lg p-2"
-                      defaultValue={selectedClient.status}
-                      onChange={(e) => handleStatusUpdate(selectedClient.id, e.target.value)}
-                    >
-                      <option value="Active">Active</option>
-                      <option value="Inactive">Inactive</option>
-                    </select>
-                  </div>
-                </div>
-              )}
-              
-              {modalType === 'delete' && selectedClient && (
-                <div>
-                  <p className="text-gray-600 mb-4">
-                    Are you sure you want to delete client {selectedClient.name}? This action cannot be undone.
-                  </p>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => handleDelete(selectedClient.id)}
-                      className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
-                    >
-                      Delete
-                    </button>
-                    <button
-                      onClick={() => setShowModal(false)}
-                      className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
-              
-              {modalType !== 'delete' && (
-                <div className="flex justify-end mt-6">
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
-                  >
-                    Close
-                  </button>
-                </div>
-              )}
-            </div>
+      {/* --- ACTION MODAL (VIEW / EDIT / DELETE) --- */}
+{showModal && selectedClient && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all animate-in fade-in zoom-in duration-200">
+      
+      {/* Header */}
+      <div className="flex justify-between items-center border-b pb-3 mb-4">
+        <h3 className="text-xl font-bold text-gray-800">
+          {modalType === 'view' && 'Client Summary'}
+          {modalType === 'edit' && 'Edit Client Status'}
+          {modalType === 'delete' && 'Delete Client'}
+        </h3>
+        <button
+          onClick={() => setShowModal(false)}
+          className="text-gray-400 hover:text-gray-600 text-2xl"
+        >
+          &times;
+        </button>
+      </div>
+
+      {/* VIEW */}
+      {modalType === 'view' && (
+        <div className="space-y-4">
+          <div className="flex justify-between border-b border-gray-50 pb-2">
+            <span className="text-gray-500">Client ID</span>
+            <span className="text-gray-900 font-bold">{selectedClient.clientId}</span>
+          </div>
+
+          <div className="flex justify-between border-b border-gray-50 pb-2">
+            <span className="text-gray-500">Name</span>
+            <span className="text-gray-900 font-medium">{selectedClient.name}</span>
+          </div>
+
+          <div className="flex justify-between border-b border-gray-50 pb-2">
+            <span className="text-gray-500">Email</span>
+            <span className="text-gray-900">{selectedClient.email}</span>
+          </div>
+
+          <div className="flex justify-between border-b border-gray-50 pb-2">
+            <span className="text-gray-500">Phone</span>
+            <span className="text-gray-900">{selectedClient.phone}</span>
+          </div>
+
+          <div className="flex justify-between border-b border-gray-50 pb-2">
+            <span className="text-gray-500">Status</span>
+            <span className={`px-3 py-1 text-xs rounded-full font-medium ${
+              selectedClient.status === 'Active'
+                ? 'bg-green-100 text-green-700'
+                : 'bg-gray-100 text-gray-700'
+            }`}>
+              {selectedClient.status}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-gray-500">Join Date</span>
+            <span className="text-gray-900">{selectedClient.joinDate || 'N/A'}</span>
+          </div>
+
+          <button
+            onClick={() => setShowModal(false)}
+            className="mt-8 w-full bg-gray-800 text-white py-3 rounded-xl font-semibold hover:bg-gray-900 transition-colors"
+          >
+            Close Details
+          </button>
+        </div>
+      )}
+
+      {/* EDIT */}
+      {modalType === 'edit' && (
+        <div className="space-y-4">
+          <div className="flex justify-between border-b border-gray-50 pb-2">
+            <span className="text-gray-500">Client</span>
+            <span className="text-gray-900 font-medium">{selectedClient.name}</span>
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-500 mb-2">Status</label>
+            <select
+              defaultValue={selectedClient.status}
+              onChange={(e) => handleStatusUpdate(selectedClient.id, e.target.value)}
+              className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+
+          <button
+            onClick={() => setShowModal(false)}
+            className="mt-6 w-full bg-gray-800 text-white py-3 rounded-xl font-semibold hover:bg-gray-900 transition-colors"
+          >
+            Done
+          </button>
+        </div>
+      )}
+
+      {/* DELETE */}
+      {modalType === 'delete' && (
+        <div className="space-y-5">
+          <p className="text-gray-600 text-sm leading-relaxed">
+            Are you sure you want to delete client{' '}
+            <span className="font-semibold text-gray-900">
+              {selectedClient.name}
+            </span>
+            ? This action cannot be undone.
+          </p>
+
+          <div className="flex gap-3">
+            <button
+              onClick={() => handleDelete(selectedClient.id)}
+              className="flex-1 bg-red-600 text-white py-3 rounded-xl font-semibold hover:bg-red-700 transition-colors"
+            >
+              Delete
+            </button>
+
+            <button
+              onClick={() => setShowModal(false)}
+              className="flex-1 bg-gray-200 text-gray-800 py-3 rounded-xl font-semibold hover:bg-gray-300 transition-colors"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
+
+    </div>
+  </div>
+)}
+
+         
+
     </div>
   );
 };
