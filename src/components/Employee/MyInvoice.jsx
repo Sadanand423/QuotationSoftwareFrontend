@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const MyInvoice = () => {
+  const navigate = useNavigate();
   const [invoices, setInvoices] = useState([]);
   const [groupedClients, setGroupedClients] = useState({});
   const [expandedClient, setExpandedClient] = useState(null);
@@ -9,6 +11,8 @@ const MyInvoice = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [editingStatusInvoiceId, setEditingStatusInvoiceId] = useState(null);
+  const [statusPickerPos, setStatusPickerPos] = useState({ top: 0, left: 0 });
 
   const currentEmpId = localStorage.getItem("empId") || "EMP-001";
 
@@ -59,6 +63,30 @@ const MyInvoice = () => {
     setExpandedClient((prev) => (prev === clientName ? null : clientName));
   };
 
+  const handleStatusUpdate = async (invoiceId, newStatus) => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/invoices/update-status/${invoiceId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (response.ok) {
+        setInvoices((prev) =>
+          prev.map((inv) => (inv.id === invoiceId ? { ...inv, status: newStatus } : inv))
+        );
+        setEditingStatusInvoiceId(null);
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
+  };
+
+  const STATUS_OPTIONS = [
+    { label: 'Paid',    value: 'Paid',    classes: 'bg-green-100 text-green-700 hover:bg-green-200' },
+    { label: 'Unpaid',  value: 'Unpaid',  classes: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' },
+    { label: 'Overdue', value: 'Overdue', classes: 'bg-red-100 text-red-700 hover:bg-red-200' },
+  ];
+
   const handlePrint = (invoice) => {
     const printContent = `
       <html>
@@ -95,7 +123,7 @@ const MyInvoice = () => {
   const getStatusClasses = (status) => {
     switch ((status || '').toLowerCase()) {
       case 'paid': return 'bg-green-100 text-green-700';
-      case 'pending': return 'bg-yellow-100 text-yellow-700';
+      case 'pending': case 'unpaid': return 'bg-yellow-100 text-yellow-700';
       case 'overdue': return 'bg-red-100 text-red-700';
       case 'cancelled': case 'canceled': return 'bg-gray-100 text-gray-600';
       case 'draft': return 'bg-slate-100 text-slate-600';
@@ -158,7 +186,10 @@ const MyInvoice = () => {
                     {paginatedClients.map((clientGroup) => (
                   <React.Fragment key={clientGroup.clientName}>
                     <tr className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 text-sm font-bold text-teal-700">{clientGroup.clientName}</td>
+                      <td
+                        className="px-6 py-4 text-sm font-bold text-teal-700 cursor-pointer hover:underline"
+                        onClick={() => handleClientExpand(clientGroup.clientName)}
+                      >{clientGroup.clientName}</td>
                       <td className="px-6 py-4 text-sm font-semibold text-gray-900">{clientGroup.totalInvoices}</td>
                       <td className="px-6 py-4 text-sm text-gray-500">{clientGroup.latestInvoiceDate}</td>
                       <td className="px-6 py-4 text-sm">
@@ -173,42 +204,73 @@ const MyInvoice = () => {
 
                     {expandedClient === clientGroup.clientName && (
                       <tr>
-                        <td colSpan="4" className="px-6 py-4 bg-gray-50">
-                          <table className="min-w-full bg-white rounded-lg border overflow-hidden">
-                            <thead className="bg-gray-100">
+                        <td colSpan="4" className="px-6 py-4 bg-slate-50 border-t border-b border-teal-100">
+                          <div className="rounded-xl border border-teal-200 shadow-md overflow-hidden">
+                          <table className="min-w-full bg-white">
+                            <thead className="bg-teal-50 border-b-2 border-teal-200">
                               <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Invoice Number</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                                <th className="px-5 py-3 text-left text-xs font-bold text-teal-700 uppercase tracking-wider">Invoice Number</th>
+                                <th className="px-5 py-3 text-left text-xs font-bold text-teal-700 uppercase tracking-wider">Date</th>
+                                <th className="px-5 py-3 text-left text-xs font-bold text-teal-700 uppercase tracking-wider">Amount</th>
+                                <th className="px-5 py-3 text-left text-xs font-bold text-teal-700 uppercase tracking-wider">Paid Amount</th>
+                                <th className="px-5 py-3 text-left text-xs font-bold text-teal-700 uppercase tracking-wider">Balance Amount</th>
+                                <th className="px-5 py-3 text-left text-xs font-bold text-teal-700 uppercase tracking-wider">Status</th>
+                                <th className="px-5 py-3 text-left text-xs font-bold text-teal-700 uppercase tracking-wider">Action</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-200">
+                            <tbody className="divide-y divide-gray-100">
                               {clientGroup.invoices.map((inv) => (
-                                <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
-                                  <td className="px-6 py-4 text-sm font-bold text-teal-700">{inv.invoiceNumber}</td>
-                                  <td className="px-6 py-4 text-sm text-gray-500">{inv.invoiceDate}</td>
-                                  <td className="px-6 py-4">
+                                <tr key={inv.id} className="hover:bg-teal-50/40 transition-colors">
+                                  <td
+                                    className="px-5 py-3 text-sm font-bold text-teal-700 cursor-pointer hover:underline"
+                                    onClick={() => setSelectedInvoice(inv)}
+                                  >{inv.invoiceNumber}</td>
+                                  <td className="px-5 py-3 text-sm text-gray-500">{inv.invoiceDate}</td>
+                                  <td className="px-5 py-3 text-sm font-semibold text-gray-900">
+                                    ₹{Number(inv.finalAmount || 0).toLocaleString('en-IN')}
+                                  </td>
+                                  <td className="px-5 py-3 text-sm font-semibold text-green-700">
+                                    ₹{Number(inv.totalPaidAmount || 0).toLocaleString('en-IN')}
+                                  </td>
+                                  <td className="px-5 py-3 text-sm font-semibold text-gray-900">
+                                    ₹{Number(inv.balanceAmount || 0).toLocaleString('en-IN')}
+                                  </td>
+                                  <td className="px-5 py-3">
                                     <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusClasses(inv.status)}`}>
                                       {inv.status || 'Sent'}
                                     </span>
                                   </td>
-                                  <td className="px-6 py-4 text-sm font-semibold text-gray-900">
-                                    ₹{Number(inv.finalAmount || 0).toLocaleString('en-IN')}
-                                  </td>
-                                  <td className="px-6 py-4 text-sm">
-                                    <button
-                                      onClick={() => setSelectedInvoice(inv)}
-                                      className="text-teal-600 hover:text-teal-800 font-medium"
-                                    >
-                                      View
-                                    </button>
+                                  <td className="px-5 py-3 text-sm">
+                                    <div className="flex items-center gap-3">
+                                      <button
+                                        onClick={() => setSelectedInvoice(inv)}
+                                        className="text-teal-600 hover:text-teal-800 font-medium"
+                                      >
+                                        View
+                                      </button>
+                                      <div className="relative">
+                                        <button
+                                          onClick={(e) => {
+                                            if (editingStatusInvoiceId === inv.id) {
+                                              setEditingStatusInvoiceId(null);
+                                            } else {
+                                              const rect = e.currentTarget.getBoundingClientRect();
+                                              setStatusPickerPos({ top: rect.bottom + window.scrollY, left: rect.left + window.scrollX });
+                                              setEditingStatusInvoiceId(inv.id);
+                                            }
+                                          }}
+                                          className="text-indigo-600 hover:text-indigo-800 font-medium"
+                                        >
+                                          Edit
+                                        </button>
+                                      </div>
+                                    </div>
                                   </td>
                                 </tr>
                               ))}
                             </tbody>
                           </table>
+                          </div>
                         </td>
                       </tr>
                     )}
@@ -238,6 +300,31 @@ const MyInvoice = () => {
           </table>
         </div>
       </div>
+
+      {/* --- STATUS PICKER (fixed overlay, always on top) --- */}
+      {editingStatusInvoiceId && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setEditingStatusInvoiceId(null)}
+          />
+          <div
+            className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-xl p-2 flex flex-col gap-1"
+            style={{ top: statusPickerPos.top + 6, left: statusPickerPos.left }}
+          >
+            <p className="text-xs text-gray-400 font-semibold uppercase px-1 pb-1">Set Status</p>
+            {STATUS_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => handleStatusUpdate(editingStatusInvoiceId, opt.value)}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-full text-left ${opt.classes}`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* --- INVOICE DETAIL MODAL --- */}
       {selectedInvoice && (
