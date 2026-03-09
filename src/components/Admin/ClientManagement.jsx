@@ -94,9 +94,12 @@ const handleDelete = async (clientId) => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          Client Management
-        </h2>
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+            Client Management
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">Total Clients: {clients.length}</p>
+        </div>
         <div className="flex gap-3">
           <div className="relative">
             <input

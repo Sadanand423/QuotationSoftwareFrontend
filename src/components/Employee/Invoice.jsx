@@ -121,30 +121,41 @@ const Invoice = () => {
     if (currentEmpId) fetchData();
   }, [currentEmpId]);
 
-  const generateInvoice = (quotation) => {
-    const rawAmount = typeof quotation.totalCost === 'string'
-      ? parseFloat(quotation.totalCost.replace(/[₹,]/g, ''))
-      : (quotation.totalCost || 0);
+ const generateInvoice = (quotation) => {
 
-    const taxRateVal = parseFloat(invoiceData.taxRate) || 0;
-    const taxAmount = (rawAmount * taxRateVal) / 100;
-    const finalTotal = rawAmount + taxAmount;
+  const rawAmount =
+    typeof quotation.totalCost === "string"
+      ? parseFloat(quotation.totalCost.replace(/[₹,]/g, ""))
+      : quotation.totalCost || 0;
 
-    setInvoiceData(prev => ({
-      ...prev,
-      quotationId: quotation.quotationNumber || quotation.id,
-      clientName: quotation.client || '',
-      clientEmail: quotation.clientEmail || '',
-      clientPhone: quotation.clientPhone || '',
-      clientAddress: quotation.clientAddress || '',
-      projectName: quotation.project || '',
-      totalAmount: rawAmount,
-      taxAmount: taxAmount,
-      finalAmount: finalTotal
-    }));
-    setSelectedQuotation(quotation);
-    setShowForm(true);
-  };
+  const gstPercent = quotation.gstPercent || 0;
+  const gstAmount = quotation.gstAmount || 0;
+
+  // If finalAmount exists use it, otherwise calculate
+  const finalTotal =
+    quotation.finalAmount || rawAmount + gstAmount;
+
+  setInvoiceData((prev) => ({
+    ...prev,
+    quotationId: quotation.quotationNumber || quotation.id,
+    clientName: quotation.client || "",
+    clientEmail: quotation.clientEmail || "",
+    clientPhone: quotation.clientPhone || "",
+    clientAddress: quotation.clientAddress || "",
+    projectName: quotation.project || "",
+
+    totalAmount: rawAmount,
+
+    // 🔥 Fetch GST directly from DB
+    taxRate: gstPercent,
+    taxAmount: gstAmount,
+
+    finalAmount: finalTotal,
+  }));
+
+  setSelectedQuotation(quotation);
+  setShowForm(true);
+};
 
   const handleSaveInvoice = async () => {
     try {
@@ -176,72 +187,61 @@ const Invoice = () => {
     }
   };
 
- const handleInvoicePrint = () => {
-  // 1. Get the actual rendered logo URL from the DOM
-  const logoImg = document.querySelector('img[alt="Logo"]');
-  const logoSrc = logoImg ? logoImg.src : "";
+const handleInvoicePrint = () => {
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'absolute';
+  iframe.style.width = '0px';
+  iframe.style.height = '0px';
+  iframe.style.border = 'none';
+  document.body.appendChild(iframe);
 
-  const printContent = printRef.current.innerHTML;
-  
-  // 2. Extract styles
+  const content = printRef.current.innerHTML;
   const styles = Array.from(document.styleSheets)
     .map(sheet => {
       try {
-        if (sheet.href) return `<link rel="stylesheet" href="${sheet.href}">`;
-        if (sheet.ownerNode) return `<style>${sheet.ownerNode.innerHTML}</style>`;
+        return Array.from(sheet.cssRules).map(rule => rule.cssText).join('');
       } catch (e) { return ""; }
-      return "";
     }).join("");
 
-  const fullHTML = `
-    <!DOCTYPE html>
-    <html lang="en">
+  const doc = iframe.contentWindow.document;
+  doc.open();
+  doc.write(`
+    <html>
       <head>
-        <meta charset="UTF-8">
-        <title>Invoice - ${invoiceData.invoiceNumber}</title>
-        ${styles}
         <style>
-          @page { size: A4; margin: 10mm; }
+          ${styles}
+          @page { 
+            size: A4; 
+            margin: 10mm; /* Space between paper edge and your border */
+          }
           body { 
-            margin: 0; 
-            padding: 0; 
-            font-family: sans-serif;
-            -webkit-print-color-adjust: exact !important; 
-            print-color-adjust: exact !important;
+            -webkit-print-color-adjust: exact; 
+            margin: 0;
+            padding: 0;
           }
-          .print-container { 
-            border: 2px solid black !important; 
-            padding: 20px; 
-            min-height: 275mm; 
-            box-sizing: border-box; 
+          /* This creates the outer page border */
+          .print-wrapper {
+            border: 2px solid black; 
+            min-height: 277mm; /* Approximate A4 height minus margins */
+            padding: 20px;
+            box-sizing: border-box;
           }
-          /* FIX 2: Ensure logo shows up clearly */
-          .print-logo { width: 80px; height: auto; margin-bottom: 10px; }
-          img { max-width: 100%; display: block; }
         </style>
       </head>
       <body>
-        <div class="print-container">
-          ${printContent}
+        <div class="print-wrapper">
+          ${content}
         </div>
         <script>
-          // Re-inject the correct logo source into the print window
-          const logo = document.querySelector('img[alt="Logo"]');
-          if (logo) logo.src = "${logoSrc}";
-
           window.onload = () => {
-            setTimeout(() => { 
-              window.print(); 
-              window.onafterprint = () => window.close();
-            }, 500);
+            window.print();
+            setTimeout(() => { window.frameElement.remove(); }, 100);
           };
         </script>
       </body>
-    </html>`;
-
-  const blob = new Blob([fullHTML], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  const printWindow = window.open(url, '_blank');
+    </html>
+  `);
+  doc.close();
 };
 
   return (
@@ -601,10 +601,10 @@ TAX INVOICE
 </p>
   </div>
           <div className="p-0 text-sm">
-            <div className="flex justify-between p-2 border-b border-gray-300"><span>Taxable Amount:</span><span>₹{Number(invoiceData.totalAmount).toLocaleString("en-IN")}</span></div>
-            <div className="flex justify-between p-2 border-b border-gray-300 text-gray-600"><span>GST ({invoiceData.taxRate}%):</span><span>₹{Number(invoiceData.taxAmount).toLocaleString("en-IN")}</span></div>
-            <div className="flex justify-between p-2 font-black text-base"><span>Total Amount:</span><span>₹{Number(invoiceData.finalAmount).toLocaleString("en-IN")}</span></div>
-            <div className="flex justify-between p-2 text-gray-700 bg-gray-50"><span>Paid Amount:</span><span className="font-bold">₹{Number(invoiceData.totalPaidAmount).toLocaleString("en-IN")}</span></div>
+            <div className="flex justify-between p-2 border-b border-gray-300"><span>Total Project Amount:</span><span>₹{Number(invoiceData.totalAmount).toLocaleString("en-IN")}</span></div>
+            <div className="flex justify-between p-2 border-b border-gray-300 text-gray-900"><span>GST ({invoiceData.taxRate}%):</span><span>₹{Number(invoiceData.taxAmount).toLocaleString("en-IN")}</span></div>
+            <div className="flex justify-between p-2 font-black text-base"><span>Final Amount:</span><span>₹{Number(invoiceData.finalAmount).toLocaleString("en-IN")}</span></div>
+            <div className="flex justify-between p-2 text-green-900 font-bold bg-green-100"><span>Paid Amount:</span><span className="font-bold">₹{Number(invoiceData.totalPaidAmount).toLocaleString("en-IN")}</span></div>
             <div className="flex justify-between p-2 border-t-2 border-orange-500 bg-orange-50 font-bold text-orange-700">
               <span>Balance Amount:</span>
               <span>₹{Number(invoiceData.balanceAmount).toLocaleString("en-IN")}</span>
