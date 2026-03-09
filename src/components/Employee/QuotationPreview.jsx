@@ -269,9 +269,11 @@ const handleSendForApprovalClick = () => {
    
           {/* About Project */}
 {formData.aboutProject && (
-  <div className="bg-yellow-50 border border-yellow-300 p-4 rounded-lg mb-6">
-    
-    <p className="text-sm text-gray-800 whitespace-pre-line">{formData.aboutProject}</p>
+  <div className=" p-4 rounded-lg mt-6 print:bg-transparent print:border-none print:p-0">
+    <h3 className="text-sm font-bold text-black-500 uppercase tracking-widest mb-2 print:text-black print:text-base">About Project</h3>
+    <p className="text-sm text-gray-800 whitespace-pre-line leading-relaxed print:text-black">
+      {formData.aboutProject}
+    </p>
   </div>
 )}
 
