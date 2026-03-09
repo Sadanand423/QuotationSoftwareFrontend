@@ -9,6 +9,8 @@ const ClientManagement = () => {
   const [modalType, setModalType] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [newClient, setNewClient] = useState({ name: '', email: '', phone: '', status: 'Active' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   const statusFilters = ['All', 'Active', 'Inactive'];
 
@@ -20,13 +22,17 @@ useEffect(() => {
 }, []);
 
 
-  const filteredClients = clients.filter(client => {
+  const allFilteredClients = clients.filter(client => {
     const matchesFilter = activeFilter === 'All' || client.status === activeFilter;
     const matchesSearch = client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          client.clientId?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   });
+
+  const totalPages = Math.ceil(allFilteredClients.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const filteredClients = allFilteredClients.slice(startIndex, startIndex + itemsPerPage);
 
   const handleAction = (client, action) => {
     setSelectedClient(client);
@@ -106,7 +112,7 @@ const handleDelete = async (clientId) => {
               type="text"
               placeholder="Search clients..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -128,7 +134,7 @@ const handleDelete = async (clientId) => {
           {statusFilters.map((filter) => (
             <button
               key={filter}
-              onClick={() => setActiveFilter(filter)}
+              onClick={() => { setActiveFilter(filter); setCurrentPage(1); }}
               className={`px-6 py-4 text-sm font-medium transition-colors duration-200 ${
                 activeFilter === filter
                   ? 'bg-green-50 text-green-600 border-b-2 border-green-500'
@@ -199,12 +205,52 @@ const handleDelete = async (clientId) => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
+            <div className="text-sm text-gray-700">
+              Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, allFilteredClients.length)} of {allFilteredClients.length} clients
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Previous
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      page === currentPage
+                        ? 'bg-green-500 text-white'
+                        : 'border border-gray-300 text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Add Client Modal */}
       {showAddForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white/90 rounded-2xl shadow-2xl max-w-md w-full border border-white/30 backdrop-blur-md">
             <div className="p-6">
               <h3 className="text-lg font-semibold mb-4">Add New Client</h3>
               <div className="space-y-4">
@@ -269,7 +315,7 @@ const handleDelete = async (clientId) => {
       {/* --- ACTION MODAL (VIEW / EDIT / DELETE) --- */}
 {showModal && selectedClient && (
   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all animate-in fade-in zoom-in duration-200">
+    <div className="bg-white/90 rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all animate-in fade-in zoom-in duration-200 border border-white/30 backdrop-blur-md">
       
       {/* Header */}
       <div className="flex justify-between items-center border-b pb-3 mb-4">
