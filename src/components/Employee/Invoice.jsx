@@ -187,72 +187,61 @@ const Invoice = () => {
     }
   };
 
- const handleInvoicePrint = () => {
-  // 1. Get the actual rendered logo URL from the DOM
-  const logoImg = document.querySelector('img[alt="Logo"]');
-  const logoSrc = logoImg ? logoImg.src : "";
+const handleInvoicePrint = () => {
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'absolute';
+  iframe.style.width = '0px';
+  iframe.style.height = '0px';
+  iframe.style.border = 'none';
+  document.body.appendChild(iframe);
 
-  const printContent = printRef.current.innerHTML;
-  
-  // 2. Extract styles
+  const content = printRef.current.innerHTML;
   const styles = Array.from(document.styleSheets)
     .map(sheet => {
       try {
-        if (sheet.href) return `<link rel="stylesheet" href="${sheet.href}">`;
-        if (sheet.ownerNode) return `<style>${sheet.ownerNode.innerHTML}</style>`;
+        return Array.from(sheet.cssRules).map(rule => rule.cssText).join('');
       } catch (e) { return ""; }
-      return "";
     }).join("");
 
-  const fullHTML = `
-    <!DOCTYPE html>
-    <html lang="en">
+  const doc = iframe.contentWindow.document;
+  doc.open();
+  doc.write(`
+    <html>
       <head>
-        <meta charset="UTF-8">
-        <title>Invoice - ${invoiceData.invoiceNumber}</title>
-        ${styles}
         <style>
-          @page { size: A4; margin: 10mm; }
+          ${styles}
+          @page { 
+            size: A4; 
+            margin: 10mm; /* Space between paper edge and your border */
+          }
           body { 
-            margin: 0; 
-            padding: 0; 
-            font-family: sans-serif;
-            -webkit-print-color-adjust: exact !important; 
-            print-color-adjust: exact !important;
+            -webkit-print-color-adjust: exact; 
+            margin: 0;
+            padding: 0;
           }
-          .print-container { 
-            border: 2px solid black !important; 
-            padding: 20px; 
-            min-height: 275mm; 
-            box-sizing: border-box; 
+          /* This creates the outer page border */
+          .print-wrapper {
+            border: 2px solid black; 
+            min-height: 277mm; /* Approximate A4 height minus margins */
+            padding: 20px;
+            box-sizing: border-box;
           }
-          /* FIX 2: Ensure logo shows up clearly */
-          .print-logo { width: 80px; height: auto; margin-bottom: 10px; }
-          img { max-width: 100%; display: block; }
         </style>
       </head>
       <body>
-        <div class="print-container">
-          ${printContent}
+        <div class="print-wrapper">
+          ${content}
         </div>
         <script>
-          // Re-inject the correct logo source into the print window
-          const logo = document.querySelector('img[alt="Logo"]');
-          if (logo) logo.src = "${logoSrc}";
-
           window.onload = () => {
-            setTimeout(() => { 
-              window.print(); 
-              window.onafterprint = () => window.close();
-            }, 500);
+            window.print();
+            setTimeout(() => { window.frameElement.remove(); }, 100);
           };
         </script>
       </body>
-    </html>`;
-
-  const blob = new Blob([fullHTML], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  const printWindow = window.open(url, '_blank');
+    </html>
+  `);
+  doc.close();
 };
 
   return (

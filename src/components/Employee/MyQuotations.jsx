@@ -7,6 +7,9 @@ const MyQuotations = () => {
   const [quotations, setQuotations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedQuote, setSelectedQuote] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   const currentEmpId = localStorage.getItem("empId") || "EMP-001"; 
 
@@ -29,9 +32,19 @@ const MyQuotations = () => {
     fetchMyQuotations();
   }, [currentEmpId]);
 
-  const filteredQuotations = quotations.filter(quote => 
-    filter === 'all' || (quote.status && quote.status.toLowerCase() === filter.toLowerCase())
-  );
+  const search = searchTerm.toLowerCase();
+  const filteredQuotations = quotations.filter(quote => {
+    const matchesFilter = filter === 'all' || (quote.status && quote.status.toLowerCase() === filter.toLowerCase());
+    const matchesSearch =
+      (quote.client?.toLowerCase() || '').includes(search) ||
+      (quote.quotationNumber?.toLowerCase() || '').includes(search) ||
+      (quote.preparedBy?.toLowerCase() || '').includes(search);
+    return matchesFilter && matchesSearch;
+  });
+
+  const totalPages = Math.ceil(filteredQuotations.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedQuotations = filteredQuotations.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <div className="space-y-4 sm:space-y-6 p-4">
@@ -40,6 +53,18 @@ const MyQuotations = () => {
         <div>
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">My Quotations</h2>
           <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage assigned quotations (ID: {currentEmpId})</p>
+        </div>
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search quotations..."
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            className="w-full sm:w-auto pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+          />
+          <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
         </div>
       </div>
 
@@ -78,10 +103,10 @@ const MyQuotations = () => {
             <tbody className="divide-y divide-gray-200">
               {isLoading ? (
                 <tr><td colSpan="6" className="px-6 py-10 text-center text-gray-500">Loading...</td></tr>
-              ) : filteredQuotations.length === 0 ? (
+              ) : paginatedQuotations.length === 0 ? (
                 <tr><td colSpan="6" className="px-6 py-10 text-center text-gray-500">No quotations found.</td></tr>
               ) : (
-                filteredQuotations.map((quote) => (
+                paginatedQuotations.map((quote) => (
                   <tr key={quote.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 text-sm font-medium">{quote.quotationNumber}</td>
                     <td className="px-6 py-4 text-sm text-gray-800">{quote.client}</td>
@@ -114,6 +139,19 @@ const MyQuotations = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {!isLoading && totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+            <div className="text-sm text-gray-700">
+              Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredQuotations.length)} of {filteredQuotations.length}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1} className="px-3 py-1 border rounded disabled:opacity-50">Prev</button>
+              <button onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages} className="px-3 py-1 border rounded disabled:opacity-50">Next</button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* --- VIEW QUOTATION MODAL --- */}
