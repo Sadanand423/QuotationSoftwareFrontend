@@ -12,6 +12,7 @@ const AllNotifications = ({ notifications, setNotifications }) => {
       case "REJECTION": return "bg-red-100 text-red-700";
       case "CREATION": return "bg-blue-100 text-blue-700";
       case "SENT": return "bg-purple-100 text-purple-700";
+      case "INVOICE": return "bg-orange-100 text-orange-700"; // Add this line
       default: return "bg-indigo-100 text-indigo-700";
     }
   };

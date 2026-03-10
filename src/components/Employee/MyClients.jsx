@@ -8,6 +8,7 @@ const MyClients = ({ onCreateQuotation }) => {
     name: '',
     email: '',
     phone: '',
+    organization: '',
     address: '',
     status: 'Active'
   });
@@ -22,6 +23,7 @@ const MyClients = ({ onCreateQuotation }) => {
 
   // ✅ Add client (Employee can also add)
   const handleAddClient = async () => {
+    console.log("Sending to Backend:", newClient);
     const response = await fetch("http://localhost:8080/api/clients", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -35,6 +37,7 @@ const MyClients = ({ onCreateQuotation }) => {
       name: '',
       email: '',
       phone: '',
+      organization: '',
       address: '',
       status: 'Active'
     });
@@ -48,6 +51,7 @@ const MyClients = ({ onCreateQuotation }) => {
       client.name?.toLowerCase().includes(search) ||
       client.email?.toLowerCase().includes(search) ||
       client.phone?.toLowerCase().includes(search) ||
+      client.organization?.toLowerCase().includes(search) ||
       client.clientId?.toLowerCase().includes(search)
     );
   });
@@ -107,6 +111,14 @@ const MyClients = ({ onCreateQuotation }) => {
               onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
               className="border p-2 rounded-lg"
             />
+            {/* 2. ADDED ORGANIZATION INPUT FIELD */}
+            <input
+              type="text"
+              placeholder="Organization Name (Optional)"
+              value={newClient.organization}
+              onChange={(e) => setNewClient({ ...newClient, organization: e.target.value })}
+              className="border p-2 rounded-lg"
+            />
             <textarea
               placeholder="Address"
               value={newClient.address}
@@ -142,8 +154,14 @@ const MyClients = ({ onCreateQuotation }) => {
                 {client.clientId}
               </span>
             </div>
-            <p className="text-sm text-gray-600">📧 {client.email}</p>
-            <p className="text-sm text-gray-600">📞 {client.phone}</p>
+            {/* 3. CONDITIONAL RENDERING: ONLY SHOWS IF ORGANIZATION EXISTS */}
+            {client.organization && (
+              <p className="text-xs  text-black-600 mb-2  tracking-wide">
+                Organization: {client.organization}
+              </p>
+            )}
+            <p className="text-sm text-gray-600">Email: {client.email}</p>
+            <p className="text-sm text-gray-600">Phone No: {client.phone}</p>
 
             <button
               onClick={() => onCreateQuotation?.(client)}
