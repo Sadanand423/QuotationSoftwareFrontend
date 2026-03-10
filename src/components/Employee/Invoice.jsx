@@ -9,10 +9,12 @@ const Invoice = () => {
   const [showForm, setShowForm] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const printRef = useRef();
+  
 
   // ✅ Dynamic State for Backend Data
   const [approvedQuotations, setApprovedQuotations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // ✅ Get Employee ID
   const currentEmpId = localStorage.getItem("empId") || "EMP-001";
@@ -121,6 +123,16 @@ const Invoice = () => {
     if (currentEmpId) fetchData();
   }, [currentEmpId]);
 
+  const filteredQuotations = approvedQuotations.filter((quotation) => {
+  const search = searchTerm.toLowerCase();
+
+  return (
+    quotation.quotationNumber?.toLowerCase().includes(search) ||
+    quotation.client?.toLowerCase().includes(search) ||
+    quotation.project?.toLowerCase().includes(search)
+  );
+});
+
  const generateInvoice = (quotation) => {
 
   const rawAmount =
@@ -176,7 +188,7 @@ const Invoice = () => {
 
       if (response.ok) {
         alert("Invoice generated and saved successfully! ✅");
-        navigate('/MyInvoice'); 
+        navigate('./Invoice'); 
       } else {
         const errorData = await response.json();
         alert(`Failed to save: ${errorData.message || 'Unknown error'}`);
@@ -253,6 +265,18 @@ const handleInvoicePrint = () => {
           </h2>
           <p className="text-gray-500 mt-1 sm:mt-2 text-sm sm:text-base">Generate invoices from approved quotations</p>
         </div>
+        <div className="relative">
+          <input
+          type="text"
+          placeholder="Search invoices..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full sm:w-auto pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+          />
+          <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
       </div>
 
       {!showForm ? (
@@ -269,7 +293,7 @@ const handleInvoicePrint = () => {
                 <div className="text-center py-6 text-gray-500">Loading approved projects...</div>
             ) : approvedQuotations.length > 0 ? (
               <div className="space-y-3 sm:space-y-4">
-                {approvedQuotations.map((quotation) => (
+                {filteredQuotations.map((quotation) => (
                   <div key={quotation.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors gap-3">
                     <div className="flex-1">
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
@@ -323,184 +347,184 @@ const handleInvoicePrint = () => {
             </div>
 
            {/* Client Information Section */}
-<div className="bg-[#f0f7ff] p-4 sm:p-6 rounded-xl border border-blue-100 shadow-sm">
-  <h4 className="text-gray-700 font-bold mb-4 text-base">Client Information</h4>
-  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-    <div>
-      <label className="block text-sm font-semibold text-gray-600 mb-1">Client Name:</label>
-      <input 
-        type="text"
-        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
-        value={invoiceData.clientName}
-        onChange={(e) => setInvoiceData({...invoiceData, clientName: e.target.value})}
-      />
-    </div>
-    <div>
-      <label className="block text-sm font-semibold text-gray-600 mb-1">Email:</label>
-      <input 
-        type="email"
-        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
-        value={invoiceData.clientEmail}
-        onChange={(e) => setInvoiceData({...invoiceData, clientEmail: e.target.value})}
-      />
-    </div>
-    <div>
-      <label className="block text-sm font-semibold text-gray-600 mb-1">Phone:</label>
-      <input 
-        type="text"
-        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
-        value={invoiceData.clientPhone}
-        onChange={(e) => setInvoiceData({...invoiceData, clientPhone: e.target.value})}
-      />
-    </div>
-    <div>
-      <label className="block text-sm font-semibold text-gray-600 mb-1">Project Name:</label>
-      <input 
-        type="text"
-        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
-        value={invoiceData.projectName}
-        onChange={(e) => setInvoiceData({...invoiceData, projectName: e.target.value})}
-      />
-    </div>
-    <div className="sm:col-span-2">
-      <label className="block text-sm font-semibold text-gray-600 mb-1">Address:</label>
-      <textarea 
-        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white resize-none"
-        rows="2"
-        value={invoiceData.clientAddress}
-        onChange={(e) => setInvoiceData({...invoiceData, clientAddress: e.target.value})}
-      />
-    </div>
-  </div>
-</div>
+              <div className="bg-[#f0f7ff] p-4 sm:p-6 rounded-xl border border-blue-100 shadow-sm">
+                <h4 className="text-gray-700 font-bold mb-4 text-base">Client Information</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-600 mb-1">Client Name:</label>
+                    <input 
+                      type="text"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                      value={invoiceData.clientName}
+                      onChange={(e) => setInvoiceData({...invoiceData, clientName: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-600 mb-1">Email:</label>
+                    <input 
+                      type="email"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                      value={invoiceData.clientEmail}
+                      onChange={(e) => setInvoiceData({...invoiceData, clientEmail: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-600 mb-1">Phone:</label>
+                    <input 
+                      type="text"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                      value={invoiceData.clientPhone}
+                      onChange={(e) => setInvoiceData({...invoiceData, clientPhone: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-600 mb-1">Project Name:</label>
+                    <input 
+                      type="text"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                      value={invoiceData.projectName}
+                      onChange={(e) => setInvoiceData({...invoiceData, projectName: e.target.value})}
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-semibold text-gray-600 mb-1">Address:</label>
+                    <textarea 
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white resize-none"
+                      rows="2"
+                      value={invoiceData.clientAddress}
+                      onChange={(e) => setInvoiceData({...invoiceData, clientAddress: e.target.value})}
+                    />
+                  </div>
+                </div>
+              </div>
 
             {/* Payment Breakdown Section */}
-<div className="bg-[#fdfaff] p-5 rounded-xl border border-purple-100 shadow-sm">
-  <div className="font-bold text-gray-700 mb-4 flex items-center gap-2">
-    <span>🗓️</span> Payment Details
-  </div>
-  
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-    {/* 1. Advance Payment */}
-    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-3">
-      <div className="flex justify-between items-center">
-        <label className="text-xs font-bold text-gray-500 uppercase">1. Advance</label>
-        <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold">REQUIRED</span>
-      </div>
-      <select 
-        className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold focus:ring-2 focus:ring-purple-400 outline-none"
-        value={invoiceData.advancePercentage.replace('%', '')}
-        onChange={(e) => {
-          const percent = parseFloat(e.target.value);
-          const amt = (parseFloat(invoiceData.finalAmount) * percent) / 100;
-          setInvoiceData(prev => ({ ...prev, advancePaid: amt.toFixed(2), advancePercentage: percent + "%" }));
-        }}
-      >
-        <option value="0">Select Percentage</option>
-        <option value="40">40% Advance</option>
-        <option value="50">50% Advance</option>
-        <option value="100">100% Full Payment</option>
-      </select>
-      <div className="text-lg font-bold text-purple-600">
-        ₹{Number(invoiceData.advancePaid).toLocaleString('en-IN')}
-      </div>
-    </div>
+            <div className="bg-[#fdfaff] p-5 rounded-xl border border-purple-100 shadow-sm">
+              <div className="font-bold text-gray-700 mb-4 flex items-center gap-2">
+                <span>🗓️</span> Payment Details
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* 1. Advance Payment */}
+                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-3">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-bold text-gray-500 uppercase">1. Advance</label>
+                    <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold">REQUIRED</span>
+                  </div>
+                  <select 
+                    className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold focus:ring-2 focus:ring-purple-400 outline-none"
+                    value={invoiceData.advancePercentage.replace('%', '')}
+                    onChange={(e) => {
+                      const percent = parseFloat(e.target.value);
+                      const amt = (parseFloat(invoiceData.finalAmount) * percent) / 100;
+                      setInvoiceData(prev => ({ ...prev, advancePaid: amt.toFixed(2), advancePercentage: percent + "%" }));
+                    }}
+                  >
+                    <option value="0">Select Percentage</option>
+                    <option value="40">40% Advance</option>
+                    <option value="50">50% Advance</option>
+                    <option value="100">100% Full Payment</option>
+                  </select>
+                  <div className="text-lg font-bold text-purple-600">
+                    ₹{Number(invoiceData.advancePaid).toLocaleString('en-IN')}
+                  </div>
+                </div>
 
-    {/* 2. Mid-Way Payment */}
-    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-3">
-      <div className="flex justify-between items-center">
-        <label className="text-xs font-bold text-gray-500 uppercase">2. Mid-Way</label>
-        <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">OPTIONAL</span>
-      </div>
-      <select 
-        className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold focus:ring-2 focus:ring-blue-400 outline-none"
-        value={invoiceData.midwayPercentage.replace('%', '')}
-        onChange={(e) => {
-          const percent = parseFloat(e.target.value);
-          const amt = (parseFloat(invoiceData.finalAmount) * percent) / 100;
-          setInvoiceData(prev => ({ ...prev, midwayPaid: amt.toFixed(2), midwayPercentage: percent + "%" }));
-        }}
-      >
-        <option value="0">No Mid-way (0%)</option>
-        <option value="20">20% Milestone</option>
-        <option value="40">40% Milestone</option>
-      </select>
-      <div className="text-lg font-bold text-blue-600">
-        ₹{Number(invoiceData.midwayPaid).toLocaleString('en-IN')}
-      </div>
-    </div>
+                {/* 2. Mid-Way Payment */}
+                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-3">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-bold text-gray-500 uppercase">2. Mid-Way</label>
+                    <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">OPTIONAL</span>
+                  </div>
+                  <select 
+                    className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold focus:ring-2 focus:ring-blue-400 outline-none"
+                    value={invoiceData.midwayPercentage.replace('%', '')}
+                    onChange={(e) => {
+                      const percent = parseFloat(e.target.value);
+                      const amt = (parseFloat(invoiceData.finalAmount) * percent) / 100;
+                      setInvoiceData(prev => ({ ...prev, midwayPaid: amt.toFixed(2), midwayPercentage: percent + "%" }));
+                    }}
+                  >
+                    <option value="0">No Mid-way (0%)</option>
+                    <option value="20">20% Milestone</option>
+                    <option value="40">40% Milestone</option>
+                  </select>
+                  <div className="text-lg font-bold text-blue-600">
+                    ₹{Number(invoiceData.midwayPaid).toLocaleString('en-IN')}
+                  </div>
+                </div>
 
-    {/* 3. Pending Balance */}
-    <div className="bg-gradient-to-br from-orange-50 to-white p-4 rounded-xl border border-orange-100 shadow-sm space-y-3">
-      <div className="flex justify-between items-center">
-        <label className="text-xs font-bold text-orange-600 uppercase">3. Pending Details</label>
-        <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">DUE LATER</span>
-      </div>
-      <div className="pt-2">
-        <div className="text-2xl font-black text-orange-700">
-          ₹{(parseFloat(invoiceData.finalAmount) - parseFloat(invoiceData.advancePaid)).toLocaleString('en-IN')}
-        </div>
-        
-      </div>
-    </div>
-  </div>
-</div>
+                {/* 3. Pending Balance */}
+                <div className="bg-gradient-to-br from-orange-50 to-white p-4 rounded-xl border border-orange-100 shadow-sm space-y-3">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-bold text-orange-600 uppercase">3. Pending Details</label>
+                    <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">DUE LATER</span>
+                  </div>
+                  <div className="pt-2">
+                    <div className="text-2xl font-black text-orange-700">
+                      ₹{(parseFloat(invoiceData.finalAmount) - parseFloat(invoiceData.advancePaid)).toLocaleString('en-IN')}
+                    </div>
+                    
+                  </div>
+                </div>
+              </div>
+            </div>
 
-{/* Payment Method Selection */}
-<div className="bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm">
-  <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
-    💳 Payment Method
-  </label>
-  <select 
-    className="w-full p-3 bg-white border border-gray-300 rounded-lg font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
-    value={invoiceData.paymentMethod}
-    onChange={(e) => setInvoiceData({...invoiceData, paymentMethod: e.target.value})}
-  >
-    <option value="UPI/Online">UPI / Online Transfer</option>
-    <option value="Cash">Cash</option>
-    <option value="Cheque">Cheque</option>
-    <option value="Bank Transfer">NEFT / Bank Transfer</option>
-  </select>
-</div>
-           <div className="mt-4">
-  <label className="block text-sm font-bold text-gray-700 mb-2">
-    Authorized Signature
-  </label>
-  <div className="flex items-center gap-4 p-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors relative">
-    {/* Icon or Preview */}
-    <div className="w-16 h-12 border bg-white rounded flex items-center justify-center overflow-hidden">
-      {signature ? (
-        <img src={signature} alt="Sign" className="h-full object-contain" />
-      ) : (
-        <span className="text-gray-400 text-xs text-center">No sign</span>
-      )}
-    </div>
+            {/* Payment Method Selection */}
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm">
+              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
+                💳 Payment Method
+              </label>
+              <select 
+                className="w-full p-3 bg-white border border-gray-300 rounded-lg font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
+                value={invoiceData.paymentMethod}
+                onChange={(e) => setInvoiceData({...invoiceData, paymentMethod: e.target.value})}
+              >
+                <option value="UPI/Online">UPI / Online Transfer</option>
+                <option value="Cash">Cash</option>
+                <option value="Cheque">Cheque</option>
+                <option value="Bank Transfer">NEFT / Bank Transfer</option>
+              </select>
+            </div>
+                      <div className="mt-4">
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                Authorized Signature
+              </label>
+              <div className="flex items-center gap-4 p-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors relative">
+                {/* Icon or Preview */}
+                <div className="w-16 h-12 border bg-white rounded flex items-center justify-center overflow-hidden">
+                  {signature ? (
+                    <img src={signature} alt="Sign" className="h-full object-contain" />
+                  ) : (
+                    <span className="text-gray-400 text-xs text-center">No sign</span>
+                  )}
+                </div>
 
-    {/* Text and Hidden Input */}
-    <div>
-      <p className="text-sm font-medium text-indigo-600">Click to upload image</p>
-      <p className="text-xs text-gray-500">PNG, JPG or JPEG</p>
-    </div>
+                {/* Text and Hidden Input */}
+                <div>
+                  <p className="text-sm font-medium text-indigo-600">Click to upload image</p>
+                  <p className="text-xs text-gray-500">PNG, JPG or JPEG</p>
+                </div>
 
-    <input 
-      type="file" 
-      accept="image/*" 
-      className="absolute inset-0 opacity-0 cursor-pointer" 
-      onChange={(e) => {
-        const file = e.target.files[0];
-        if (file) setSignature(URL.createObjectURL(file));
-      }} 
-    />
-  </div>
-  {signature && (
-    <button 
-      onClick={() => setSignature(null)}
-      className="text-xs text-red-500 mt-2 underline"
-    >
-      Clear signature
-    </button>
-  )}
-</div>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  className="absolute inset-0 opacity-0 cursor-pointer" 
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) setSignature(URL.createObjectURL(file));
+                  }} 
+                />
+              </div>
+              {signature && (
+                <button 
+                  onClick={() => setSignature(null)}
+                  className="text-xs text-red-500 mt-2 underline"
+                >
+                  Clear signature
+                </button>
+              )}
+            </div>
 
             <div className="flex gap-4 pt-4">
               <button onClick={handleSaveInvoice} className="bg-green-600 text-white px-8 py-3 rounded-lg font-bold shadow">Save Invoice</button>
@@ -525,20 +549,20 @@ const handleInvoicePrint = () => {
             <div>
               <h1 className="text-lg font-bold">SMARTMATRIX Digital Services</h1>
               <p className="text-[13px] leading-tight">First Floor, Survey No. 21, Ganesham Commercial-A, Office No 102-A,
-Aundh-Ravet BRTS Rd, Pimple Saudagar, Pune 411027</p>
+                Aundh-Ravet BRTS Rd, Pimple Saudagar, Pune 411027</p>
               <p className="text-[13px]">Phone: 9112108484</p>
+              <p className="text-[13px]">GSTIN: 27ABCDE1234F1Z5</p>
             </div>
           </div>
           <h1 className="text-3xl font-bold tracking-tighter">INVOICE</h1>
         </div>
 
         {/* TAX TITLE */}
+        <div className="text-center text-gray-500 font-bold text-base py-3 border-b">
 
-<div className="text-center text-gray-500 font-bold text-base py-3 border-b">
+        TAX INVOICE
 
-TAX INVOICE
-
-</div>
+        </div>
 
         {/* Info Grid */}
         <div className="grid grid-cols-2 border-b border-gray-400">
@@ -553,13 +577,15 @@ TAX INVOICE
             <div className="flex justify-between border-b border-gray-300 py-1"><span>Invoice No:</span><span className="font-medium">{invoiceData.invoiceNumber}</span></div>
             <div className="flex justify-between border-b border-gray-300 py-1"><span>Invoice Date:</span><span className="font-medium">{invoiceData.invoiceDate}</span></div>
             <div className="flex justify-between border-b border-gray-300 py-1"><span>Employee:</span><span className="font-medium">{currentEmpName}</span></div>
+         
+         
           {/* Replace the hardcoded line with this dynamic one */}
-<div className="flex justify-between border-b border-gray-300 py-1">
-  <span>Payment Method:</span>
-  <span className="font-bold text-green-600">
-    {invoiceData.paymentMethod}
-  </span>
-</div>
+          <div className="flex justify-between border-b border-gray-300 py-1">
+            <span>Payment Method:</span>
+            <span className="font-bold text-green-600">
+              {invoiceData.paymentMethod}
+            </span>
+          </div>
             <div className="flex justify-between py-1">
               <span>Payment Status:</span>
               <span className={`font-bold ${invoiceData.paymentStatus === 'Paid' ? 'text-green-600' : 'text-red-600'}`}>
@@ -590,26 +616,52 @@ TAX INVOICE
         </table>
 
        {/* Totals Section */}
-<div className="grid grid-cols-2 border border-gray-400 mt-4">
-  <div className="p-4 border-r-2 border-gray-400 justify-center bg-gray-50/50">
-    <p className="font-bold text-[12px] uppercase text-gray-700 mb-1">Total in words:</p>   <br />
-    <p 
-  style={{ fontSize: '15px' }} 
-  className="uppercase leading-tight text-gray-900 tracking-wide font-medium"
->
-  {numberToWords(Math.round(invoiceData.finalAmount))} RUPEES ONLY
-</p>
-  </div>
-          <div className="p-0 text-sm">
-            <div className="flex justify-between p-2 border-b border-gray-300"><span>Total Project Amount:</span><span>₹{Number(invoiceData.totalAmount).toLocaleString("en-IN")}</span></div>
-            <div className="flex justify-between p-2 border-b border-gray-300 text-gray-900"><span>GST ({invoiceData.taxRate}%):</span><span>₹{Number(invoiceData.taxAmount).toLocaleString("en-IN")}</span></div>
-            <div className="flex justify-between p-2 font-black text-base"><span>Final Amount:</span><span>₹{Number(invoiceData.finalAmount).toLocaleString("en-IN")}</span></div>
-            <div className="flex justify-between p-2 text-green-900 font-bold bg-green-100"><span>Paid Amount:</span><span className="font-bold">₹{Number(invoiceData.totalPaidAmount).toLocaleString("en-IN")}</span></div>
-            <div className="flex justify-between p-2 border-t-2 border-orange-500 bg-orange-50 font-bold text-orange-700">
-              <span>Balance Amount:</span>
-              <span>₹{Number(invoiceData.balanceAmount).toLocaleString("en-IN")}</span>
-            </div>
+        <div className="grid grid-cols-2 border border-gray-400 mt-4">
+          <div className="p-4 border-r-2 border-gray-400 justify-center bg-gray-50/50">
+            <p className="font-bold text-[12px] uppercase text-gray-700 mb-1">Total in words:</p>   <br />
+            <p 
+          style={{ fontSize: '15px' }} 
+          className="uppercase leading-tight text-gray-900 tracking-wide font-medium"
+        >
+          {numberToWords(Math.round(invoiceData.finalAmount))} RUPEES ONLY
+        </p>
           </div>
+                  <div className="p-0 text-sm">
+          <div className="flex justify-between p-2 border-b border-gray-300">
+            <span>Total Project Amount:</span>
+            <span>₹{Number(invoiceData.totalAmount).toLocaleString("en-IN")}</span>
+          </div>
+
+          {/* Show GST only if GST exists */}
+          {invoiceData.taxRate > 0 && (
+            <div className="flex justify-between p-2 border-b border-gray-300 text-gray-900">
+              <span>GST ({invoiceData.taxRate}%):</span>
+              <span>₹{Number(invoiceData.taxAmount).toLocaleString("en-IN")}</span>
+            </div>
+          )}
+
+          <div className="flex justify-between p-2 font-black text-base">
+            <span>Final Amount:</span>
+            <span>₹{Number(invoiceData.finalAmount).toLocaleString("en-IN")}</span>
+          </div>
+
+          {/* Show inclusive tax message if GST = 0 */}
+          {invoiceData.taxRate == 0 && (
+            <div className="px-2 pb-2 text-xs text-gray-700 italic">
+              ( Amount is inclusive of all applicable taxes.)
+            </div>
+          )}
+
+          <div className="flex justify-between p-2 text-green-900 font-bold bg-green-100">
+            <span>Paid Amount:</span>
+            <span>₹{Number(invoiceData.totalPaidAmount).toLocaleString("en-IN")}</span>
+          </div>
+
+          <div className="flex justify-between p-2 border-t-2 border-orange-500 bg-orange-50 font-bold text-orange-700">
+            <span>Balance Amount:</span>
+            <span>₹{Number(invoiceData.balanceAmount).toLocaleString("en-IN")}</span>
+          </div>
+        </div>
         </div>
 
         {/* Signature */}
