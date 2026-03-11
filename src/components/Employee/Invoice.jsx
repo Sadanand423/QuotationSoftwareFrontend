@@ -15,6 +15,9 @@ const Invoice = () => {
   const [approvedQuotations, setApprovedQuotations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [remainingBalance, setRemainingBalance] = useState(0);
+  const [previouslyPaid, setPreviouslyPaid] = useState(0);
+  const [quotationPayments, setQuotationPayments] = useState({});
 
   // ✅ Get Employee ID
   const currentEmpId = localStorage.getItem("empId") || "EMP-001";
@@ -70,28 +73,29 @@ const Invoice = () => {
 
   // ✅ Auto-calculate totals whenever payment fields change
  useEffect(() => {
-  const final = parseFloat(invoiceData.finalAmount) || 0;
   const adv = parseFloat(invoiceData.advancePaid) || 0;
   const mid = parseFloat(invoiceData.midwayPaid) || 0;
   
-  // Total money received so far
-  const totalPaid = adv + mid;
-  const balance = final - totalPaid;
+  const totalPaidThisInvoice = adv + mid;
+  const balanceAfterThis = remainingBalance - totalPaidThisInvoice;
+
+  const quotationTotal = parseFloat(invoiceData.finalAmount) || 0;
+  const overallPaid = previouslyPaid + totalPaidThisInvoice;
 
   let status = "Pending";
-  if (totalPaid >= final && final > 0) {
+  if (overallPaid >= quotationTotal && quotationTotal > 0) {
     status = "Paid";
-  } else if (totalPaid > 0) {
+  } else if (overallPaid > 0) {
     status = "Partially Paid";
   }
 
   setInvoiceData(prev => ({
     ...prev,
-    totalPaidAmount: totalPaid.toFixed(2),
-    balanceAmount: balance.toFixed(2),
+    totalPaidAmount: totalPaidThisInvoice.toFixed(2),
+    balanceAmount: balanceAfterThis.toFixed(2),
     paymentStatus: status
   }));
-}, [invoiceData.advancePaid, invoiceData.midwayPaid, invoiceData.finalAmount]);
+}, [invoiceData.advancePaid, invoiceData.midwayPaid, remainingBalance, previouslyPaid, invoiceData.finalAmount]);
 
   // ✅ Fetch Approved Quotations
   useEffect(() => {
@@ -112,6 +116,20 @@ const Invoice = () => {
           const quotData = await quotResponse.json();
           const approved = quotData.filter(q => q.status === 'Approved');
           setApprovedQuotations(approved);
+
+          // Fetch payment summaries for all approved quotations
+          const quotationIds = approved.map(q => q.quotationNumber || q.id);
+          if (quotationIds.length > 0) {
+            const summaryResponse = await fetch('http://localhost:8080/api/invoices/payment-summaries', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(quotationIds)
+            });
+            if (summaryResponse.ok) {
+              const summaries = await summaryResponse.json();
+              setQuotationPayments(summaries);
+            }
+          }
         }
       } catch (error) {
         console.error("Error loading data:", error);
@@ -133,7 +151,8 @@ const Invoice = () => {
   );
 });
 
- const generateInvoice = (quotation) => {
+ const generateInvoice = async (quotation) => {
+  const quotationId = quotation.quotationNumber || quotation.id;
 
   const rawAmount =
     typeof quotation.totalCost === "string"
@@ -142,27 +161,51 @@ const Invoice = () => {
 
   const gstPercent = quotation.gstPercent || 0;
   const gstAmount = quotation.gstAmount || 0;
+  const finalTotal = quotation.finalAmount || rawAmount + gstAmount;
 
-  // If finalAmount exists use it, otherwise calculate
-  const finalTotal =
-    quotation.finalAmount || rawAmount + gstAmount;
+  // Fetch existing invoices for this quotation to calculate remaining balance
+  let totalAlreadyPaid = 0;
+  try {
+    const res = await fetch(`http://localhost:8080/api/invoices/by-quotation/${encodeURIComponent(quotationId)}`);
+    if (res.ok) {
+      const existingInvoices = await res.json();
+      totalAlreadyPaid = existingInvoices.reduce((sum, inv) => sum + (parseFloat(inv.totalPaidAmount) || 0), 0);
+    }
+  } catch (err) {
+    console.error("Error fetching existing invoices:", err);
+  }
+
+  const remaining = finalTotal - totalAlreadyPaid;
+
+  if (remaining <= 0) {
+    alert("This quotation is fully paid. No more invoices can be generated.");
+    return;
+  }
+
+  setPreviouslyPaid(totalAlreadyPaid);
+  setRemainingBalance(remaining);
 
   setInvoiceData((prev) => ({
     ...prev,
-    quotationId: quotation.quotationNumber || quotation.id,
+    invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
+    quotationId: quotationId,
     clientName: quotation.client || "",
     clientEmail: quotation.clientEmail || "",
     clientPhone: quotation.clientPhone || "",
     clientAddress: quotation.clientAddress || "",
     projectName: quotation.project || "",
-
-    totalAmount: rawAmount,
-
-    // 🔥 Fetch GST directly from DB
+    totalAmount: finalTotal,
     taxRate: gstPercent,
     taxAmount: gstAmount,
-
     finalAmount: finalTotal,
+    advancePercentage: '0%',
+    advancePaid: 0,
+    midwayPercentage: '0%',
+    midwayPaid: 0,
+    finalPaymentPaid: 0,
+    totalPaidAmount: 0,
+    balanceAmount: remaining,
+    paymentStatus: 'Pending',
   }));
 
   setSelectedQuotation(quotation);
@@ -170,6 +213,16 @@ const Invoice = () => {
 };
 
   const handleSaveInvoice = async () => {
+    const totalPaidThisInvoice = parseFloat(invoiceData.totalPaidAmount) || 0;
+    if (totalPaidThisInvoice <= 0) {
+      alert("Please select a payment amount before saving the invoice.");
+      return;
+    }
+    if (totalPaidThisInvoice > remainingBalance + 0.01) {
+      alert(`Payment amount (₹${totalPaidThisInvoice.toFixed(2)}) exceeds remaining balance (₹${remainingBalance.toFixed(2)}) for this quotation.`);
+      return;
+    }
+
     try {
       const savedName = localStorage.getItem("empName") || currentEmpName;
       const payload = {
@@ -187,8 +240,14 @@ const Invoice = () => {
       });
 
       if (response.ok) {
+        const qId = invoiceData.quotationId;
+        setQuotationPayments(prev => ({
+          ...prev,
+          [qId]: (prev[qId] || 0) + totalPaidThisInvoice
+        }));
         alert("Invoice generated and saved successfully! ✅");
-        navigate('./Invoice'); 
+        setShowForm(false);
+        setShowPreview(false);
       } else {
         const errorData = await response.json();
         alert(`Failed to save: ${errorData.message || 'Unknown error'}`);
@@ -293,7 +352,14 @@ const handleInvoicePrint = () => {
                 <div className="text-center py-6 text-gray-500">Loading approved projects...</div>
             ) : approvedQuotations.length > 0 ? (
               <div className="space-y-3 sm:space-y-4">
-                {filteredQuotations.map((quotation) => (
+                {filteredQuotations.map((quotation) => {
+                  const qId = quotation.quotationNumber || quotation.id;
+                  const qTotal = quotation.finalAmount || quotation.totalCost || 0;
+                  const paidSoFar = quotationPayments[qId] || 0;
+                  const qRemaining = qTotal - paidSoFar;
+                  const isFullyPaid = qRemaining <= 0;
+
+                  return (
                   <div key={quotation.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors gap-3">
                     <div className="flex-1">
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
@@ -302,19 +368,29 @@ const handleInvoicePrint = () => {
                           <p className="text-xs sm:text-sm text-gray-600">{quotation.client} - {quotation.project}</p>
                         </div>
                         <div className="text-left sm:text-right">
-                          <p className="font-bold text-green-600">₹{quotation.totalCost?.toLocaleString('en-IN')}</p>
+                          <p className="font-bold text-green-600">₹{(quotation.finalAmount || quotation.totalCost + (quotation.gstAmount || 0))?.toLocaleString('en-IN')}</p>
+                          {paidSoFar > 0 && (
+                            <p className="text-xs text-blue-600 font-medium">Paid: ₹{paidSoFar.toLocaleString('en-IN')} | Remaining: ₹{Math.max(0, qRemaining).toLocaleString('en-IN')}</p>
+                          )}
                           <p className="text-xs text-gray-500">Approved: {quotation.date}</p>
                         </div>
                       </div>
                     </div>
-                    <button 
-                      onClick={() => generateInvoice(quotation)}
-                      className="bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 transition-colors font-medium text-sm"
-                    >
-                      Generate Invoice
-                    </button>
+                    {isFullyPaid ? (
+                      <span className="bg-green-100 text-green-700 px-4 py-2 rounded-lg font-bold text-sm">
+                        ✅ Fully Paid
+                      </span>
+                    ) : (
+                      <button 
+                        onClick={() => generateInvoice(quotation)}
+                        className="bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 transition-colors font-medium text-sm"
+                      >
+                        Generate Invoice
+                      </button>
+                    )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-6 sm:py-8">
@@ -328,6 +404,11 @@ const handleInvoicePrint = () => {
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
           <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-4 py-4">
             <h3 className="text-lg font-bold text-white">Generate Invoice - {invoiceData.quotationId}</h3>
+            {previouslyPaid > 0 && (
+              <p className="text-green-100 text-sm mt-1">
+                Previously Paid: ₹{previouslyPaid.toLocaleString('en-IN')} | Remaining Balance: ₹{remainingBalance.toLocaleString('en-IN')}
+              </p>
+            )}
           </div>
           
           <div className="p-4 sm:p-6 space-y-6">
@@ -400,8 +481,13 @@ const handleInvoicePrint = () => {
 
             {/* Payment Breakdown Section */}
             <div className="bg-[#fdfaff] p-5 rounded-xl border border-purple-100 shadow-sm">
-              <div className="font-bold text-gray-700 mb-4 flex items-center gap-2">
-                <span>🗓️</span> Payment Details
+              <div className="font-bold text-gray-700 mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span>🗓️</span> Payment Details
+                </div>
+                <div className="text-sm font-bold text-indigo-600">
+                  Available Balance: ₹{remainingBalance.toLocaleString('en-IN')}
+                </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -416,7 +502,7 @@ const handleInvoicePrint = () => {
                     value={invoiceData.advancePercentage.replace('%', '')}
                     onChange={(e) => {
                       const percent = parseFloat(e.target.value);
-                      const amt = (parseFloat(invoiceData.finalAmount) * percent) / 100;
+                      const amt = (remainingBalance * percent) / 100;
                       setInvoiceData(prev => ({ ...prev, advancePaid: amt.toFixed(2), advancePercentage: percent + "%" }));
                     }}
                   >
@@ -441,7 +527,7 @@ const handleInvoicePrint = () => {
                     value={invoiceData.midwayPercentage.replace('%', '')}
                     onChange={(e) => {
                       const percent = parseFloat(e.target.value);
-                      const amt = (parseFloat(invoiceData.finalAmount) * percent) / 100;
+                      const amt = (remainingBalance * percent) / 100;
                       setInvoiceData(prev => ({ ...prev, midwayPaid: amt.toFixed(2), midwayPercentage: percent + "%" }));
                     }}
                   >
@@ -462,7 +548,7 @@ const handleInvoicePrint = () => {
                   </div>
                   <div className="pt-2">
                     <div className="text-2xl font-black text-orange-700">
-                      ₹{(parseFloat(invoiceData.finalAmount) - parseFloat(invoiceData.advancePaid)).toLocaleString('en-IN')}
+                      ₹{(remainingBalance - (parseFloat(invoiceData.advancePaid) || 0) - (parseFloat(invoiceData.midwayPaid) || 0)).toLocaleString('en-IN')}
                     </div>
                     
                   </div>
@@ -652,13 +738,20 @@ const handleInvoicePrint = () => {
             </div>
           )}
 
+          {previouslyPaid > 0 && (
+            <div className="flex justify-between p-2 text-blue-800 bg-blue-50 border-b border-blue-200">
+              <span>Previously Paid:</span>
+              <span>₹{previouslyPaid.toLocaleString("en-IN")}</span>
+            </div>
+          )}
+
           <div className="flex justify-between p-2 text-green-900 font-bold bg-green-100">
-            <span>Paid Amount:</span>
+            <span>This Invoice Amount:</span>
             <span>₹{Number(invoiceData.totalPaidAmount).toLocaleString("en-IN")}</span>
           </div>
 
           <div className="flex justify-between p-2 border-t-2 border-orange-500 bg-orange-50 font-bold text-orange-700">
-            <span>Balance Amount:</span>
+            <span>Remaining Balance:</span>
             <span>₹{Number(invoiceData.balanceAmount).toLocaleString("en-IN")}</span>
           </div>
         </div>

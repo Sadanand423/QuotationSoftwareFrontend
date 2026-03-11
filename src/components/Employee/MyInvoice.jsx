@@ -71,20 +71,31 @@ const MyInvoice = () => {
         body: JSON.stringify({ status: newStatus }),
       });
       if (response.ok) {
+        // Update local state immediately
         setInvoices((prev) =>
           prev.map((inv) => (inv.id === invoiceId ? { ...inv, status: newStatus } : inv))
         );
         setEditingStatusInvoiceId(null);
+        // Optional: Refresh from backend to ensure consistency
+        // Uncomment below to fetch fresh data from server
+        // await fetchMyInvoices();
+      } else {
+        console.error('Failed to update status:', response.statusText);
+        alert('Failed to update invoice status. Please try again.');
       }
     } catch (error) {
       console.error('Error updating status:', error);
+      alert('Error updating invoice status');
     }
   };
 
   const STATUS_OPTIONS = [
-    { label: 'Paid',    value: 'Paid',    classes: 'bg-green-100 text-green-700 hover:bg-green-200' },
-    { label: 'Unpaid',  value: 'Unpaid',  classes: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' },
-    { label: 'Overdue', value: 'Overdue', classes: 'bg-red-100 text-red-700 hover:bg-red-200' },
+    { label: 'Sent',           value: 'Sent',           classes: 'bg-blue-100 text-blue-700 hover:bg-blue-200' },
+    { label: 'Pending',        value: 'Pending',        classes: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' },
+    { label: 'Partially Paid', value: 'Partially Paid', classes: 'bg-purple-100 text-purple-700 hover:bg-purple-200' },
+    { label: 'Paid',           value: 'Paid',           classes: 'bg-green-100 text-green-700 hover:bg-green-200' },
+    { label: 'Overdue',        value: 'Overdue',        classes: 'bg-red-100 text-red-700 hover:bg-red-200' },
+    { label: 'Cancelled',      value: 'Cancelled',      classes: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
   ];
 
   const handlePrint = (invoice) => {
@@ -219,55 +230,79 @@ const MyInvoice = () => {
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                              {clientGroup.invoices.map((inv) => (
-                                <tr key={inv.id} className="hover:bg-teal-50/40 transition-colors">
-                                  <td
-                                    className="px-5 py-3 text-sm font-bold text-teal-700 cursor-pointer hover:underline"
-                                    onClick={() => setSelectedInvoice(inv)}
-                                  >{inv.invoiceNumber}</td>
-                                  <td className="px-5 py-3 text-sm text-gray-500">{inv.invoiceDate}</td>
-                                  <td className="px-5 py-3 text-sm font-semibold text-gray-900">
-                                    ₹{Number(inv.finalAmount || 0).toLocaleString('en-IN')}
-                                  </td>
-                                  <td className="px-5 py-3 text-sm font-semibold text-green-700">
-                                    ₹{Number(inv.totalPaidAmount || 0).toLocaleString('en-IN')}
-                                  </td>
-                                  <td className="px-5 py-3 text-sm font-semibold text-gray-900">
-                                    ₹{Number(inv.balanceAmount || 0).toLocaleString('en-IN')}
-                                  </td>
-                                  <td className="px-5 py-3">
-                                    <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusClasses(inv.status)}`}>
-                                      {inv.status || 'Sent'}
-                                    </span>
-                                  </td>
-                                  <td className="px-5 py-3 text-sm">
-                                    <div className="flex items-center gap-3">
-                                      <button
-                                        onClick={() => setSelectedInvoice(inv)}
-                                        className="text-teal-600 hover:text-teal-800 font-medium"
-                                      >
-                                        View
-                                      </button>
-                                      <div className="relative">
-                                        <button
-                                          onClick={(e) => {
-                                            if (editingStatusInvoiceId === inv.id) {
-                                              setEditingStatusInvoiceId(null);
-                                            } else {
-                                              const rect = e.currentTarget.getBoundingClientRect();
-                                              setStatusPickerPos({ top: rect.bottom + window.scrollY, left: rect.left + window.scrollX });
-                                              setEditingStatusInvoiceId(inv.id);
-                                            }
-                                          }}
-                                          className="text-indigo-600 hover:text-indigo-800 font-medium"
-                                        >
-                                          Edit
-                                        </button>
-                                      </div>
-                                    </div>
-                                  </td>
-                                </tr>
-                              ))}
+                              {(() => {
+                                // Group invoices by quotationId (project)
+                                const groupedByProject = clientGroup.invoices.reduce((acc, inv) => {
+                                  const qId = inv.quotationId || 'unknown';
+                                  if (!acc[qId]) {
+                                    acc[qId] = { quotationId: qId, projectName: inv.projectName || 'Unnamed Project', invoices: [] };
+                                  }
+                                  acc[qId].invoices.push(inv);
+                                  return acc;
+                                }, {});
+
+                                // Render grouped invoices with project headers
+                                return Object.entries(groupedByProject).map(([qId, projectGroup]) => (
+                                  <React.Fragment key={qId}>
+                                    {/* Project Header Row */}
+                                    <tr className="bg-gray-100 border-t border-b border-gray-300">
+                                      <td colSpan="7" className="px-5 py-2 font-bold text-gray-700 text-sm">
+                                        PROJECT: {projectGroup.projectName}
+                                      </td>
+                                    </tr>
+                                    {/* Invoice Rows for this Project */}
+                                    {projectGroup.invoices.map((inv) => (
+                                      <tr key={inv.id} className="hover:bg-teal-50/40 transition-colors">
+                                        <td
+                                          className="px-5 py-3 text-sm font-bold text-teal-700 cursor-pointer hover:underline"
+                                          onClick={() => setSelectedInvoice(inv)}
+                                        >{inv.invoiceNumber}</td>
+                                        <td className="px-5 py-3 text-sm text-gray-500">{inv.invoiceDate}</td>
+                                        <td className="px-5 py-3 text-sm font-semibold text-gray-900">
+                                          ₹{Number(inv.finalAmount || 0).toLocaleString('en-IN')}
+                                        </td>
+                                        <td className="px-5 py-3 text-sm font-semibold text-green-700">
+                                          ₹{Number(inv.totalPaidAmount || 0).toLocaleString('en-IN')}
+                                        </td>
+                                        <td className="px-5 py-3 text-sm font-semibold text-gray-900">
+                                          ₹{Number(inv.balanceAmount || 0).toLocaleString('en-IN')}
+                                        </td>
+                                        <td className="px-5 py-3">
+                                          <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusClasses(inv.status)}`}>
+                                            {inv.status || 'Sent'}
+                                          </span>
+                                        </td>
+                                        <td className="px-5 py-3 text-sm">
+                                          <div className="flex items-center gap-3">
+                                            <button
+                                              onClick={() => setSelectedInvoice(inv)}
+                                              className="text-teal-600 hover:text-teal-800 font-medium"
+                                            >
+                                              View
+                                            </button>
+                                            <div className="relative">
+                                              <button
+                                                onClick={(e) => {
+                                                  if (editingStatusInvoiceId === inv.id) {
+                                                    setEditingStatusInvoiceId(null);
+                                                  } else {
+                                                    const rect = e.currentTarget.getBoundingClientRect();
+                                                    setStatusPickerPos({ top: rect.bottom + window.scrollY, left: rect.left + window.scrollX });
+                                                    setEditingStatusInvoiceId(inv.id);
+                                                  }
+                                                }}
+                                                className="text-indigo-600 hover:text-indigo-800 font-medium"
+                                              >
+                                                Edit
+                                              </button>
+                                            </div>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </React.Fragment>
+                                ));
+                              })()}
                             </tbody>
                           </table>
                           </div>
@@ -309,8 +344,23 @@ const MyInvoice = () => {
             onClick={() => setEditingStatusInvoiceId(null)}
           />
           <div
-            className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-xl p-2 flex flex-col gap-1"
-            style={{ top: statusPickerPos.top + 6, left: statusPickerPos.left }}
+            className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-xl p-2 flex flex-col gap-1 max-w-xs"
+            style={{
+              top: (() => {
+                const dropdownHeight = 200;
+                const padding = 10;
+                return statusPickerPos.top + dropdownHeight > window.innerHeight - padding
+                  ? Math.max(0, statusPickerPos.top - dropdownHeight - 10)
+                  : statusPickerPos.top + 6;
+              })(),
+              left: (() => {
+                const dropdownWidth = 160;
+                const padding = 10;
+                return statusPickerPos.left + dropdownWidth > window.innerWidth - padding
+                  ? Math.max(0, window.innerWidth - dropdownWidth - padding)
+                  : statusPickerPos.left;
+              })(),
+            }}
           >
             <p className="text-xs text-gray-400 font-semibold uppercase px-1 pb-1">Set Status</p>
             {STATUS_OPTIONS.map((opt) => (

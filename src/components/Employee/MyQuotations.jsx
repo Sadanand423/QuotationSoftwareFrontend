@@ -111,7 +111,7 @@ const MyQuotations = () => {
                     <td className="px-6 py-4 text-sm font-medium">{quote.quotationNumber}</td>
                     <td className="px-6 py-4 text-sm text-gray-800">{quote.client}</td>
                     <td className="px-6 py-4 text-sm font-semibold text-gray-900">
-                      {quote.currency} {quote.totalCost?.toLocaleString()}
+                      {quote.currency} {(quote.finalAmount || quote.totalCost + (quote.gstAmount || 0))?.toLocaleString('en-IN')}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 text-xs rounded-full font-medium ${
