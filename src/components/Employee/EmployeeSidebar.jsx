@@ -1,5 +1,6 @@
 import React from 'react';
 import { LayoutDashboard, Users, PlusCircle, FileText, Receipt, FileCheck, User } from "lucide-react";
+import mainlogo from "../../assets/mainlogo.webp";
 
 const EmployeeSidebar = ({ activeModule, setActiveModule, onClose }) => {
   const menuItems = [
@@ -16,9 +17,13 @@ const EmployeeSidebar = ({ activeModule, setActiveModule, onClose }) => {
 <div className="w-64 bg-gradient-to-b from-[#171b4d] via-[#370b3b] to-[#a82d55] text-white shadow-2xl h-full">      <div className="p-4 sm:p-6 border-b border-gray-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2 sm:space-x-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm sm:text-lg">Q</span>
-            </div>
+           <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white rounded-lg flex items-center justify-center overflow-hidden p-0.5 shadow-inner">
+                               <img 
+                                 src={mainlogo} 
+                                 alt="Main Logo" 
+                                 className="w-18 h-18 object-contain" 
+                               />
+                             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                 QuoteEmployee

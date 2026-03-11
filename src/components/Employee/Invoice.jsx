@@ -169,33 +169,46 @@ const Invoice = () => {
   setShowForm(true);
 };
 
-  const handleSaveInvoice = async () => {
+ const handleSaveInvoice = async () => {
     try {
       const savedName = localStorage.getItem("empName") || currentEmpName;
+      const empId = localStorage.getItem("empId") || currentEmpId;
+
+      // Prepare the data exactly how the Backend expects it
       const payload = {
         ...invoiceData,
-        employeeId: currentEmpId,
+        employeeId: empId,
         employeeName: savedName,
-        status: 'Sent',
+        // Ensure status is 'Sent' so the Admin knows it's active
+        status: 'Sent', 
         date: new Date().toLocaleDateString('en-IN')
       };
 
+      // Ensure the URL matches your Controller: /api/invoices/create
       const response = await fetch(`http://localhost:8080/api/invoices/create`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json' 
+        },
         body: JSON.stringify(payload)
       });
 
       if (response.ok) {
+        // This is where the magic happens: 
+        // The Java backend receives this, saves it, and creates the Notification.
         alert("Invoice generated and saved successfully! ✅");
+        
+        // Reset view
+        setShowForm(false);
+        // If you want to go back to the invoice list
         navigate('./Invoice'); 
       } else {
         const errorData = await response.json();
-        alert(`Failed to save: ${errorData.message || 'Unknown error'}`);
+        alert(`Failed to save invoice: ${errorData.message || 'Server Error'}`);
       }
     } catch (error) {
       console.error("Save Error:", error);
-      alert("Server connection error ❌");
+      alert("Server connection error ❌. Is the backend running?");
     }
   };
 

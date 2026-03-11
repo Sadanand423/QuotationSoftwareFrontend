@@ -1,5 +1,6 @@
   import React from 'react';
   import { LayoutDashboard, FileText, Receipt, Users, UserCog, BarChart3, User } from "lucide-react";
+  import mainlogo from "../../assets/mainlogo.webp";
 
   const Sidebar = ({ activeModule, setActiveModule, sidebarOpen, setSidebarOpen }) => {
     const menuItems = [
@@ -29,9 +30,13 @@
           <div className="p-4 sm:p-6 border-b border-gray-700">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm sm:text-lg">Q</span>
-                </div>
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white rounded-lg flex items-center justify-center overflow-hidden p-0.5 shadow-inner">
+                    <img 
+                      src={mainlogo} 
+                      alt="Main Logo" 
+                      className="w-18 h-18 object-contain" 
+                    />
+                  </div>
                 <div>
                   <h2 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                     QuoteAdmin
