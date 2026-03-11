@@ -213,6 +213,40 @@ const handleSendForApprovalClick = () => {
     }
   };
 
+  const paymentTerms = [
+  { percent: 25, label: "Advance – Kickoff" },
+  { percent: 30, label: "Main + Subscription MVP" },
+  { percent: 25, label: "Payments complete" },
+  { percent: 20, label: "Admin + Launch" }
+];
+
+const calculatePayment = (percent) => {
+  return Math.round((formData.totalCost * percent) / 100);
+};
+
+const calculateTimelineWeeks = () => {
+  if (!formData.timeline) return 0;
+
+  return formData.timeline.reduce((total, item) => {
+    const match = item.duration?.match(/\d+/); // extract number
+    const weeks = match ? Number(match[0]) : 0;
+    return total + weeks;
+  }, 0);
+};
+
+const calculateMaintenanceRange = () => {
+  if (!formData.maintenancePlans?.length) return "₹0";
+
+  const yearlyPrices = formData.maintenancePlans.map(
+    plan => (Number(plan.monthly) || 0) * 12
+  );
+
+  const min = Math.min(...yearlyPrices);
+  const max = Math.max(...yearlyPrices);
+
+  return `₹${min.toLocaleString("en-IN")} – ₹${max.toLocaleString("en-IN")}`;
+};
+
 
   return (
   <div className="fixed inset-0 bg-black/50 z-50 overflow-y-auto p-6 print:static print:bg-white print:p-0">
@@ -255,7 +289,7 @@ const handleSendForApprovalClick = () => {
           </div>
 
           {/* Project Info */}
-          <div className="bg-orange-50 border border-orange-300 p-6 rounded-lg">
+          <div className=" border border-gray-500 p-6 rounded-lg">
             <h3 className="text-lg font-bold text-orange-700 mb-4">
               Project Details
             </h3>
@@ -269,8 +303,8 @@ const handleSendForApprovalClick = () => {
    
           {/* About Project */}
           {formData.aboutProject && (
-            <div className=" p-4 rounded-lg print:bg-transparent print:border-none print:p-0">
-              <h3 className="text-xl font-bold mb-4">About Project</h3>
+            <div className=" rounded-lg print:bg-transparent print:border-none print:p-0">
+              <h3 className="text-xl font-bold mb-4">1. About Project</h3>
               <p className="text-sm text-gray-800 whitespace-pre-line leading-relaxed print:text-black">
                 {formData.aboutProject}
               </p>
@@ -280,8 +314,8 @@ const handleSendForApprovalClick = () => {
    
           {/* ==============Scope of Work============== */}
           {formData.scopeOfWork && (
-            <div className=" p-4 rounded-lg print:bg-transparent print:border-none print:p-0">
-              <h3 className="text-xl font-bold mb-4">Scope of Work</h3>
+            <div className=" rounded-lg print:bg-transparent print:border-none print:p-0">
+              <h3 className="text-xl font-bold mb-4">2. Scope of Work</h3>
               <p className="text-sm text-gray-800 whitespace-pre-line leading-relaxed print:text-black">
                 {formData.scopeOfWork}
               </p>
@@ -290,85 +324,97 @@ const handleSendForApprovalClick = () => {
 
 
           {/* ============   Technology Stack  ============== */}
-          {/* ============ Technology Stack ============== */}
-<div>
-  <h3 className="text-xl font-bold mb-4 text-gray-800">
-    3. Technology Stack
-  </h3>
+         
+            <div>
+              <h3 className="text-xl font-bold mb-4 text-gray-800">
+                3. Technology Stack
+              </h3>
 
-  <table className="w-full border-collapse text-sm">
-    <thead>
-      <tr className="bg-blue-50">
-        <th className="border p-3 text-left">Component</th>
-        <th className="border p-3 text-left">Technology</th>
-        <th className="border p-3 text-left">Rationale</th>
-      </tr>
-    </thead>
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr className="bg-blue-50">
+                    <th className="border p-3 text-left">Component</th>
+                    <th className="border p-3 text-left">Technology</th>
+                    <th className="border p-3 text-left">Rationale</th>
+                  </tr>
+                </thead>
 
-    <tbody>
-      {formData.techStack?.map((tech, index) => (
-        <tr key={index}>
-          <td className="border p-3">{tech.component}</td>
-          <td className="border p-3">{tech.technology}</td>
-          <td className="border p-3">{tech.rationale}</td>
-        </tr>
-      ))}
+                <tbody>
+                  {formData.techStack
+                    ?.filter(
+                      (tech) =>
+                        tech.component?.trim() ||
+                        tech.technology?.trim() ||
+                        tech.rationale?.trim()
+                    )
+                    .map((tech, index) => (
+                      <tr key={index}>
+                        <td className="border p-3">{tech.component}</td>
+                        <td className="border p-3">{tech.technology}</td>
+                        <td className="border p-3">{tech.rationale}</td>
+                      </tr>
+                    ))}
 
-      {/* If no tech stack added */}
-      {!formData.techStack?.length && (
-        <tr>
-          <td colSpan="3" className="border p-3 text-center text-gray-500">
-            No technology stack defined
-          </td>
-        </tr>
-      )}
-    </tbody>
-  </table>
-</div>
+                  {/* If no tech stack added */}
+                  {!formData.techStack?.some(
+                    (tech) =>
+                      tech.component?.trim() ||
+                      tech.technology?.trim() ||
+                      tech.rationale?.trim()
+                  ) && (
+                    <tr>
+                      <td colSpan="3" className="border p-3 text-center text-gray-500">
+                        No technology stack defined
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
 
 
           {/* Cost Breakdown */}
           <div>
             <h3 className="text-xl font-bold mb-4">
-              1. Cost Breakdown
+              4. Cost Breakdown
             </h3>
 
-            <table className="w-full border-collapse text-sm">
+            <table className="w-full border-collapse text-sm table-fixed">
               <thead>
-                <tr className="bg-gray-100">
-                  <th className="border p-3">Sr</th>
-                  <th className="border p-3">Development Area</th>
-                  <th className="border p-3">Scope</th>
-                  <th className="border p-3">Amount</th>
-                </tr>
-              </thead>
+  <tr className="bg-gray-100">
+    <th className="border p-3 w-[8%]">Sr</th>
+    <th className="border p-3 w-[25%]">Development Area</th>
+    <th className="border p-3 w-[45%]">Scope</th>
+    <th className="border p-3 w-[22%]">Amount</th>
+  </tr>
+</thead>
               <tbody>
                 {formData.costBreakdown.map((item, index) => (
                   <tr key={index}>
                     <td className="border p-3 text-center">{item.srNo}</td>
                     <td className="border p-3">{item.area}</td>
-                    <td className="border p-3">{item.scope}</td>
-                    <td className="border p-3 text-center font-semibold text-orange-600">
+                    <td className="border p-3 whitespace-pre-wrap break-words">{item.scope}</td>
+                    <td className="border p-3 text-center font-semibold text-black">
                       {item.amount}
                     </td>
                   </tr>
                 ))}
-                <tr className="bg-orange-100 font-bold">
+                <tr className="font-bold">
                   <td colSpan="3" className="border p-3 text-right">
                     TOTAL PROJECT COST
                   </td>
-                  <td className="border p-3 text-center text-orange-700">
+                  <td className="border p-3 text-center text-black">
                     {formatIndianCurrency(formData.totalCost)}
                   </td>
                 </tr>
 
                 {/* Show GST only if GST > 0 */}
                 {gstPercent > 0 && (
-                  <tr className="bg-gray-100 font-semibold">
+                  <tr className="font-semibold">
                     <td colSpan="3" className="border p-3 text-right">
                       GST ({gstPercent}%)
                     </td>
-                    <td className="border p-3 text-center text-blue-700">
+                    <td className="border p-3 text-center text-black">
                       {formatIndianCurrency(gstAmount)}
                     </td>
                   </tr>
@@ -380,7 +426,7 @@ const handleSendForApprovalClick = () => {
                     <td colSpan="3" className="border p-3 text-right">
                       FINAL AMOUNT
                     </td>
-                    <td className="border p-3 text-center text-lg">
+                    <td className="border p-3 text-center text-black-lg">
                       {formatIndianCurrency(finalAmount)}
                     </td>
                   </tr>
@@ -390,58 +436,239 @@ const handleSendForApprovalClick = () => {
             </table>
           </div>
 
-          
-
-          {/* Includes */}
-          <div>
-            <h3 className="text-xl font-bold mb-3 text-gray-800">
-              2. What This Cost Includes
-            </h3>
-
-            <ul className="space-y-1 text-sm">
-              {formData.includes.map((item, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <span className="text-green-600 text-lg font-bold">✔</span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
 
           {/* Timeline */}
-          <div>
-            <h3 className="text-xl font-bold mb-4 text-gray-800">
-              3. Development Timeline
-            </h3>
+<div>
+  <h3 className="text-xl font-bold mb-4 text-gray-800">
+    5. Project Timeline
+  </h3>
 
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="bg-blue-50">
-                  <th className="border p-3">Phase</th>
-                  <th className="border p-3">Duration</th>
-                  <th className="border p-3">Deliverables</th>
-                </tr>
-              </thead>
-              <tbody>
-                {formData.timeline.map((phase, index) => (
-                  <tr key={index}>
-                    <td className="border p-3">{phase.phase}</td>
-                    <td className="border p-3">{phase.duration}</td>
-                    <td className="border p-3">{phase.deliverables}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+  <table className="w-full border-collapse text-sm">
+    <thead>
+      <tr className="bg-blue-50">
+        <th className="border p-3">Phase</th>
+        <th className="border p-3">Duration</th>
+        <th className="border p-3">Deliverables</th>
+      </tr>
+    </thead>
 
-            <p className="mt-3 font-semibold">
-              Total Timeline: {formData.totalTimeline}
-            </p>
-          </div>
+    <tbody>
+      {formData.timeline.map((phase, index) => (
+        <tr key={index}>
+          <td className="border p-3">{phase.phase}</td>
+          <td className="border p-3">{phase.duration}</td>
+          <td className="border p-3">{phase.deliverables}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
 
-          {/* Commercial Terms */}
+  <p className="mt-3 font-semibold">
+    Total Timeline: {calculateTimelineWeeks()} Weeks
+  </p>
+</div>
+
+
+          {/* Payment Terms */}
+<div>
+  <h3 className="text-xl font-bold mb-3 text-gray-800">
+    6. Payment Terms (Net 30 Days Invoicing)
+  </h3>
+
+  <ul className="space-y-1 text-sm">
+
+    {paymentTerms.map((term, index) => (
+      <li key={index} className="flex items-start gap-2">
+
+        <span className="text-green-600 text-lg font-bold">✔</span>
+
+        <span>
+          {term.percent}% 
+          ({formatIndianCurrency(calculatePayment(term.percent))}) – {term.label}
+        </span>
+
+      </li>
+    ))}
+
+    <li className="flex items-start gap-2">
+      <span className="text-green-600 text-lg font-bold">✔</span>
+      <span>GST @ {gstPercent}% extra as applicable</span>
+    </li>
+
+  </ul>
+</div>
+
+{/* Post Launch Maintenance */}
+<div>
+  <h3 className="text-xl font-bold mb-4 text-gray-800">
+    7. Post-Launch Maintenance (Optional, 12-Month Contract)
+  </h3>
+
+  <table className="w-full border border-gray-300 border-collapse text-sm">
+    
+    <thead>
+      <tr className="bg-gray-200">
+        <th className="p-3 text-left">Plan</th>
+        <th className="p-3 text-left">Coverage</th>
+        <th className="p-3 text-left">Monthly (₹)</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {formData.maintenancePlans?.map((plan, index) => (
+        <tr key={index}>
+          <td className="p-3 font-medium">
+            {plan.plan}
+          </td>
+
+          <td className="p-3">
+            {plan.coverage}
+          </td>
+
+          <td className="p-3">
+            ₹{Number(plan.monthly).toLocaleString("en-IN")}
+          </td>
+        </tr>
+      ))}
+    </tbody>
+
+  </table>
+
+  {/* Total Range */}
+  <p className="mt-4 font-semibold">
+    Total Range: {calculateMaintenanceRange()} <span className="font-normal">(per year, Excl. GST)</span>
+  </p>
+
+  {/* Note */}
+  <p className="mt-2 text-sm text-gray-700">
+    <span className="font-semibold">Note:</span> Usage-based recurring costs excluded from development quote per industry norms. Client manages billing directly with providers.
+  </p>
+
+</div>
+
+{/* Assumptions, Exclusions & Warranty */}
+<div className="mt-8">
+
+  <h3 className="text-xl font-bold mb-4 text-gray-800">
+    9. Assumptions, Exclusions & Warranty
+  </h3>
+
+  {/* INCLUDED */}
+  {formData.assumptions?.included?.length > 0 && (
+    <div className="mb-6">
+      <h4 className="font-semibold text-gray-800 mb-2">INCLUDED:</h4>
+
+      <ul className="space-y-1 text-sm">
+        {formData.assumptions.included.map((item, index) => (
+          <li key={index} className="flex items-start gap-2">
+            <span className="text-green-600 font-bold">•</span>
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )}
+
+  {/* EXCLUDED */}
+  {formData.assumptions?.excluded?.length > 0 && (
+    <div className="mb-6">
+      <h4 className="font-semibold text-gray-800 mb-2">EXCLUDED:</h4>
+
+      <ul className="space-y-1 text-sm">
+        {formData.assumptions.excluded.map((item, index) => (
+          <li key={index} className="flex items-start gap-2">
+            <span className="text-red-600 font-bold">•</span>
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )}
+
+  {/* WARRANTY */}
+  {formData.assumptions?.warranty?.length > 0 && (
+    <div>
+      <h4 className="font-semibold text-gray-800 mb-2">WARRANTY & SUPPORT:</h4>
+
+      <ul className="space-y-1 text-sm">
+        {formData.assumptions.warranty.map((item, index) => (
+          <li key={index} className="flex items-start gap-2">
+            <span className="text-blue-600 font-bold">•</span>
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )}
+
+</div>  
+
+<div className="mt-8 bg-gray-100 p-4 rounded-lg border">
+
+  <p className="text-lg font-semibold text-gray-800">
+    Total Investment:{" "}
+    {formatIndianCurrency(formData.totalCost)} +{" "}
+    {formatIndianCurrency(gstAmount)} ({gstPercent}% GST Applicable)
+  </p>
+
+  <p className="text-xl font-bold text-gray-900 mt-2">
+    Final Project Investment: {formatIndianCurrency(finalAmount)}
+  </p>
+
+</div>
+
+{/* Authorized Signature Preview */}
+<div className="mt-8 border-t pt-6">
+
+  <h3 className="font-semibold text-gray-800 mb-3">
+    Authorized Signature:
+  </h3>
+
+  <div className="flex items-start gap-6">
+
+    {/* Stamp */}
+    {formData.companyStamp && (
+      <img
+        src={formData.companyStamp}
+        alt="Company Stamp"
+        className="w-24 h-24 object-contain"
+      />
+    )}
+
+    <div className="text-sm text-gray-800">
+
+      <p className="font-semibold">{formData.authorizedName}</p>
+
+      <p>{formData.authorizedRole}</p>
+
+      <p className="font-semibold">
+        {formData.companyName}
+      </p>
+
+      <p>
+        Contact: {formData.contactNumber} |{" "}
+        <span className="text-blue-600 underline">
+          {formData.contactEmail}
+        </span>{" "}
+        | {formData.location}
+      </p>
+
+      <p className="mt-2">
+        <span className="font-semibold">Note:</span>{" "}
+        {formData.signatureNote}
+      </p>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+ {/* ======================= Commercial Terms =========================
           <div>
             <h3 className="text-xl font-bold mb-3 text-gray-800">
-              4. Commercial Terms
+              7. Commercial Terms
             </h3>
 
             <ul className="list-disc ml-6 space-y-2 text-sm">
@@ -452,6 +679,10 @@ const handleSendForApprovalClick = () => {
               <li><strong>Change Requests:</strong> {formData.terms.changeRequests}</li>
             </ul>
           </div>
+
+          */}
+
+
 
           {/* Signatures */}
           <div className="grid grid-cols-2 gap-12 mt-10">
@@ -482,7 +713,7 @@ const handleSendForApprovalClick = () => {
 
         </div>
 
- {/* FOOTER */}
+      {/* FOOTER */}
       <div className="footer">
         <img src={footerImg} alt="Footer" className="w-full" />
       </div>

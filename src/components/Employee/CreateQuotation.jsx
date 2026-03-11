@@ -48,11 +48,12 @@ const CreateQuotation = ({ selectedClient }) => {
       'QA testing & production rollout'
     ],
     timeline: [
-      { phase: 'Phase-1 (MVP)', duration: '8 Weeks', deliverables: 'Core 3D editor, drag-drop, materials' },
-      { phase: 'Phase-2 (Advanced)', duration: '12 Weeks', deliverables: 'Save/load, user accounts, admin panel' },
-      { phase: 'Phase-3 (Premium)', duration: 'Optional', deliverables: 'AI layout, pricing, checkout' }
-    ],
-    totalTimeline: '20-24 Weeks',
+  { phase: "1. Discovery", duration: "1 Week", deliverables: "Requirements, main page prototype" },
+  { phase: "2. Core Frontend + Backend", duration: "2 Weeks", deliverables: "Main + subscription MVP" },
+  { phase: "3. Payments Page", duration: "1 Week", deliverables: "Checkout integration" },
+  { phase: "4. Admin + Testing", duration: "1 Week", deliverables: "Dashboards, QA cycles" },
+  { phase: "5. UAT & Launch", duration: "1 Week", deliverables: "Bug fixes, deployment, training" }
+],
     terms: {
       pricingModel: 'Fixed Price',
       paymentMilestones: 'Phase-wise (Mutually agreed)',
@@ -60,11 +61,51 @@ const CreateQuotation = ({ selectedClient }) => {
       domainServer: 'Not included (Charged separately)',
       changeRequests: 'Any scope change will be quoted separately'
     },
+
+    maintenancePlans: [
+  {plan: "Basic", coverage: "Bug fixes, server monitoring", monthly: 12000},
+  {plan: "Standard (Recommended)", coverage: "+ Feature updates, API monitoring", monthly: 20000}
+],
+
+ authorizedName: "Sanjay K.",
+authorizedRole: "Project Lead",
+companyName: "SmartMatrix Digital Solutions Pvt. Ltd",
+contactNumber: "+91 9765400796",
+contactEmail: "sanjay.k@smartmatrixds.com",
+location: "Pune, Maharashtra, India",
+companyStamp: null,
+signatureNote:
+  "Once discussion is finalized, the SOW will be initiated along with the contractual obligations.",
+
+    assumptions: {
+    included: [
+      "Source code handover (React + PHP/Laravel)",
+      "30 days free post-launch support",
+      "Complete documentation",
+      "Training session for admin panel"
+    ],
+    excluded: [
+      "Custom hardware integration",
+      "Marketing & user acquisition",
+      "Regulatory compliance (e-commerce norms)",
+      "Third-party API costs",
+      "Hosting/domain setup"
+    ],
+    warranty: [
+      "3 months defect-free guarantee, priority support"
+    ]
+  },
     projectManager: 'Sagar Solanke',
     operationManager: 'Bikram Burman',
     projectManagerSignature: null,
     operationManagerSignature: null
-  });
+  
+    
+  }
+);
+
+
+
   useEffect(() => {
   if (selectedClient) {
     setFormData((prev) => ({
@@ -76,8 +117,7 @@ const CreateQuotation = ({ selectedClient }) => {
     }));
   }
 }, [selectedClient]);
-    
-
+  
   useEffect(() => {
   const total = calculateTotal();
   setFormData((prev) => ({
@@ -213,8 +253,109 @@ const CreateQuotation = ({ selectedClient }) => {
   }
 };
 
+const removeTechStack = (index) => {
+  const newStack = formData.techStack.filter((_, i) => i !== index);
+  setFormData({ ...formData, techStack: newStack });
+};
 
 
+
+const paymentTerms = [
+  { percent: 25, label: "Advance – Kickoff" },
+  { percent: 30, label: "Main + Subscription MVP" },
+  { percent: 25, label: "Payments complete" },
+  { percent: 20, label: "Admin + Launch" }
+];
+
+const calculatePayment = (percent) => {
+  return Math.round((formData.totalCost * percent) / 100);
+};
+
+const calculateTimelineWeeks = () => {
+
+  return formData.timeline.reduce((total, phase) => {
+    const match = phase.duration?.match(/\d+/); // extract number
+    const weeks = match ? Number(match[0]) : 0;
+    return total + weeks;
+  }, 0);
+};
+
+const calculateMaintenanceRange = () => {
+  if (!formData.maintenancePlans?.length) return "₹0";
+
+  const yearlyPrices = formData.maintenancePlans.map(
+    plan => (Number(plan.monthly) || 0) * 12
+  );
+
+  const min = Math.min(...yearlyPrices);
+  const max = Math.max(...yearlyPrices);
+
+  return `₹${min.toLocaleString("en-IN")} – ₹${max.toLocaleString("en-IN")}`;
+};
+
+const updateMaintenancePlan = (index, field, value) => {
+  const updated = [...formData.maintenancePlans];
+  updated[index][field] = value;
+
+  setFormData({
+    ...formData,
+    maintenancePlans: updated
+  });
+};
+
+const addMaintenancePlan = () => {
+  setFormData({
+    ...formData,
+    maintenancePlans: [
+      ...formData.maintenancePlans,
+      { plan: "", coverage: "", monthly: "" }
+    ]
+  });
+};
+
+const removeMaintenancePlan = (index) => {
+  const updated = formData.maintenancePlans.filter((_, i) => i !== index);
+
+  setFormData({
+    ...formData,
+    maintenancePlans: updated
+  });
+};
+
+const updateAssumption = (section, index, value) => {
+  const updated = [...formData.assumptions[section]];
+  updated[index] = value;
+
+  setFormData({
+    ...formData,
+    assumptions: {
+      ...formData.assumptions,
+      [section]: updated
+    }
+  });
+};
+
+const addAssumption = (section) => {
+  setFormData({
+    ...formData,
+    assumptions: {
+      ...formData.assumptions,
+      [section]: [...formData.assumptions[section], ""]
+    }
+  });
+};
+
+const removeAssumption = (section, index) => {
+  const updated = formData.assumptions[section].filter((_, i) => i !== index);
+
+  setFormData({
+    ...formData,
+    assumptions: {
+      ...formData.assumptions,
+      [section]: updated
+    }
+  });
+};
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -417,12 +558,12 @@ const CreateQuotation = ({ selectedClient }) => {
 
           {/* ========= Scope of Work ========= */}
           <div className="px-4 sm:px-6 lg:px-8 pb-2">
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-lg border border-pink-200 overflow-hidden">
 
-              {/* Header similar to Cost Breakdown */}
-              <div className="bg-gradient-to-r from-pink-600 to-pink-700 px-6 py-4">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-pink-500 to-pink-600 px-6 py-4">
                 <h2 className="text-xl font-bold text-white flex items-center">
-                  <span className="w-6 h-6 bg-pink-500 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
+                  <span className="w-6 h-6 bg-white text-pink-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
                     2
                   </span>
                   Scope of Work
@@ -430,23 +571,57 @@ const CreateQuotation = ({ selectedClient }) => {
               </div>
 
               {/* Body */}
+              <div className="p-6 bg-pink-50">
+                <textarea
+                  rows={4}
+                  className="w-full px-3 py-2 border border-pink-300 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none resize-none text-sm"
+                  placeholder="Write something about scope of project..."
+                  value={formData.scopeOfWork}
+                  onChange={(e) =>
+                    setFormData({ ...formData, scopeOfWork: e.target.value })
+                  }
+                />
+              </div>
+
+            </div>
+          </div>
+
+
+          {/* ==========Technology Stack============  */}
+            <div className="px-4 sm:px-6 lg:px-8 pb-6">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+              <h2 className="text-xl font-bold text-white flex items-center">
+                <span className="w-6 h-6 bg-white text-blue-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">3</span>
+                Technology Stack
+              </h2>
+            </div>
+
+              {/* Body */}
                 <div className="p-6">
                   <div className="overflow-x-auto">
 
                     <table className="w-full border-collapse">
-                      <thead>
-                        <tr className="bg-gradient-to-r from-blue-50 to-indigo-50">
-                          <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">
-                            Component
-                          </th>
-                          <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">
-                            Technology
-                          </th>
-                          <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">
-                            Rationale
-                          </th>
-                        </tr>
-                      </thead>
+                      
+                     <thead>
+                      <tr className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                        <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">
+                          Component
+                        </th>
+
+                        <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">
+                          Technology
+                        </th>
+
+                        <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">
+                          Rationale
+                        </th>
+
+                        <th className="border border-gray-200 p-4 text-center font-semibold text-gray-700 w-20">
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
 
                       <tbody>
                         {formData.techStack.map((tech, index) => (
@@ -491,6 +666,16 @@ const CreateQuotation = ({ selectedClient }) => {
                               />
                             </td>
 
+                            {/* REMOVE BUTTON */}
+                            <td className="border border-gray-200 p-4 text-center min-w-[100px]">
+                              <button
+                                onClick={() => removeTechStack(index)}
+                                className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-colors text-xs"
+                              >
+                                Remove
+                              </button>
+                            </td>
+
                           </tr>
                         ))}
                       </tbody>
@@ -512,8 +697,7 @@ const CreateQuotation = ({ selectedClient }) => {
             </div>
           </div>
 
-
-      
+    
 
         {/* Cost Breakdown */}
         <div className="px-4 sm:px-6 lg:px-8 pb-6">
@@ -663,13 +847,13 @@ const CreateQuotation = ({ selectedClient }) => {
         </div>
         
 
-        {/* Development Timeline */}
+        {/* Project Timeline */}
         <div className="px-4 sm:px-6 lg:px-8 pb-6">
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
             <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
               <h2 className="text-xl font-bold text-white flex items-center">
                 <span className="w-6 h-6 bg-white text-blue-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">5</span>
-                Development Timeline
+                Project Timeline
               </h2>
             </div>
             
@@ -729,70 +913,531 @@ const CreateQuotation = ({ selectedClient }) => {
               </div>
               
               <div className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                  <span className="font-semibold text-gray-800">Total Estimated Timeline:</span>
-                  <input 
-                    type="text" 
-                    className="flex-1 sm:max-w-xs px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none font-bold text-blue-700 bg-white"
-                    value={formData.totalTimeline}
-                    onChange={(e) => setFormData({...formData, totalTimeline: e.target.value})}
+  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+    <span className="font-semibold text-gray-800">Total Timeline:</span>
+
+    <input
+      type="text"
+      readOnly
+      value={`${calculateTimelineWeeks()} Weeks`}
+      className="flex-1 sm:max-w-xs px-3 py-2 border border-blue-200 rounded-lg font-bold text-blue-700 bg-white"
+      
+    />
+  </div>
+</div>
+            </div>
+          </div>
+        </div>
+
+
+        {/* Payment Terms */}
+<div className="px-4 sm:px-6 lg:px-8 pb-6">
+  <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+
+    <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
+      <h2 className="text-xl font-bold text-white flex items-center">
+        <span className="w-6 h-6 bg-white text-green-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
+          6
+        </span>
+        Payment Terms (Net 30 Days Invoicing)
+      </h2>
+    </div>
+
+    <div className="p-6">
+      <ul className="space-y-3 text-gray-800">
+
+        {paymentTerms.map((term, index) => (
+          <li key={index} className="flex items-start gap-3">
+
+            <span className="text-green-600 font-bold mt-1">•</span>
+
+            <span>
+              <strong>{term.percent}%</strong>{" "}
+              ({formatIndianCurrency(calculatePayment(term.percent))}) – {term.label}
+            </span>
+
+          </li>
+        ))}
+
+        <li className="flex items-start gap-3">
+          <span className="text-green-600 font-bold mt-1">•</span>
+          <span>GST @ {gstPercent}% extra as applicable</span>
+        </li>
+
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+
+{/* Post-Launch Maintenance */}
+<div className="px-4 sm:px-6 lg:px-8 pb-6">
+  <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+
+    {/* Header */}
+    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+      <h2 className="text-xl font-bold text-white flex items-center">
+        <span className="w-6 h-6 bg-white text-blue-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
+          7
+        </span>
+        Post-Launch Maintenance (Optional, 12-Month Contract)
+      </h2>
+    </div>
+
+    <div className="p-6">
+
+      <div className="overflow-x-auto">
+
+        <table className="w-full border-collapse">
+
+          <thead>
+            <tr className="bg-gradient-to-r from-blue-50 to-indigo-50">
+              <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">
+                Plan
+              </th>
+
+              <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">
+                Coverage
+              </th>
+
+              <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">
+                Monthly (₹)
+              </th>
+
+              <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">
+                Action
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {formData.maintenancePlans?.map((plan, index) => (
+              <tr key={index} className="hover:bg-blue-50 transition-colors">
+
+                <td className="border border-gray-200 p-4">
+                  <input
+                    type="text"
+                    className="w-full outline-none bg-transparent font-semibold text-blue-700 focus:bg-blue-50 focus:ring-2 focus:ring-blue-200 rounded px-2 py-1"
+                    value={plan.plan}
+                    onChange={(e) =>
+                      updateMaintenancePlan(index, "plan", e.target.value)
+                    }
                   />
-                </div>
-              </div>
-            </div>
+                </td>
+
+                <td className="border border-gray-200 p-4">
+                  <input
+                    type="text"
+                    className="w-full outline-none bg-transparent text-gray-700 focus:bg-blue-50 focus:ring-2 focus:ring-blue-200 rounded px-2 py-1"
+                    value={plan.coverage}
+                    onChange={(e) =>
+                      updateMaintenancePlan(index, "coverage", e.target.value)
+                    }
+                  />
+                </td>
+
+                <td className="border border-gray-200 p-4">
+                  <input
+                    type="number"
+                    className="w-full outline-none bg-transparent font-semibold text-gray-800 focus:bg-blue-50 focus:ring-2 focus:ring-blue-200 rounded px-2 py-1"
+                    value={plan.monthly}
+                    onChange={(e) =>
+                      updateMaintenancePlan(index, "monthly", e.target.value)
+                    }
+                  />
+                </td>
+
+                <td className="border border-gray-200 p-4">
+                  <button
+                    onClick={() => removeMaintenancePlan(index)}
+                    className="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600"
+                  >
+                    Remove
+                  </button>
+                </td>
+
+              </tr>
+            ))}
+          </tbody>
+
+        </table>
+
+      </div>
+
+      {/* Add Plan Button */}
+      <div className="mt-6">
+        <button
+          onClick={addMaintenancePlan}
+          className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 font-medium shadow"
+        >
+          + Add Plan
+        </button>
+      </div>
+
+      {/* Total Range */}
+      <p className="mt-6 font-semibold text-gray-800">
+        Total Range: {calculateMaintenanceRange()} <span className="font-normal">(per year, Excl. GST)</span>
+      </p>
+
+      {/* Note */}
+      <p className="mt-2 text-sm text-gray-700">
+        <span className="font-semibold">Note:</span> Usage-based recurring costs excluded from development quote per industry norms. Client manages billing directly with providers.
+      </p>
+
+    </div>
+  </div>
+</div>
+
+{/* Assumptions, Exclusions & Warranty */}
+<div className="px-4 sm:px-6 lg:px-8 pb-6">
+  <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+
+    {/* Header */}
+    <div className="bg-gradient-to-r from-slate-700 to-slate-800 px-6 py-4">
+      <h2 className="text-xl font-bold text-white flex items-center">
+        <span className="w-6 h-6 bg-white text-slate-700 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
+          8
+        </span>
+        Assumptions, Exclusions & Warranty
+      </h2>
+    </div>
+
+    <div className="p-6 space-y-8">
+
+      {/* INCLUDED */}
+      <div>
+        <h3 className="font-semibold text-gray-800 mb-3">Included</h3>
+
+        {formData.assumptions.included.map((item, index) => (
+          <div key={index} className="flex gap-3 mb-2">
+            <input
+              type="text"
+              value={item}
+              onChange={(e) => updateAssumption("included", index, e.target.value)}
+              className="flex-1 border border-gray-300 rounded px-3 py-2"
+            />
+
+            <button
+              onClick={() => removeAssumption("included", index)}
+              className="bg-red-500 text-white px-3 py-1 rounded text-xs"
+            >
+              Remove
+            </button>
           </div>
+        ))}
+
+        <button
+          onClick={() => addAssumption("included")}
+          className="mt-2 text-blue-600 font-medium"
+        >
+          + Add Included
+        </button>
+      </div>
+
+
+      {/* EXCLUDED */}
+      <div>
+        <h3 className="font-semibold text-gray-800 mb-3">Excluded</h3>
+
+        {formData.assumptions.excluded.map((item, index) => (
+          <div key={index} className="flex gap-3 mb-2">
+            <input
+              type="text"
+              value={item}
+              onChange={(e) => updateAssumption("excluded", index, e.target.value)}
+              className="flex-1 border border-gray-300 rounded px-3 py-2"
+            />
+
+            <button
+              onClick={() => removeAssumption("excluded", index)}
+              className="bg-red-500 text-white px-3 py-1 rounded text-xs"
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+
+        <button
+          onClick={() => addAssumption("excluded")}
+          className="mt-2 text-blue-600 font-medium"
+        >
+          + Add Exclusion
+        </button>
+      </div>
+
+
+      {/* WARRANTY */}
+      <div>
+        <h3 className="font-semibold text-gray-800 mb-3">Warranty & Support</h3>
+
+        {formData.assumptions.warranty.map((item, index) => (
+          <div key={index} className="flex gap-3 mb-2">
+            <input
+              type="text"
+              value={item}
+              onChange={(e) => updateAssumption("warranty", index, e.target.value)}
+              className="flex-1 border border-gray-300 rounded px-3 py-2"
+            />
+
+            <button
+              onClick={() => removeAssumption("warranty", index)}
+              className="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600"
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+
+        <button
+          onClick={() => addAssumption("warranty")}
+          className="mt-2 text-blue-600 font-medium"
+        >
+          + Add Warranty
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{/* Investment Summary */}
+<div className="px-4 sm:px-6 lg:px-8 pb-6">
+  <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+
+    {/* Header */}
+    <div className="bg-gradient-to-r from-emerald-600 to-green-600 px-6 py-4">
+      <h2 className="text-xl font-bold text-white flex items-center">
+        <span className="w-6 h-6 bg-white text-green-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
+          8
+        </span>
+        Project Investment Summary
+      </h2>
+    </div>
+
+    <div className="p-6 space-y-4">
+
+      {/* Total Project Cost */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <span className="font-semibold text-gray-700 w-56">
+          Total Project Cost
+        </span>
+
+        <input
+          type="text"
+          readOnly
+          value={formatIndianCurrency(formData.totalCost)}
+          className="px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 font-semibold text-gray-800"
+        />
+      </div>
+
+
+      {/* GST Input */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <span className="font-semibold text-gray-700 w-56">
+          GST Percentage
+        </span>
+
+        <input
+          type="number"
+          min="0"
+          max="100"
+          value={formData.gstPercent}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              gstPercent: Number(e.target.value)
+            })
+          }
+          className="w-24 px-3 py-2 border border-gray-300 rounded-lg"
+        />
+
+        <span className="text-gray-600">% GST Applicable</span>
+      </div>
+
+
+      {/* GST Amount */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <span className="font-semibold text-gray-700 w-56">
+          GST Amount
+        </span>
+
+        <input
+          type="text"
+          readOnly
+          value={formatIndianCurrency(gstAmount)}
+          className="px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 font-semibold text-blue-700"
+        />
+      </div>
+
+
+      {/* Final Amount */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 border-t pt-4">
+
+        <span className="font-bold text-gray-800 w-56 text-lg">
+          Final Project Investment
+        </span>
+
+        <input
+          type="text"
+          readOnly
+          value={formatIndianCurrency(finalAmount)}
+          className="px-3 py-2 border border-green-300 rounded-lg bg-green-50 font-bold text-green-700 text-lg"
+        />
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+{/* Authorized Signature */}
+<div className="px-4 sm:px-6 lg:px-8 pb-6">
+  <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+
+    {/* Header */}
+    <div className="bg-gradient-to-r from-gray-700 to-gray-800 px-6 py-4">
+      <h2 className="text-xl font-bold text-white flex items-center">
+        <span className="w-6 h-6 bg-white text-gray-700 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
+          10
+        </span>
+        Authorized Signature
+      </h2>
+    </div>
+
+    <div className="p-6 grid md:grid-cols-2 gap-8 items-start">
+
+      {/* Left Side Info */}
+      <div className="space-y-3">
+
+        <input
+          type="text"
+          value={formData.authorizedName}
+          placeholder="Authorized Person Name"
+          onChange={(e) =>
+            setFormData({ ...formData, authorizedName: e.target.value })
+          }
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+        />
+
+        <input
+          type="text"
+          value={formData.authorizedRole}
+          placeholder="Designation"
+          onChange={(e) =>
+            setFormData({ ...formData, authorizedRole: e.target.value })
+          }
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+        />
+
+        <input
+          type="text"
+          value={formData.companyName}
+          placeholder="Company Name"
+          onChange={(e) =>
+            setFormData({ ...formData, companyName: e.target.value })
+          }
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+        />
+
+        <input
+          type="text"
+          value={formData.contactNumber}
+          placeholder="Contact Number"
+          onChange={(e) =>
+            setFormData({ ...formData, contactNumber: e.target.value })
+          }
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+        />
+
+        <input
+          type="email"
+          value={formData.contactEmail}
+          placeholder="Email Address"
+          onChange={(e) =>
+            setFormData({ ...formData, contactEmail: e.target.value })
+          }
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+        />
+
+        <input
+          type="text"
+          value={formData.location}
+          placeholder="Location"
+          onChange={(e) =>
+            setFormData({ ...formData, location: e.target.value })
+          }
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+        />
+
+      </div>
+
+      {/* Stamp Upload */}
+      <div className="text-center">
+
+        <p className="font-semibold text-gray-700 mb-3">
+          Company Stamp
+        </p>
+
+        <div
+          className="w-40 h-40 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-50 mx-auto"
+          onClick={() => document.getElementById("companyStamp").click()}
+        >
+          {formData.companyStamp ? (
+            <img
+              src={formData.companyStamp}
+              alt="Stamp"
+              className="w-full h-full object-contain"
+            />
+          ) : (
+            <span className="text-gray-400 text-sm">
+              Click to Upload
+            </span>
+          )}
         </div>
 
+        <input
+          id="companyStamp"
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files[0];
+            if (!file) return;
 
-        {/* What This Cost Includes */}
-        <div className="px-4 sm:px-6 lg:px-8 pb-6">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
-              <h2 className="text-xl font-bold text-white flex items-center">
-                <span className="w-6 h-6 bg-white text-green-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">6</span>
-                What This Cost Includes
-              </h2>
-            </div>
-            
-            <div className="p-6">
-              <div className="grid grid-cols-1 gap-4">
-                {formData.includes.map((item, index) => (
-                  <div key={index} className="flex items-start bg-green-50 rounded-lg p-3 border border-green-100 hover:bg-green-100 transition-colors">
-                    <span className="text-green-600 mr-3 mt-1 text-lg font-bold">✓</span>
-                    <input 
-                      type="text" 
-                      className="flex-1 outline-none bg-transparent text-gray-800 font-medium focus:bg-white focus:ring-2 focus:ring-green-200 rounded px-2 py-1 transition-all"
-                      value={item}
-                      onChange={(e) => {
-                        const newIncludes = [...formData.includes];
-                        newIncludes[index] = e.target.value;
-                        setFormData({...formData, includes: newIncludes});
-                      }}
-                    />
-                    <button 
-                      onClick={() => {
-                        const newIncludes = formData.includes.filter((_, i) => i !== index);
-                        setFormData({...formData, includes: newIncludes});
-                      }}
-                      className="ml-2 bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 transition-colors"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-              
-              <button 
-                onClick={() => setFormData({...formData, includes: [...formData.includes, 'New feature']})}
-                className="mt-4 bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-2 rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg"
-              >
-                + Add Feature
-              </button>
-            </div>
-          </div>
-        </div>
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              setFormData({
+                ...formData,
+                companyStamp: event.target.result
+              });
+            };
+            reader.readAsDataURL(file);
+          }}
+        />
 
-        {/* Commercial Terms */}
+      </div>
+    </div>
+
+    {/* Note */}
+    <div className="px-6 pb-6">
+      <textarea
+        rows="2"
+        placeholder="Note..."
+        value={formData.signatureNote}
+        onChange={(e) =>
+          setFormData({ ...formData, signatureNote: e.target.value })
+        }
+        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+
+  </div>
+</div>
+
+
+        {/* Commercial Terms 
         <div className="px-4 sm:px-6 lg:px-8 pb-6">
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
             <div className="bg-gradient-to-r from-purple-600 to-violet-600 px-6 py-4">
@@ -869,6 +1514,8 @@ const CreateQuotation = ({ selectedClient }) => {
             </div>
           </div>
         </div>
+
+        */}
 
         {/* Signatures */}
         <div className="px-4 sm:px-6 lg:px-8 pb-6">
