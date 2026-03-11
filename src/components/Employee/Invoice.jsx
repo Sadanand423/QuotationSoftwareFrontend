@@ -213,48 +213,39 @@ const Invoice = () => {
 };
 
   const handleSaveInvoice = async () => {
-    const totalPaidThisInvoice = parseFloat(invoiceData.totalPaidAmount) || 0;
-    if (totalPaidThisInvoice <= 0) {
-      alert("Please select a payment amount before saving the invoice.");
-      return;
-    }
-    if (totalPaidThisInvoice > remainingBalance + 0.01) {
-      alert(`Payment amount (₹${totalPaidThisInvoice.toFixed(2)}) exceeds remaining balance (₹${remainingBalance.toFixed(2)}) for this quotation.`);
-      return;
-    }
-
     try {
       const savedName = localStorage.getItem("empName") || currentEmpName;
+      const empId = localStorage.getItem("empId") || currentEmpId;
+
+      // Prepare the data exactly how the Backend expects it
       const payload = {
         ...invoiceData,
-        employeeId: currentEmpId,
+        employeeId: empId,
         employeeName: savedName,
-        status: 'Sent',
+        // Ensure status is 'Sent' so the Admin knows it's active
+        status: 'Sent', 
         date: new Date().toLocaleDateString('en-IN')
       };
 
+      // Ensure the URL matches your Controller: /api/invoices/create
       const response = await fetch(`http://localhost:8080/api/invoices/create`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json' 
+        },
         body: JSON.stringify(payload)
       });
 
       if (response.ok) {
-        const qId = invoiceData.quotationId;
-        setQuotationPayments(prev => ({
-          ...prev,
-          [qId]: (prev[qId] || 0) + totalPaidThisInvoice
-        }));
         alert("Invoice generated and saved successfully! ✅");
-        setShowForm(false);
-        setShowPreview(false);
+        navigate(-1); 
       } else {
         const errorData = await response.json();
-        alert(`Failed to save: ${errorData.message || 'Unknown error'}`);
+        alert(`Failed to save invoice: ${errorData.message || 'Server Error'}`);
       }
     } catch (error) {
       console.error("Save Error:", error);
-      alert("Server connection error ❌");
+      alert("Server connection error ❌. Is the backend running?");
     }
   };
 
@@ -732,7 +723,7 @@ const handleInvoicePrint = () => {
           </div>
 
           {/* Show inclusive tax message if GST = 0 */}
-          {invoiceData.taxRate == 0 && (
+          {invoiceData.taxRate === 0 && (
             <div className="px-2 pb-2 text-xs text-gray-700 italic">
               ( Amount is inclusive of all applicable taxes.)
             </div>

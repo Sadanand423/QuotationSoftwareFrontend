@@ -23,6 +23,15 @@ const CreateQuotation = ({ selectedClient }) => {
     totalCost: 0,
     gstPercent: 18,
     aboutProject: '',
+    scopeOfWork: '',
+    techStack: [
+      { component: "Frontend", technology: "React.js", rationale: "Fast rendering, design fidelity" },
+      { component: "Backend", technology: "PHP (Laravel)", rationale: "Secure e-commerce APIs" },
+      { component: "Database", technology: "MySQL", rationale: "Reliable transaction handling" },
+      { component: "Admin Panels", technology: "React.js", rationale: "Real-time dashboards" },
+      { component: "Hosting", technology: "AWS / DigitalOcean", rationale: "99.9% uptime, easy scaling" },
+      { component: "Payments", technology: "Razorpay", rationale: "UPI / recurring billing" }
+    ],
     costBreakdown: [
       { srNo: 1, area: 'Architecture & Planning', scope: '', amount: '' },
       { srNo: 2, area: 'UI / UX Design', scope: '', amount: '' },
@@ -86,6 +95,16 @@ const CreateQuotation = ({ selectedClient }) => {
     : 0;
 
   const finalAmount = formData.totalCost + gstAmount;
+
+  const addTechStack = () => {
+  setFormData({
+    ...formData,
+    techStack: [
+      ...formData.techStack,
+      { component: "", technology: "", rationale: "" }
+    ]
+  });
+};
 
   const addCostItem = () => {
     setFormData((prev) => ({
@@ -367,18 +386,132 @@ const CreateQuotation = ({ selectedClient }) => {
         </div>
    
           {/* About Project */}
-          <div className="px-4 sm:px-6 lg:px-8 pb-6">
-            <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
-              <h3 className="text-lg font-bold text-yellow-700 mb-2">About Project</h3>
-              <textarea
-                rows={4}
-                className="w-full px-3 py-2 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 outline-none resize-none text-sm"
-                placeholder="Write something about the project..."
-                value={formData.aboutProject}
-                onChange={(e) => setFormData({...formData, aboutProject: e.target.value})}
-              />
+          <div className="px-4 sm:px-6 lg:px-8 pb-2">
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+
+              {/* Header */}
+              <div className="bg-gradient-to-r from-yellow-600 to-yellow-700 px-6 py-4">
+                <h2 className="text-xl font-bold text-white flex items-center">
+                  <span className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
+                    1
+                  </span>
+                  About Project
+                </h2>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 bg-yellow-50">
+                <textarea
+                  rows={4}
+                  className="w-full px-3 py-2 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 outline-none resize-none text-sm"
+                  placeholder="Write something about the project..."
+                  value={formData.aboutProject}
+                  onChange={(e) =>
+                    setFormData({ ...formData, aboutProject: e.target.value })
+                  }
+                />
+              </div>
+
             </div>
           </div>
+
+          {/* ========= Scope of Work ========= */}
+          <div className="px-4 sm:px-6 lg:px-8 pb-2">
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+
+              {/* Header similar to Cost Breakdown */}
+              <div className="bg-gradient-to-r from-pink-600 to-pink-700 px-6 py-4">
+                <h2 className="text-xl font-bold text-white flex items-center">
+                  <span className="w-6 h-6 bg-pink-500 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
+                    2
+                  </span>
+                  Scope of Work
+                </h2>
+              </div>
+
+              {/* Body */}
+                <div className="p-6">
+                  <div className="overflow-x-auto">
+
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                          <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">
+                            Component
+                          </th>
+                          <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">
+                            Technology
+                          </th>
+                          <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">
+                            Rationale
+                          </th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {formData.techStack.map((tech, index) => (
+                          <tr key={index} className="hover:bg-blue-50 transition-colors">
+
+                            <td className="border border-gray-200 p-4">
+                              <input
+                                type="text"
+                                className="w-full outline-none bg-transparent font-semibold text-blue-700 focus:bg-blue-50 focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 transition-all"
+                                value={tech.component}
+                                onChange={(e) => {
+                                  const newStack = [...formData.techStack];
+                                  newStack[index].component = e.target.value;
+                                  setFormData({ ...formData, techStack: newStack });
+                                }}
+                              />
+                            </td>
+
+                            <td className="border border-gray-200 p-4">
+                              <input
+                                type="text"
+                                className="w-full outline-none bg-transparent font-medium text-gray-700 focus:bg-blue-50 focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 transition-all"
+                                value={tech.technology}
+                                onChange={(e) => {
+                                  const newStack = [...formData.techStack];
+                                  newStack[index].technology = e.target.value;
+                                  setFormData({ ...formData, techStack: newStack });
+                                }}
+                              />
+                            </td>
+
+                            <td className="border border-gray-200 p-4">
+                              <input
+                                type="text"
+                                className="w-full outline-none bg-transparent text-gray-700 focus:bg-blue-50 focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 transition-all"
+                                value={tech.rationale}
+                                onChange={(e) => {
+                                  const newStack = [...formData.techStack];
+                                  newStack[index].rationale = e.target.value;
+                                  setFormData({ ...formData, techStack: newStack });
+                                }}
+                              />
+                            </td>
+
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                  </div>
+
+                  {/* Add Technology Row Button */}
+                  <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                    <button
+                      onClick={addTechStack}
+                      className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl flex items-center justify-center"
+                    >
+                      <span className="mr-2">+</span> Add Technology
+                    </button>
+                  </div>
+
+                </div>
+            </div>
+          </div>
+
 
       
 
@@ -387,7 +520,7 @@ const CreateQuotation = ({ selectedClient }) => {
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
             <div className="bg-gradient-to-r from-slate-700 to-slate-800 px-6 py-4">
               <h2 className="text-xl font-bold text-white flex items-center">
-                <span className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center mr-3 text-sm font-bold">1</span>
+                <span className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center mr-3 text-sm font-bold">4</span>
                 Cost Breakdown 
               </h2>
             </div>
@@ -528,61 +661,14 @@ const CreateQuotation = ({ selectedClient }) => {
             </div>
           </div>
         </div>
-
-        {/* What This Cost Includes */}
-        <div className="px-4 sm:px-6 lg:px-8 pb-6">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
-              <h2 className="text-xl font-bold text-white flex items-center">
-                <span className="w-6 h-6 bg-white text-green-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">2</span>
-                What This Cost Includes
-              </h2>
-            </div>
-            
-            <div className="p-6">
-              <div className="grid grid-cols-1 gap-4">
-                {formData.includes.map((item, index) => (
-                  <div key={index} className="flex items-start bg-green-50 rounded-lg p-3 border border-green-100 hover:bg-green-100 transition-colors">
-                    <span className="text-green-600 mr-3 mt-1 text-lg font-bold">✓</span>
-                    <input 
-                      type="text" 
-                      className="flex-1 outline-none bg-transparent text-gray-800 font-medium focus:bg-white focus:ring-2 focus:ring-green-200 rounded px-2 py-1 transition-all"
-                      value={item}
-                      onChange={(e) => {
-                        const newIncludes = [...formData.includes];
-                        newIncludes[index] = e.target.value;
-                        setFormData({...formData, includes: newIncludes});
-                      }}
-                    />
-                    <button 
-                      onClick={() => {
-                        const newIncludes = formData.includes.filter((_, i) => i !== index);
-                        setFormData({...formData, includes: newIncludes});
-                      }}
-                      className="ml-2 bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 transition-colors"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-              
-              <button 
-                onClick={() => setFormData({...formData, includes: [...formData.includes, 'New feature']})}
-                className="mt-4 bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-2 rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg"
-              >
-                + Add Feature
-              </button>
-            </div>
-          </div>
-        </div>
+        
 
         {/* Development Timeline */}
         <div className="px-4 sm:px-6 lg:px-8 pb-6">
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
             <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
               <h2 className="text-xl font-bold text-white flex items-center">
-                <span className="w-6 h-6 bg-white text-blue-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">3</span>
+                <span className="w-6 h-6 bg-white text-blue-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">5</span>
                 Development Timeline
               </h2>
             </div>
@@ -657,12 +743,61 @@ const CreateQuotation = ({ selectedClient }) => {
           </div>
         </div>
 
+
+        {/* What This Cost Includes */}
+        <div className="px-4 sm:px-6 lg:px-8 pb-6">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
+              <h2 className="text-xl font-bold text-white flex items-center">
+                <span className="w-6 h-6 bg-white text-green-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">6</span>
+                What This Cost Includes
+              </h2>
+            </div>
+            
+            <div className="p-6">
+              <div className="grid grid-cols-1 gap-4">
+                {formData.includes.map((item, index) => (
+                  <div key={index} className="flex items-start bg-green-50 rounded-lg p-3 border border-green-100 hover:bg-green-100 transition-colors">
+                    <span className="text-green-600 mr-3 mt-1 text-lg font-bold">✓</span>
+                    <input 
+                      type="text" 
+                      className="flex-1 outline-none bg-transparent text-gray-800 font-medium focus:bg-white focus:ring-2 focus:ring-green-200 rounded px-2 py-1 transition-all"
+                      value={item}
+                      onChange={(e) => {
+                        const newIncludes = [...formData.includes];
+                        newIncludes[index] = e.target.value;
+                        setFormData({...formData, includes: newIncludes});
+                      }}
+                    />
+                    <button 
+                      onClick={() => {
+                        const newIncludes = formData.includes.filter((_, i) => i !== index);
+                        setFormData({...formData, includes: newIncludes});
+                      }}
+                      className="ml-2 bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 transition-colors"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+              
+              <button 
+                onClick={() => setFormData({...formData, includes: [...formData.includes, 'New feature']})}
+                className="mt-4 bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-2 rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg"
+              >
+                + Add Feature
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Commercial Terms */}
         <div className="px-4 sm:px-6 lg:px-8 pb-6">
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
             <div className="bg-gradient-to-r from-purple-600 to-violet-600 px-6 py-4">
               <h2 className="text-xl font-bold text-white flex items-center">
-                <span className="w-6 h-6 bg-white text-purple-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">4</span>
+                <span className="w-6 h-6 bg-white text-purple-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">7</span>
                 Commercial Terms & Conditions
               </h2>
             </div>
