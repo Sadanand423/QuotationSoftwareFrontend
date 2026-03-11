@@ -237,7 +237,7 @@ const handleSendForApprovalClick = () => {
       </div>
 
         {/* BODY */}
-        <div className="content p-8 space-y-8 text-gray-800">
+        <div className="content p-8 space-y-6 text-gray-800">
 
           {/* Quotation Info */}
           <div className="grid grid-cols-2 gap-6 text-sm">
@@ -268,14 +268,63 @@ const handleSendForApprovalClick = () => {
           </div>
    
           {/* About Project */}
-{formData.aboutProject && (
-  <div className=" p-4 rounded-lg mt-6 print:bg-transparent print:border-none print:p-0">
-    <h3 className="text-sm font-bold text-black-500 uppercase tracking-widest mb-2 print:text-black print:text-base">About Project</h3>
-    <p className="text-sm text-gray-800 whitespace-pre-line leading-relaxed print:text-black">
-      {formData.aboutProject}
-    </p>
-  </div>
-)}
+          {formData.aboutProject && (
+            <div className=" p-4 rounded-lg print:bg-transparent print:border-none print:p-0">
+              <h3 className="text-xl font-bold mb-4">About Project</h3>
+              <p className="text-sm text-gray-800 whitespace-pre-line leading-relaxed print:text-black">
+                {formData.aboutProject}
+              </p>
+            </div>
+          )}
+
+   
+          {/* ==============Scope of Work============== */}
+          {formData.scopeOfWork && (
+            <div className=" p-4 rounded-lg print:bg-transparent print:border-none print:p-0">
+              <h3 className="text-xl font-bold mb-4">Scope of Work</h3>
+              <p className="text-sm text-gray-800 whitespace-pre-line leading-relaxed print:text-black">
+                {formData.scopeOfWork}
+              </p>
+            </div>
+          )}
+
+
+          {/* ============   Technology Stack  ============== */}
+          {/* ============ Technology Stack ============== */}
+<div>
+  <h3 className="text-xl font-bold mb-4 text-gray-800">
+    3. Technology Stack
+  </h3>
+
+  <table className="w-full border-collapse text-sm">
+    <thead>
+      <tr className="bg-blue-50">
+        <th className="border p-3 text-left">Component</th>
+        <th className="border p-3 text-left">Technology</th>
+        <th className="border p-3 text-left">Rationale</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {formData.techStack?.map((tech, index) => (
+        <tr key={index}>
+          <td className="border p-3">{tech.component}</td>
+          <td className="border p-3">{tech.technology}</td>
+          <td className="border p-3">{tech.rationale}</td>
+        </tr>
+      ))}
+
+      {/* If no tech stack added */}
+      {!formData.techStack?.length && (
+        <tr>
+          <td colSpan="3" className="border p-3 text-center text-gray-500">
+            No technology stack defined
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
 
 
           {/* Cost Breakdown */}
@@ -314,28 +363,28 @@ const handleSendForApprovalClick = () => {
                 </tr>
 
                 {/* Show GST only if GST > 0 */}
-{gstPercent > 0 && (
-  <tr className="bg-gray-100 font-semibold">
-    <td colSpan="3" className="border p-3 text-right">
-      GST ({gstPercent}%)
-    </td>
-    <td className="border p-3 text-center text-blue-700">
-      {formatIndianCurrency(gstAmount)}
-    </td>
-  </tr>
-)}
+                {gstPercent > 0 && (
+                  <tr className="bg-gray-100 font-semibold">
+                    <td colSpan="3" className="border p-3 text-right">
+                      GST ({gstPercent}%)
+                    </td>
+                    <td className="border p-3 text-center text-blue-700">
+                      {formatIndianCurrency(gstAmount)}
+                    </td>
+                  </tr>
+                )}
 
-{/* Show Final Amount only if GST applied */}
-{gstPercent > 0 && (
-  <tr className="bg-green-100 font-bold">
-    <td colSpan="3" className="border p-3 text-right">
-      FINAL AMOUNT
-    </td>
-    <td className="border p-3 text-center text-green-700 text-lg">
-      {formatIndianCurrency(finalAmount)}
-    </td>
-  </tr>
-)}
+                {/* Show Final Amount only if GST applied */}
+                {gstPercent > 0 && (
+                  <tr className="font-bold">
+                    <td colSpan="3" className="border p-3 text-right">
+                      FINAL AMOUNT
+                    </td>
+                    <td className="border p-3 text-center text-lg">
+                      {formatIndianCurrency(finalAmount)}
+                    </td>
+                  </tr>
+                )}
 
               </tbody>
             </table>
