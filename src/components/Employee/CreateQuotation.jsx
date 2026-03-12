@@ -356,6 +356,16 @@ const removeAssumption = (section, index) => {
     }
   });
 };
+
+const addTimelineRow = () => {
+  setFormData({
+    ...formData,
+    timeline: [
+      ...formData.timeline,
+      { phase: "", duration: "", deliverables: "" }
+    ]
+  });
+};
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -913,687 +923,578 @@ const removeAssumption = (section, index) => {
               </div>
               
               <div className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
-  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-    <span className="font-semibold text-gray-800">Total Timeline:</span>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <span className="font-semibold text-gray-800">Total Timeline:</span>
 
-    <input
-      type="text"
-      readOnly
-      value={`${calculateTimelineWeeks()} Weeks`}
-      className="flex-1 sm:max-w-xs px-3 py-2 border border-blue-200 rounded-lg font-bold text-blue-700 bg-white"
-      
-    />
-  </div>
-</div>
+                  <input
+                    type="text"
+                    readOnly
+                    value={`${calculateTimelineWeeks()} Weeks`}
+                    className="flex-1 sm:max-w-xs px-3 py-2 border border-blue-200 rounded-lg font-bold text-blue-700 bg-white"/>
+                </div>
+              </div>
+              <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <button 
+                onClick={addTimelineRow}
+                className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl flex items-center justify-center">
+                <span className="mr-2">+</span> Add Phase
+              </button>
+            </div>
+
             </div>
           </div>
         </div>
 
 
         {/* Payment Terms */}
-<div className="px-4 sm:px-6 lg:px-8 pb-6">
-  <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-
-    <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
-      <h2 className="text-xl font-bold text-white flex items-center">
-        <span className="w-6 h-6 bg-white text-green-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
-          6
-        </span>
-        Payment Terms (Net 30 Days Invoicing)
-      </h2>
-    </div>
-
-    <div className="p-6">
-      <ul className="space-y-3 text-gray-800">
-
-        {paymentTerms.map((term, index) => (
-          <li key={index} className="flex items-start gap-3">
-
-            <span className="text-green-600 font-bold mt-1">•</span>
-
-            <span>
-              <strong>{term.percent}%</strong>{" "}
-              ({formatIndianCurrency(calculatePayment(term.percent))}) – {term.label}
-            </span>
-
-          </li>
-        ))}
-
-        <li className="flex items-start gap-3">
-          <span className="text-green-600 font-bold mt-1">•</span>
-          <span>GST @ {gstPercent}% extra as applicable</span>
-        </li>
-
-      </ul>
-    </div>
-
-  </div>
-</div>
-
-
-{/* Post-Launch Maintenance */}
-<div className="px-4 sm:px-6 lg:px-8 pb-6">
-  <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-
-    {/* Header */}
-    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
-      <h2 className="text-xl font-bold text-white flex items-center">
-        <span className="w-6 h-6 bg-white text-blue-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
-          7
-        </span>
-        Post-Launch Maintenance (Optional, 12-Month Contract)
-      </h2>
-    </div>
-
-    <div className="p-6">
-
-      <div className="overflow-x-auto">
-
-        <table className="w-full border-collapse">
-
-          <thead>
-            <tr className="bg-gradient-to-r from-blue-50 to-indigo-50">
-              <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">
-                Plan
-              </th>
-
-              <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">
-                Coverage
-              </th>
-
-              <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">
-                Monthly (₹)
-              </th>
-
-              <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">
-                Action
-              </th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {formData.maintenancePlans?.map((plan, index) => (
-              <tr key={index} className="hover:bg-blue-50 transition-colors">
-
-                <td className="border border-gray-200 p-4">
-                  <input
-                    type="text"
-                    className="w-full outline-none bg-transparent font-semibold text-blue-700 focus:bg-blue-50 focus:ring-2 focus:ring-blue-200 rounded px-2 py-1"
-                    value={plan.plan}
-                    onChange={(e) =>
-                      updateMaintenancePlan(index, "plan", e.target.value)
-                    }
-                  />
-                </td>
-
-                <td className="border border-gray-200 p-4">
-                  <input
-                    type="text"
-                    className="w-full outline-none bg-transparent text-gray-700 focus:bg-blue-50 focus:ring-2 focus:ring-blue-200 rounded px-2 py-1"
-                    value={plan.coverage}
-                    onChange={(e) =>
-                      updateMaintenancePlan(index, "coverage", e.target.value)
-                    }
-                  />
-                </td>
-
-                <td className="border border-gray-200 p-4">
-                  <input
-                    type="number"
-                    className="w-full outline-none bg-transparent font-semibold text-gray-800 focus:bg-blue-50 focus:ring-2 focus:ring-blue-200 rounded px-2 py-1"
-                    value={plan.monthly}
-                    onChange={(e) =>
-                      updateMaintenancePlan(index, "monthly", e.target.value)
-                    }
-                  />
-                </td>
-
-                <td className="border border-gray-200 p-4">
-                  <button
-                    onClick={() => removeMaintenancePlan(index)}
-                    className="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600"
-                  >
-                    Remove
-                  </button>
-                </td>
-
-              </tr>
-            ))}
-          </tbody>
-
-        </table>
-
-      </div>
-
-      {/* Add Plan Button */}
-      <div className="mt-6">
-        <button
-          onClick={addMaintenancePlan}
-          className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 font-medium shadow"
-        >
-          + Add Plan
-        </button>
-      </div>
-
-      {/* Total Range */}
-      <p className="mt-6 font-semibold text-gray-800">
-        Total Range: {calculateMaintenanceRange()} <span className="font-normal">(per year, Excl. GST)</span>
-      </p>
-
-      {/* Note */}
-      <p className="mt-2 text-sm text-gray-700">
-        <span className="font-semibold">Note:</span> Usage-based recurring costs excluded from development quote per industry norms. Client manages billing directly with providers.
-      </p>
-
-    </div>
-  </div>
-</div>
-
-{/* Assumptions, Exclusions & Warranty */}
-<div className="px-4 sm:px-6 lg:px-8 pb-6">
-  <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-
-    {/* Header */}
-    <div className="bg-gradient-to-r from-slate-700 to-slate-800 px-6 py-4">
-      <h2 className="text-xl font-bold text-white flex items-center">
-        <span className="w-6 h-6 bg-white text-slate-700 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
-          8
-        </span>
-        Assumptions, Exclusions & Warranty
-      </h2>
-    </div>
-
-    <div className="p-6 space-y-8">
-
-      {/* INCLUDED */}
-      <div>
-        <h3 className="font-semibold text-gray-800 mb-3">Included</h3>
-
-        {formData.assumptions.included.map((item, index) => (
-          <div key={index} className="flex gap-3 mb-2">
-            <input
-              type="text"
-              value={item}
-              onChange={(e) => updateAssumption("included", index, e.target.value)}
-              className="flex-1 border border-gray-300 rounded px-3 py-2"
-            />
-
-            <button
-              onClick={() => removeAssumption("included", index)}
-              className="bg-red-500 text-white px-3 py-1 rounded text-xs"
-            >
-              Remove
-            </button>
-          </div>
-        ))}
-
-        <button
-          onClick={() => addAssumption("included")}
-          className="mt-2 text-blue-600 font-medium"
-        >
-          + Add Included
-        </button>
-      </div>
-
-
-      {/* EXCLUDED */}
-      <div>
-        <h3 className="font-semibold text-gray-800 mb-3">Excluded</h3>
-
-        {formData.assumptions.excluded.map((item, index) => (
-          <div key={index} className="flex gap-3 mb-2">
-            <input
-              type="text"
-              value={item}
-              onChange={(e) => updateAssumption("excluded", index, e.target.value)}
-              className="flex-1 border border-gray-300 rounded px-3 py-2"
-            />
-
-            <button
-              onClick={() => removeAssumption("excluded", index)}
-              className="bg-red-500 text-white px-3 py-1 rounded text-xs"
-            >
-              Remove
-            </button>
-          </div>
-        ))}
-
-        <button
-          onClick={() => addAssumption("excluded")}
-          className="mt-2 text-blue-600 font-medium"
-        >
-          + Add Exclusion
-        </button>
-      </div>
-
-
-      {/* WARRANTY */}
-      <div>
-        <h3 className="font-semibold text-gray-800 mb-3">Warranty & Support</h3>
-
-        {formData.assumptions.warranty.map((item, index) => (
-          <div key={index} className="flex gap-3 mb-2">
-            <input
-              type="text"
-              value={item}
-              onChange={(e) => updateAssumption("warranty", index, e.target.value)}
-              className="flex-1 border border-gray-300 rounded px-3 py-2"
-            />
-
-            <button
-              onClick={() => removeAssumption("warranty", index)}
-              className="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600"
-            >
-              Remove
-            </button>
-          </div>
-        ))}
-
-        <button
-          onClick={() => addAssumption("warranty")}
-          className="mt-2 text-blue-600 font-medium"
-        >
-          + Add Warranty
-        </button>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-{/* Investment Summary */}
-<div className="px-4 sm:px-6 lg:px-8 pb-6">
-  <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-
-    {/* Header */}
-    <div className="bg-gradient-to-r from-emerald-600 to-green-600 px-6 py-4">
-      <h2 className="text-xl font-bold text-white flex items-center">
-        <span className="w-6 h-6 bg-white text-green-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
-          8
-        </span>
-        Project Investment Summary
-      </h2>
-    </div>
-
-    <div className="p-6 space-y-4">
-
-      {/* Total Project Cost */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <span className="font-semibold text-gray-700 w-56">
-          Total Project Cost
-        </span>
-
-        <input
-          type="text"
-          readOnly
-          value={formatIndianCurrency(formData.totalCost)}
-          className="px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 font-semibold text-gray-800"
-        />
-      </div>
-
-
-      {/* GST Input */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <span className="font-semibold text-gray-700 w-56">
-          GST Percentage
-        </span>
-
-        <input
-          type="number"
-          min="0"
-          max="100"
-          value={formData.gstPercent}
-          onChange={(e) =>
-            setFormData({
-              ...formData,
-              gstPercent: Number(e.target.value)
-            })
-          }
-          className="w-24 px-3 py-2 border border-gray-300 rounded-lg"
-        />
-
-        <span className="text-gray-600">% GST Applicable</span>
-      </div>
-
-
-      {/* GST Amount */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <span className="font-semibold text-gray-700 w-56">
-          GST Amount
-        </span>
-
-        <input
-          type="text"
-          readOnly
-          value={formatIndianCurrency(gstAmount)}
-          className="px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 font-semibold text-blue-700"
-        />
-      </div>
-
-
-      {/* Final Amount */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 border-t pt-4">
-
-        <span className="font-bold text-gray-800 w-56 text-lg">
-          Final Project Investment
-        </span>
-
-        <input
-          type="text"
-          readOnly
-          value={formatIndianCurrency(finalAmount)}
-          className="px-3 py-2 border border-green-300 rounded-lg bg-green-50 font-bold text-green-700 text-lg"
-        />
-
-      </div>
-
-    </div>
-  </div>
-</div>
-
-
-{/* Authorized Signature */}
-<div className="px-4 sm:px-6 lg:px-8 pb-6">
-  <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-
-    {/* Header */}
-    <div className="bg-gradient-to-r from-gray-700 to-gray-800 px-6 py-4">
-      <h2 className="text-xl font-bold text-white flex items-center">
-        <span className="w-6 h-6 bg-white text-gray-700 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
-          10
-        </span>
-        Authorized Signature
-      </h2>
-    </div>
-
-    <div className="p-6 grid md:grid-cols-2 gap-8 items-start">
-
-      {/* Left Side Info */}
-      <div className="space-y-3">
-
-        <input
-          type="text"
-          value={formData.authorizedName}
-          placeholder="Authorized Person Name"
-          onChange={(e) =>
-            setFormData({ ...formData, authorizedName: e.target.value })
-          }
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-        />
-
-        <input
-          type="text"
-          value={formData.authorizedRole}
-          placeholder="Designation"
-          onChange={(e) =>
-            setFormData({ ...formData, authorizedRole: e.target.value })
-          }
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-        />
-
-        <input
-          type="text"
-          value={formData.companyName}
-          placeholder="Company Name"
-          onChange={(e) =>
-            setFormData({ ...formData, companyName: e.target.value })
-          }
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-        />
-
-        <input
-          type="text"
-          value={formData.contactNumber}
-          placeholder="Contact Number"
-          onChange={(e) =>
-            setFormData({ ...formData, contactNumber: e.target.value })
-          }
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-        />
-
-        <input
-          type="email"
-          value={formData.contactEmail}
-          placeholder="Email Address"
-          onChange={(e) =>
-            setFormData({ ...formData, contactEmail: e.target.value })
-          }
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-        />
-
-        <input
-          type="text"
-          value={formData.location}
-          placeholder="Location"
-          onChange={(e) =>
-            setFormData({ ...formData, location: e.target.value })
-          }
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-        />
-
-      </div>
-
-      {/* Stamp Upload */}
-      <div className="text-center">
-
-        <p className="font-semibold text-gray-700 mb-3">
-          Company Stamp
-        </p>
-
-        <div
-          className="w-40 h-40 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-50 mx-auto"
-          onClick={() => document.getElementById("companyStamp").click()}
-        >
-          {formData.companyStamp ? (
-            <img
-              src={formData.companyStamp}
-              alt="Stamp"
-              className="w-full h-full object-contain"
-            />
-          ) : (
-            <span className="text-gray-400 text-sm">
-              Click to Upload
-            </span>
-          )}
-        </div>
-
-        <input
-          id="companyStamp"
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (event) => {
-              setFormData({
-                ...formData,
-                companyStamp: event.target.result
-              });
-            };
-            reader.readAsDataURL(file);
-          }}
-        />
-
-      </div>
-    </div>
-
-    {/* Note */}
-    <div className="px-6 pb-6">
-      <textarea
-        rows="2"
-        placeholder="Note..."
-        value={formData.signatureNote}
-        onChange={(e) =>
-          setFormData({ ...formData, signatureNote: e.target.value })
-        }
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-      />
-    </div>
-
-  </div>
-</div>
-
-
-        {/* Commercial Terms 
         <div className="px-4 sm:px-6 lg:px-8 pb-6">
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-purple-600 to-violet-600 px-6 py-4">
+
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
               <h2 className="text-xl font-bold text-white flex items-center">
-                <span className="w-6 h-6 bg-white text-purple-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">7</span>
-                Commercial Terms & Conditions
+                <span className="w-6 h-6 bg-white text-green-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
+                  6
+                </span>
+                Payment Terms (Net 30 Days Invoicing)
               </h2>
             </div>
-            
+
             <div className="p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Pricing Model:</label>
-                    <input 
-                      type="text" 
-                      className="w-full px-3 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none font-medium"
-                      value={formData.terms.pricingModel} 
-                      onChange={(e) => setFormData({...formData, terms: {...formData.terms, pricingModel: e.target.value}})}
-                    />
-                  </div>
-                  
-                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Payment Milestones:</label>
-                    <input 
-                      type="text" 
-                      className="w-full px-3 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-                      value={formData.terms.paymentMilestones} 
-                      onChange={(e) => setFormData({...formData, terms: {...formData.terms, paymentMilestones: e.target.value}})}
-                    />
-                  </div>
-                  
-                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Taxes:</label>
-                    <input 
-                      type="text" 
-                      className="w-full px-3 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-                      value={formData.terms.taxes} 
-                      onChange={(e) => setFormData({...formData, terms: {...formData.terms, taxes: e.target.value}})}
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Domain & Server Cost:</label>
-                    <input 
-                      type="text" 
-                      className="w-full px-3 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-                      value={formData.terms.domainServer} 
-                      onChange={(e) => setFormData({...formData, terms: {...formData.terms, domainServer: e.target.value}})}
-                    />
-                  </div>
-                  
-                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Change Requests:</label>
-                    <input 
-                      type="text" 
-                      className="w-full px-3 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-                      value={formData.terms.changeRequests} 
-                      onChange={(e) => setFormData({...formData, terms: {...formData.terms, changeRequests: e.target.value}})}
-                    />
-                  </div>
-                  
-                  <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-4 rounded-lg border border-amber-200">
-                    <div className="flex items-center mb-2">
-                      <span className="text-amber-600 text-lg mr-2">⚠️</span>
-                      <span className="font-semibold text-gray-700">Important Note:</span>
-                    </div>
-                    <p className="text-sm text-gray-600">This quotation is valid for 30 days from the date of issue. All prices are subject to change without prior notice.</p>
-                  </div>
-                </div>
+              <ul className="space-y-3 text-gray-800">
+
+                {paymentTerms.map((term, index) => (
+                  <li key={index} className="flex items-start gap-3">
+
+                    <span className="text-green-600 font-bold mt-1">•</span>
+
+                    <span>
+                      <strong>{term.percent}%</strong>{" "}
+                      ({formatIndianCurrency(calculatePayment(term.percent))}) – {term.label}
+                    </span>
+
+                  </li>
+                ))}
+
+                <li className="flex items-start gap-3">
+                  <span className="text-green-600 font-bold mt-1">•</span>
+                  <span>GST @ {gstPercent}% extra as applicable</span>
+                </li>
+
+              </ul>
+            </div>
+
+          </div>
+        </div>
+
+
+        {/* Post-Launch Maintenance */}
+        <div className="px-4 sm:px-6 lg:px-8 pb-6">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+              <h2 className="text-xl font-bold text-white flex items-center">
+                <span className="w-6 h-6 bg-white text-blue-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
+                  7
+                </span>
+                Post-Launch Maintenance (Optional, 12-Month Contract)
+              </h2>
+            </div>
+
+            <div className="p-6">
+
+              <div className="overflow-x-auto">
+
+                <table className="w-full border-collapse">
+
+                  <thead>
+                    <tr className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                      <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">
+                        Plan
+                      </th>
+
+                      <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">
+                        Coverage
+                      </th>
+
+                      <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">
+                        Monthly (₹)
+                      </th>
+
+                      <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {formData.maintenancePlans?.map((plan, index) => (
+                      <tr key={index} className="hover:bg-blue-50 transition-colors">
+
+                        <td className="border border-gray-200 p-4">
+                          <input
+                            type="text"
+                            className="w-full outline-none bg-transparent font-semibold text-blue-700 focus:bg-blue-50 focus:ring-2 focus:ring-blue-200 rounded px-2 py-1"
+                            value={plan.plan}
+                            onChange={(e) =>
+                              updateMaintenancePlan(index, "plan", e.target.value)
+                            }
+                          />
+                        </td>
+
+                        <td className="border border-gray-200 p-4">
+                          <input
+                            type="text"
+                            className="w-full outline-none bg-transparent text-gray-700 focus:bg-blue-50 focus:ring-2 focus:ring-blue-200 rounded px-2 py-1"
+                            value={plan.coverage}
+                            onChange={(e) =>
+                              updateMaintenancePlan(index, "coverage", e.target.value)
+                            }
+                          />
+                        </td>
+
+                        <td className="border border-gray-200 p-4">
+                          <input
+                            type="number"
+                            className="w-full outline-none bg-transparent font-semibold text-gray-800 focus:bg-blue-50 focus:ring-2 focus:ring-blue-200 rounded px-2 py-1"
+                            value={plan.monthly}
+                            onChange={(e) =>
+                              updateMaintenancePlan(index, "monthly", e.target.value)
+                            }
+                          />
+                        </td>
+
+                        <td className="border border-gray-200 p-4">
+                          <button
+                            onClick={() => removeMaintenancePlan(index)}
+                            className="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600"
+                          >
+                            Remove
+                          </button>
+                        </td>
+
+                      </tr>
+                    ))}
+                  </tbody>
+
+                </table>
+
               </div>
+
+              {/* Add Plan Button */}
+              <div className="mt-6">
+                <button
+                  onClick={addMaintenancePlan}
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 font-medium shadow"
+                >
+                  + Add Plan
+                </button>
+              </div>
+
+              {/* Total Range */}
+              <p className="mt-6 font-semibold text-gray-800">
+                Total Range: {calculateMaintenanceRange()} <span className="font-normal">(per year, Excl. GST)</span>
+              </p>
+
+              {/* Note */}
+              <p className="mt-2 text-sm text-gray-700">
+                <span className="font-semibold">Note:</span> Usage-based recurring costs excluded from development quote per industry norms. Client manages billing directly with providers.
+              </p>
+
             </div>
           </div>
         </div>
 
-        */}
-
-        {/* Signatures */}
+        {/* Assumptions, Exclusions & Warranty */}
         <div className="px-4 sm:px-6 lg:px-8 pb-6">
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-gray-700 to-gray-800 px-6 py-4">
-              <h3 className="text-xl font-bold text-white text-center">Authorized Signatures</h3>
-              <p className="text-gray-300 text-center text-sm mt-1">Smartmatrix Digital Services</p>
+
+            {/* Header */}
+            <div className="bg-gradient-to-r from-slate-700 to-slate-800 px-6 py-4">
+              <h2 className="text-xl font-bold text-white flex items-center">
+                <span className="w-6 h-6 bg-white text-slate-700 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
+                  8
+                </span>
+                Assumptions, Exclusions & Warranty
+              </h2>
             </div>
-            
-            <div className="p-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
-                <div className="text-center">
-                  <div className="w-32 h-20 border-2 border-dashed border-gray-300 rounded-lg mx-auto mb-4 flex items-center justify-center bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => document.getElementById('projectManagerSign').click()}>
-                    <span className="text-gray-400 text-sm">Click to Sign</span>
+
+            <div className="p-6 space-y-8">
+
+              {/* INCLUDED */}
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-3">Included</h3>
+
+                {formData.assumptions.included.map((item, index) => (
+                  <div key={index} className="flex gap-3 mb-2">
+                    <input
+                      type="text"
+                      value={item}
+                      onChange={(e) => updateAssumption("included", index, e.target.value)}
+                      className="flex-1 border border-gray-300 rounded px-3 py-2"
+                    />
+
+                    <button
+                      onClick={() => removeAssumption("included", index)}
+                      className="bg-red-500 text-white px-3 py-1 rounded text-xs"
+                    >
+                      Remove
+                    </button>
                   </div>
-                  <input 
-                    id="projectManagerSign"
-                    type="file" 
-                    accept="image/*" 
+                ))}
+
+                <button
+                  onClick={() => addAssumption("included")}
+                  className="mt-2 text-blue-600 font-medium"
+                >
+                  + Add Included
+                </button>
+              </div>
+
+
+              {/* EXCLUDED */}
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-3">Excluded</h3>
+
+                {formData.assumptions.excluded.map((item, index) => (
+                  <div key={index} className="flex gap-3 mb-2">
+                    <input
+                      type="text"
+                      value={item}
+                      onChange={(e) => updateAssumption("excluded", index, e.target.value)}
+                      className="flex-1 border border-gray-300 rounded px-3 py-2"
+                    />
+
+                    <button
+                      onClick={() => removeAssumption("excluded", index)}
+                      className="bg-red-500 text-white px-3 py-1 rounded text-xs"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+
+                <button
+                  onClick={() => addAssumption("excluded")}
+                  className="mt-2 text-blue-600 font-medium"
+                >
+                  + Add Exclusion
+                </button>
+              </div>
+
+
+              {/* WARRANTY */}
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-3">Warranty & Support</h3>
+
+                {formData.assumptions.warranty.map((item, index) => (
+                  <div key={index} className="flex gap-3 mb-2">
+                    <input
+                      type="text"
+                      value={item}
+                      onChange={(e) => updateAssumption("warranty", index, e.target.value)}
+                      className="flex-1 border border-gray-300 rounded px-3 py-2"
+                    />
+
+                    <button
+                      onClick={() => removeAssumption("warranty", index)}
+                      className="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+
+                <button
+                  onClick={() => addAssumption("warranty")}
+                  className="mt-2 text-blue-600 font-medium"
+                >
+                  + Add Warranty
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        {/* Investment Summary */}
+        <div className="px-4 sm:px-6 lg:px-8 pb-6">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+
+            {/* Header */}
+            <div className="bg-gradient-to-r from-emerald-600 to-green-600 px-6 py-4">
+              <h2 className="text-xl font-bold text-white flex items-center">
+                <span className="w-6 h-6 bg-white text-green-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
+                  8
+                </span>
+                Project Investment Summary
+              </h2>
+            </div>
+
+            <div className="p-6 space-y-4">
+
+              {/* Total Project Cost */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <span className="font-semibold text-gray-700 w-56">
+                  Total Project Cost
+                </span>
+
+                <input
+                  type="text"
+                  readOnly
+                  value={formatIndianCurrency(formData.totalCost)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 font-semibold text-gray-800"
+                />
+              </div>
+
+
+              {/* GST Input */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <span className="font-semibold text-gray-700 w-56">
+                  GST Percentage
+                </span>
+
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={formData.gstPercent}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      gstPercent: Number(e.target.value)
+                    })
+                  }
+                  className="w-24 px-3 py-2 border border-gray-300 rounded-lg"
+                />
+
+                <span className="text-gray-600">% GST Applicable</span>
+              </div>
+
+
+              {/* GST Amount */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <span className="font-semibold text-gray-700 w-56">
+                  GST Amount
+                </span>
+
+                <input
+                  type="text"
+                  readOnly
+                  value={formatIndianCurrency(gstAmount)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 font-semibold text-blue-700"
+                />
+              </div>
+
+
+              {/* Final Amount */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 border-t pt-4">
+
+                <span className="font-bold text-gray-800 w-56 text-lg">
+                  Final Project Investment
+                </span>
+
+                <input
+                  type="text"
+                  readOnly
+                  value={formatIndianCurrency(finalAmount)}
+                  className="px-3 py-2 border border-green-300 rounded-lg bg-green-50 font-bold text-green-700 text-lg"
+                />
+
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+
+        {/* Authorized Signature */}
+        <div className="px-4 sm:px-6 lg:px-8 pb-6">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+
+            {/* Header */}
+            <div className="bg-gradient-to-r from-gray-700 to-gray-800 px-6 py-4">
+              <h2 className="text-xl font-bold text-white flex items-center">
+                <span className="w-6 h-6 bg-white text-gray-700 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
+                  10
+                </span>
+                Authorized Signature
+              </h2>
+            </div>
+
+            <div className="p-6 grid md:grid-cols-2 gap-8 items-start">
+
+              {/* Left Side Info */}
+              <div className="space-y-3">
+
+                <input
+                  type="text"
+                  value={formData.authorizedName}
+                  placeholder="Authorized Person Name"
+                  onChange={(e) =>
+                    setFormData({ ...formData, authorizedName: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+
+                <input
+                  type="text"
+                  value={formData.authorizedRole}
+                  placeholder="Designation"
+                  onChange={(e) =>
+                    setFormData({ ...formData, authorizedRole: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+
+                <input
+                  type="text"
+                  value={formData.companyName}
+                  placeholder="Company Name"
+                  onChange={(e) =>
+                    setFormData({ ...formData, companyName: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+
+                <input
+                  type="text"
+                  value={formData.contactNumber}
+                  placeholder="Contact Number"
+                  onChange={(e) =>
+                    setFormData({ ...formData, contactNumber: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+
+                <input
+                  type="email"
+                  value={formData.contactEmail}
+                  placeholder="Email Address"
+                  onChange={(e) =>
+                    setFormData({ ...formData, contactEmail: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+
+                <input
+                  type="text"
+                  value={formData.location}
+                  placeholder="Location"
+                  onChange={(e) =>
+                    setFormData({ ...formData, location: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+
+              </div>
+
+              {/* Signature + Stamp Upload */}
+              <div className="text-center space-y-6">
+
+                {/* Signature Upload */}
+                <div>
+                  <p className="font-semibold text-gray-700 mb-3">
+                    Authorized Signature
+                  </p>
+
+                  <div
+                    className="w-35 h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-50 mx-auto"
+                    onClick={() => document.getElementById("signatureUpload").click()}
+                  >
+                    {formData.signature ? (
+                      <img
+                        src={formData.signature}
+                        alt="Signature"
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <span className="text-gray-400 text-sm">
+                        Upload Signature
+                      </span>
+                    )}
+                  </div>
+
+                  <input
+                    id="signatureUpload"
+                    type="file"
+                    accept="image/*"
                     className="hidden"
                     onChange={(e) => {
                       const file = e.target.files[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                          setFormData({...formData, projectManagerSignature: event.target.result});
-                        };
-                        reader.readAsDataURL(file);
-                      }
+                      if (!file) return;
+
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        setFormData({
+                          ...formData,
+                          signature: event.target.result
+                        });
+                      };
+                      reader.readAsDataURL(file);
                     }}
                   />
-                  {formData.projectManagerSignature && (
-                    <img src={formData.projectManagerSignature} alt="Signature" className="w-32 h-20 mx-auto mb-4 border rounded-lg" />
-                  )}
-                  <input 
-                    type="text" 
-                    className="text-center font-semibold outline-none border-b-2 border-gray-300 focus:border-blue-500 transition-colors w-full max-w-xs mx-auto block text-lg"
-                    value={formData.projectManager}
-                    onChange={(e) => setFormData({...formData, projectManager: e.target.value})}
-                  />
-                  <div className="text-sm text-gray-600 mt-2 font-medium">Project Manager</div>
-                  <div className="text-xs text-gray-500 mt-1">Date: {formData.date}</div>
                 </div>
-                
-                <div className="text-center">
-                  <div className="w-32 h-20 border-2 border-dashed border-gray-300 rounded-lg mx-auto mb-4 flex items-center justify-center bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => document.getElementById('operationManagerSign').click()}>
-                    <span className="text-gray-400 text-sm">Click to Sign</span>
+
+                {/* Company Stamp */}
+                <div>
+                  <p className="font-semibold text-gray-700 mb-3">
+                    Company Stamp
+                  </p>
+
+                  <div
+                    className="w-40 h-25 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-50 mx-auto"
+                    onClick={() => document.getElementById("companyStamp").click()}
+                  >
+                    {formData.companyStamp ? (
+                      <img
+                        src={formData.companyStamp}
+                        alt="Stamp"
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <span className="text-gray-400 text-sm">
+                        Click to Upload
+                      </span>
+                    )}
                   </div>
-                  <input 
-                    id="operationManagerSign"
-                    type="file" 
-                    accept="image/*" 
+
+                  <input
+                    id="companyStamp"
+                    type="file"
+                    accept="image/*"
                     className="hidden"
                     onChange={(e) => {
                       const file = e.target.files[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                          setFormData({...formData, operationManagerSignature: event.target.result});
-                        };
-                        reader.readAsDataURL(file);
-                      }
+                      if (!file) return;
+
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        setFormData({
+                          ...formData,
+                          companyStamp: event.target.result
+                        });
+                      };
+                      reader.readAsDataURL(file);
                     }}
                   />
-                  {formData.operationManagerSignature && (
-                    <img src={formData.operationManagerSignature} alt="Signature" className="w-32 h-20 mx-auto mb-4 border rounded-lg" />
-                  )}
-                  <input 
-                    type="text" 
-                    className="text-center font-semibold outline-none border-b-2 border-gray-300 focus:border-blue-500 transition-colors w-full max-w-xs mx-auto block text-lg"
-                    value={formData.operationManager}
-                    onChange={(e) => setFormData({...formData, operationManager: e.target.value})}
-                  />
-                  <div className="text-sm text-gray-600 mt-2 font-medium">Operation Manager</div>
-                  <div className="text-xs text-gray-500 mt-1">Date: {formData.date}</div>
                 </div>
               </div>
+              </div>
+
+            {/* Note */}
+            <div className="px-6 pb-6">
+              <textarea
+                rows="2"
+                placeholder="Note..."
+                value={formData.signatureNote}
+                onChange={(e) =>
+                  setFormData({ ...formData, signatureNote: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+              />
             </div>
+
           </div>
         </div>
 
