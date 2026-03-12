@@ -211,7 +211,7 @@ const handleDelete = async (quoteId) => {
                     </td>
                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-900">{quote.client}</td>
                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm font-semibold hidden sm:table-cell">
-                      {quote.currency || '$'}{quote.totalCost?.toLocaleString() || '0'}
+                      {quote.currency || '$'}{(quote.finalAmount || quote.totalCost + (quote.gstAmount || 0))?.toLocaleString('en-IN') || '0'}
                     </td>
                     {/* ... inside your table map ... */}
 <td className="px-3 sm:px-6 py-4">
@@ -305,7 +305,7 @@ const handleDelete = async (quoteId) => {
                       <span className="text-gray-500">Amount</span>
                       <span className="text-green-600 font-bold">
                         {selectedQuote.currency}{" "}
-                        {selectedQuote.totalCost?.toLocaleString()}
+                        {(selectedQuote.finalAmount || selectedQuote.totalCost + (selectedQuote.gstAmount || 0))?.toLocaleString('en-IN')}
                       </span>
                     </div>
 
