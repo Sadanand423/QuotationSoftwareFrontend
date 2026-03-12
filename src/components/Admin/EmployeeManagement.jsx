@@ -10,6 +10,9 @@ const EmployeeManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showPasswordResetModal, setShowPasswordResetModal] = useState(false);
+  const [resetPasswordData, setResetPasswordData] = useState({ temporaryPassword: '', loading: false });
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -100,11 +103,16 @@ const handleEditEmployee = (employee) => {
 
     const method = isEdit ? "PUT" : "POST";
 
+    // In edit mode, exclude password from the update (use reset-password endpoint instead)
+    const dataToSend = isEdit 
+      ? { ...formData, password: selectedEmployee.password }
+      : formData;
+
     try {
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(dataToSend),
       });
 
       const data = await res.json();
@@ -145,6 +153,43 @@ const handleEditEmployee = (employee) => {
     }
   };
 
+  // ✅ RESET PASSWORD (Secure endpoint)
+  const handleResetPassword = async () => {
+    if (!selectedEmployee) return;
+    
+    setResetPasswordData(prev => ({ ...prev, loading: true }));
+    
+    try {
+      const response = await fetch(`http://localhost:8080/api/admin/employees/reset-password/${selectedEmployee.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setResetPasswordData({
+          temporaryPassword: data.temporaryPassword,
+          loading: false
+        });
+        setShowPasswordResetModal(true);
+        
+        // Update the employees list to reflect the password change
+        setEmployees(employees.map(emp => 
+          emp.id === selectedEmployee.id 
+            ? { ...emp, password: '•••••••' } 
+            : emp
+        ));
+      } else {
+        alert('Failed to reset password. Please try again.');
+        setResetPasswordData(prev => ({ ...prev, loading: false }));
+      }
+    } catch (err) {
+      console.error("Reset password error", err);
+      alert('Error resetting password');
+      setResetPasswordData(prev => ({ ...prev, loading: false }));
+    }
+  };
+
   const backToList = () => {
     setCurrentView('list');
     setSelectedEmployee(null);
@@ -175,7 +220,9 @@ const passwordRules = {
 };
 
 const validCount = Object.values(passwordRules).filter(Boolean).length;
-const isPasswordValid = validCount === 4;
+// In edit mode, skip password validation since password field is read-only
+// In add mode, password must be valid
+const isPasswordValid = currentView === 'edit' ? true : validCount === 4;
 
 
 
@@ -293,19 +340,26 @@ const getStrength = () => {
     name="password"
     autoComplete="new-password"
     value={formData.password}
-    onChange={handleChange}
-    onFocus={() => setIsFocused(true)}
+    onChange={currentView === 'edit' ? undefined : handleChange}
+    onFocus={() => currentView !== 'edit' && setIsFocused(true)}
     onBlur={() => setIsFocused(false)}
+    readOnly={currentView === 'edit'}
     className={`w-full p-2 rounded-lg text-xs sm:text-sm border transition-all duration-300 ${
-      isFocused && isPasswordValid
-        ? "border-green-500 bg-green-50 focus:ring-2 focus:ring-green-500"
-        : "border-gray-300 focus:ring-2 focus:ring-blue-500"
+      currentView === 'edit' 
+        ? 'bg-gray-100 text-gray-600 border-gray-300 cursor-not-allowed'
+        : (isFocused && isPasswordValid
+          ? "border-green-500 bg-green-50 focus:ring-2 focus:ring-green-500"
+          : "border-gray-300 focus:ring-2 focus:ring-blue-500")
     }`}
-    placeholder="Enter strong password"
+    placeholder={currentView === 'edit' ? "Password is secured" : "Enter strong password"}
     required
   />
 
-  {isFocused && formData.password.length > 0 && !isPasswordValid && (
+  {currentView === 'edit' && (
+    <p className="text-xs text-gray-500 mt-1.5">Password editing is restricted for security. Use the Reset Password button below.</p>
+  )}
+
+  {isFocused && formData.password.length > 0 && !isPasswordValid && currentView !== 'edit' && (
     <div
       className="absolute left-0 top-full mt-2 w-full z-20 
                  bg-red-50 border border-red-300 text-red-600 
@@ -331,6 +385,18 @@ const getStrength = () => {
         Password must be at least 8 characters and include an uppercase letter, number and special character.
       </span>
     </div>
+  )}
+
+  {/* Reset Password Button (only in edit mode) */}
+  {currentView === 'edit' && (
+    <button
+      type="button"
+      onClick={handleResetPassword}
+      disabled={resetPasswordData.loading}
+      className="mt-2 w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200"
+    >
+      {resetPasswordData.loading ? '🔄 Resetting...' : '🔑 Reset Password'}
+    </button>
   )}
 </div>
 
@@ -422,6 +488,59 @@ const getStrength = () => {
             </div>
           </form>
         </div>
+
+        {/* ✅ PASSWORD RESET MODAL */}
+        {showPasswordResetModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+              <div className="text-center">
+                <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-gray-800 mb-2">Password Reset Successful ✅</h3>
+                <p className="text-sm text-gray-600 mb-4">A temporary password has been generated below.</p>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <p className="text-xs text-gray-700 uppercase font-semibold mb-2">Temporary Password:</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={resetPasswordData.temporaryPassword}
+                    readOnly
+                    className="flex-1 bg-white border border-blue-300 rounded px-3 py-2 font-mono font-bold text-lg text-blue-700"
+                  />
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(resetPasswordData.temporaryPassword);
+                      alert('Password copied to clipboard!');
+                    }}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded transition-all"
+                    title="Copy to clipboard"
+                  >
+                    📋
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <p className="text-xs text-yellow-800">
+                  <strong>⚠️ Important:</strong> Please share this temporary password securely with the employee. 
+                  They should change it after logging in for their security.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowPasswordResetModal(false)}
+                className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-semibold transition-all"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
