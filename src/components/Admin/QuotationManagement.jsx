@@ -156,7 +156,7 @@ const handleDelete = async (quoteId) => {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-visible">
         <div className="flex flex-wrap border-b border-gray-200">
           {statusFilters.map((filter) => (
             <button
@@ -171,8 +171,8 @@ const handleDelete = async (quoteId) => {
           ))}
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
+        <div className="overflow-x-auto overflow-y-visible">
+          <table className="min-w-full !overflow-visible">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">QUOTATION NO</th>
@@ -211,13 +211,32 @@ const handleDelete = async (quoteId) => {
                     </td>
                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-900">{quote.client}</td>
                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm font-semibold hidden sm:table-cell">
-                      {quote.currency || '$'}{(quote.finalAmount || quote.totalCost + (quote.gstAmount || 0))?.toLocaleString('en-IN') || '0'}
+                      {quote.currency || '$'}{quote.totalCost?.toLocaleString() || '0'}
                     </td>
-                    <td className="px-3 sm:px-6 py-4">
-                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(quote.status)}`}>
-                        {quote.status || 'Draft'}
-                      </span>
-                    </td>
+                    {/* ... inside your table map ... */}
+<td className="px-3 sm:px-6 py-4">
+  <div className="relative group inline-block"> 
+    <span className={`px-2 py-1 text-xs rounded-full font-medium cursor-help ${getStatusColor(quote.status)}`}>
+      {quote.status || 'Draft'}
+    </span>
+
+    {/* Floating Window */}
+    {quote.status === "Rejected" && quote.rejectionReason && (
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-[9999]">
+        <div className="bg-white text-gray-800 text-sm rounded-xl p-4 shadow-2xl ring-1 ring-black/5 min-w-[200px] max-w-[350px] w-max transition-all">
+          <p className="font-bold border-b border-gray-100 pb-2 mb-2 text-red-500 text-xs uppercase tracking-wider">
+            Rejection Reason
+          </p>
+          <p className="leading-relaxed text-gray-700 font-serif whitespace-normal break-words">
+            "{quote.rejectionReason}"
+          </p>
+          {/* Arrow pointing down */}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-white drop-shadow-sm"></div>
+        </div>
+      </div>
+    )}
+  </div>
+</td>
                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-600 hidden md:table-cell">{quote.date}</td>
                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm">
                       <div className="flex gap-3">
@@ -286,20 +305,25 @@ const handleDelete = async (quoteId) => {
                       <span className="text-gray-500">Amount</span>
                       <span className="text-green-600 font-bold">
                         {selectedQuote.currency}{" "}
-                        {(selectedQuote.finalAmount || selectedQuote.totalCost + (selectedQuote.gstAmount || 0))?.toLocaleString('en-IN')}
+                        {selectedQuote.totalCost?.toLocaleString()}
                       </span>
                     </div>
 
-                    <div className="flex justify-between border-b border-gray-50 pb-2">
-                      <span className="text-gray-500">Status</span>
-                      <span
-                        className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(
-                          selectedQuote.status || "Draft"
-                        )}`}
-                      >
-                        {selectedQuote.status || "Draft"}
-                      </span>
-                    </div>
+                    {/* Inside {modalType === "view" && (...)} */}
+<div className="flex justify-between border-b border-gray-50 pb-2">
+  <span className="text-gray-500">Status</span>
+  <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(selectedQuote.status)}`}>
+    {selectedQuote.status || "Draft"}
+  </span>
+</div>
+
+{/* ADD THIS BLOCK FOR THE REJECTION REASON */}
+{selectedQuote.status === "Rejected" && selectedQuote.rejectionReason && (
+  <div className="mt-2 p-3 bg-red-50 border border-red-100 rounded-lg">
+    <p className="text-xs font-bold text-red-700 uppercase mb-1">Client Feedback</p>
+    <p className="text-sm text-gray-700 italic">"{selectedQuote.rejectionReason}"</p>
+  </div>
+)}
 
 
                     <div className="flex justify-between">
