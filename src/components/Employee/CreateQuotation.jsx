@@ -48,19 +48,18 @@ const CreateQuotation = ({ selectedClient }) => {
       'QA testing & production rollout'
     ],
     timeline: [
-  { phase: "1. Discovery", duration: "1 Week", deliverables: "Requirements, main page prototype" },
-  { phase: "2. Core Frontend + Backend", duration: "2 Weeks", deliverables: "Main + subscription MVP" },
-  { phase: "3. Payments Page", duration: "1 Week", deliverables: "Checkout integration" },
-  { phase: "4. Admin + Testing", duration: "1 Week", deliverables: "Dashboards, QA cycles" },
-  { phase: "5. UAT & Launch", duration: "1 Week", deliverables: "Bug fixes, deployment, training" }
+  { srNo: 1, phase: "Discovery", duration: "1 Week", deliverables: "Requirements, main page prototype" },
+  { srNo: 2, phase: "Core Frontend + Backend", duration: "2 Weeks", deliverables: "Main + subscription MVP" },
+  { srNo: 3, phase: "Payments Page", duration: "1 Week", deliverables: "Checkout integration" },
+  { srNo: 4, phase: "Admin + Testing", duration: "1 Week", deliverables: "Dashboards, QA cycles" },
+  { srNo: 5, phase: "UAT & Launch", duration: "1 Week", deliverables: "Bug fixes, deployment, training" }
 ],
-    terms: {
-      pricingModel: 'Fixed Price',
-      paymentMilestones: 'Phase-wise (Mutually agreed)',
-      taxes: 'GST applicable as per government norms',
-      domainServer: 'Not included (Charged separately)',
-      changeRequests: 'Any scope change will be quoted separately'
-    },
+    paymentTerms: [
+  { percent: 25, label: "Advance upon contract signing" },
+  { percent: 30, label: "Midpoint milestone" },
+  { percent: 25, label: "UAT approval" },
+  { percent: 20, label: "Final delivery and deployment" }
+],
 
     maintenancePlans: [
   {plan: "Basic", coverage: "Bug fixes, server monitoring", monthly: 12000},
@@ -259,13 +258,32 @@ const removeTechStack = (index) => {
 };
 
 
+const updatePaymentTerm = (index, field, value) => {
+  const updated = [...formData.paymentTerms];
+  updated[index][field] = value;
 
-const paymentTerms = [
-  { percent: 25, label: "Advance – Kickoff" },
-  { percent: 30, label: "Main + Subscription MVP" },
-  { percent: 25, label: "Payments complete" },
-  { percent: 20, label: "Admin + Launch" }
-];
+  setFormData({
+    ...formData,
+    paymentTerms: updated
+  });
+};
+const addPaymentTerm = () => {
+  setFormData({
+    ...formData,
+    paymentTerms: [
+      ...formData.paymentTerms,
+      { percent: "", label: "" }
+    ]
+  });
+};
+const removePaymentTerm = (index) => {
+  const updated = formData.paymentTerms.filter((_, i) => i !== index);
+
+  setFormData({
+    ...formData,
+    paymentTerms: updated
+  });
+};
 
 const calculatePayment = (percent) => {
   return Math.round((formData.totalCost * percent) / 100);
@@ -362,8 +380,22 @@ const addTimelineRow = () => {
     ...formData,
     timeline: [
       ...formData.timeline,
-      { phase: "", duration: "", deliverables: "" }
+      {
+        srNo: formData.timeline.length + 1,
+        phase: "",
+        duration: "",
+        deliverables: ""
+      }
     ]
+  });
+};
+
+const removeTimelineRow = (index) => {
+  const newTimeline = formData.timeline.filter((_, i) => i !== index);
+
+  setFormData({
+    ...formData,
+    timeline: newTimeline
   });
 };
   
@@ -690,7 +722,6 @@ const addTimelineRow = () => {
                         ))}
                       </tbody>
                     </table>
-
                   </div>
 
                   {/* Add Technology Row Button */}
@@ -812,9 +843,7 @@ const addTimelineRow = () => {
                             }
                           }}
                           className="w-16 text-center border border-gray-300 rounded px-1 mx-1"
-                        />
-
-                        %
+                        /> %
                       </td>
 
                       <td className="border border-gray-200 p-4 text-center text-blue-700">
@@ -872,49 +901,66 @@ const addTimelineRow = () => {
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                      <th className="border border-gray-200 p-3 text-left font-semibold text-gray-700 text-sm w-20">Sr. No</th>
                       <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">Phase</th>
                       <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">Duration</th>
                       <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">Deliverables</th>
+                      <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700 w-20">Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {formData.timeline.map((phase, index) => (
+
                       <tr key={index} className="hover:bg-blue-50 transition-colors">
+                        <td className="border border-gray-200 p-3 text-center font-medium text-gray-600">
+                          {index + 1}
+                        </td>
+
                         <td className="border border-gray-200 p-4">
-                          <input 
-                            type="text" 
-                            className="w-full outline-none bg-transparent font-semibold text-blue-700 focus:bg-blue-50 focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 transition-all"
+                          <input
+                            type="text"
+                            className="w-full outline-none bg-transparent font-semibold text-blue-700 focus:bg-blue-50 focus:ring-2 focus:ring-blue-200 rounded px-2 py-1"
                             value={phase.phase}
                             onChange={(e) => {
                               const newTimeline = [...formData.timeline];
                               newTimeline[index].phase = e.target.value;
-                              setFormData({...formData, timeline: newTimeline});
+                              setFormData({ ...formData, timeline: newTimeline });
                             }}
                           />
                         </td>
+
                         <td className="border border-gray-200 p-4">
-                          <input 
-                            type="text" 
-                            className="w-full outline-none bg-transparent font-medium text-gray-700 focus:bg-blue-50 focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 transition-all"
+                          <input
+                            type="text"
+                            className="w-full outline-none bg-transparent font-medium text-gray-700 focus:bg-blue-50 focus:ring-2 focus:ring-blue-200 rounded px-2 py-1"
                             value={phase.duration}
                             onChange={(e) => {
                               const newTimeline = [...formData.timeline];
                               newTimeline[index].duration = e.target.value;
-                              setFormData({...formData, timeline: newTimeline});
+                              setFormData({ ...formData, timeline: newTimeline });
                             }}
                           />
                         </td>
+
                         <td className="border border-gray-200 p-4">
-                          <input 
-                            type="text" 
-                            className="w-full outline-none bg-transparent text-gray-700 focus:bg-blue-50 focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 transition-all"
+                          <input
+                            type="text"
+                            className="w-full outline-none bg-transparent text-gray-700 focus:bg-blue-50 focus:ring-2 focus:ring-blue-200 rounded px-2 py-1"
                             value={phase.deliverables}
                             onChange={(e) => {
                               const newTimeline = [...formData.timeline];
                               newTimeline[index].deliverables = e.target.value;
-                              setFormData({...formData, timeline: newTimeline});
-                            }}
-                          />
+                              setFormData({ ...formData, timeline: newTimeline });
+                            }} />
+                        </td>
+
+                        {/* REMOVE BUTTON */}
+                        <td className="border border-gray-200 p-4 text-center">
+                          <button
+                            onClick={() => removeTimelineRow(index)}
+                            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-colors text-xs">
+                            Remove
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -925,7 +971,6 @@ const addTimelineRow = () => {
               <div className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                   <span className="font-semibold text-gray-800">Total Timeline:</span>
-
                   <input
                     type="text"
                     readOnly
@@ -959,30 +1004,60 @@ const addTimelineRow = () => {
               </h2>
             </div>
 
-            <div className="p-6">
-              <ul className="space-y-3 text-gray-800">
+            <div className="p-6 space-y-3">
 
-                {paymentTerms.map((term, index) => (
-                  <li key={index} className="flex items-start gap-3">
+              {formData.paymentTerms.map((term, index) => (
+                <div key={index} className="flex items-center gap-3">
 
-                    <span className="text-green-600 font-bold mt-1">•</span>
+                  <input
+                    type="number"
+                    value={term.percent}
+                    onChange={(e) =>
+                      updatePaymentTerm(index, "percent", e.target.value)
+                    }
+                    className="w-20 border border-gray-300 rounded px-2 py-1 text-center"
+                  />
 
-                    <span>
-                      <strong>{term.percent}%</strong>{" "}
-                      ({formatIndianCurrency(calculatePayment(term.percent))}) – {term.label}
-                    </span>
+                  <span className="font-semibold">%</span>
 
-                  </li>
-                ))}
+                  <span className="text-gray-600">
+                    ({formatIndianCurrency(calculatePayment(term.percent))})
+                  </span>
 
-                <li className="flex items-start gap-3">
-                  <span className="text-green-600 font-bold mt-1">•</span>
-                  <span>GST @ {gstPercent}% extra as applicable</span>
-                </li>
+                  <input
+                    type="text"
+                    value={term.label}
+                    onChange={(e) =>
+                      updatePaymentTerm(index, "label", e.target.value)
+                    }
+                    className="flex-1 border border-gray-300 rounded px-3 py-1"
+                  />
 
-              </ul>
+                  <button
+                    onClick={() => removePaymentTerm(index)}
+                    className="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600"
+                  >
+                    Remove
+                  </button>
+
+                </div>
+              ))}
+
+              {/* Add Button */}
+              <button
+                onClick={addPaymentTerm}
+                className="mt-3 bg-green-500 text-white px-5 py-2 rounded hover:bg-green-600 text-sm"
+              >
+                + Add Payment Term
+              </button>
+
+              {/* GST */}
+              <div className="flex items-center gap-2 mt-4">
+                <span className="text-green-600 font-bold">•</span>
+                <span>GST @ {gstPercent}% extra as applicable</span>
+              </div>
+
             </div>
-
           </div>
         </div>
 
@@ -1067,8 +1142,7 @@ const addTimelineRow = () => {
                         <td className="border border-gray-200 p-4">
                           <button
                             onClick={() => removeMaintenancePlan(index)}
-                            className="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600"
-                          >
+                            className="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600">
                             Remove
                           </button>
                         </td>
@@ -1085,8 +1159,7 @@ const addTimelineRow = () => {
               <div className="mt-6">
                 <button
                   onClick={addMaintenancePlan}
-                  className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 font-medium shadow"
-                >
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 font-medium shadow">
                   + Add Plan
                 </button>
               </div>
@@ -1126,7 +1199,7 @@ const addTimelineRow = () => {
                 <h3 className="font-semibold text-gray-800 mb-3">Included</h3>
 
                 {formData.assumptions.included.map((item, index) => (
-                  <div key={index} className="flex gap-3 mb-2">
+                  <div key={index} className="flex items-center gap-3 mb-2">
                     <input
                       type="text"
                       value={item}
@@ -1136,7 +1209,7 @@ const addTimelineRow = () => {
 
                     <button
                       onClick={() => removeAssumption("included", index)}
-                      className="bg-red-500 text-white px-3 py-1 rounded text-xs"
+                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-colors text-xs flex-shrink-0"
                     >
                       Remove
                     </button>
@@ -1155,20 +1228,17 @@ const addTimelineRow = () => {
               {/* EXCLUDED */}
               <div>
                 <h3 className="font-semibold text-gray-800 mb-3">Excluded</h3>
-
                 {formData.assumptions.excluded.map((item, index) => (
-                  <div key={index} className="flex gap-3 mb-2">
+                  <div key={index} className="flex items-center gap-3 mb-2">
                     <input
                       type="text"
                       value={item}
                       onChange={(e) => updateAssumption("excluded", index, e.target.value)}
-                      className="flex-1 border border-gray-300 rounded px-3 py-2"
-                    />
+                      className="flex-1 border border-gray-300 rounded px-3 py-2"/>
 
                     <button
                       onClick={() => removeAssumption("excluded", index)}
-                      className="bg-red-500 text-white px-3 py-1 rounded text-xs"
-                    >
+                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-colors text-xs flex-shrink-0">
                       Remove
                     </button>
                   </div>
@@ -1176,8 +1246,7 @@ const addTimelineRow = () => {
 
                 <button
                   onClick={() => addAssumption("excluded")}
-                  className="mt-2 text-blue-600 font-medium"
-                >
+                  className="mt-2 text-blue-600 font-medium">
                   + Add Exclusion
                 </button>
               </div>
@@ -1188,18 +1257,16 @@ const addTimelineRow = () => {
                 <h3 className="font-semibold text-gray-800 mb-3">Warranty & Support</h3>
 
                 {formData.assumptions.warranty.map((item, index) => (
-                  <div key={index} className="flex gap-3 mb-2">
+                  <div key={index} className="flex items-center gap-3 mb-2">
                     <input
                       type="text"
                       value={item}
                       onChange={(e) => updateAssumption("warranty", index, e.target.value)}
-                      className="flex-1 border border-gray-300 rounded px-3 py-2"
-                    />
+                      className="flex-1 border border-gray-300 rounded px-3 py-2"/>
 
                     <button
                       onClick={() => removeAssumption("warranty", index)}
-                      className="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600"
-                    >
+                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-colors text-xs flex-shrink-0">
                       Remove
                     </button>
                   </div>
@@ -1207,8 +1274,7 @@ const addTimelineRow = () => {
 
                 <button
                   onClick={() => addAssumption("warranty")}
-                  className="mt-2 text-blue-600 font-medium"
-                >
+                  className="mt-2 text-blue-600 font-medium">
                   + Add Warranty
                 </button>
               </div>
@@ -1225,7 +1291,7 @@ const addTimelineRow = () => {
             <div className="bg-gradient-to-r from-emerald-600 to-green-600 px-6 py-4">
               <h2 className="text-xl font-bold text-white flex items-center">
                 <span className="w-6 h-6 bg-white text-green-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
-                  8
+                  9
                 </span>
                 Project Investment Summary
               </h2>
