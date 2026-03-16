@@ -143,6 +143,36 @@ const MyInvoice = () => {
     }
   };
 
+  const getDisplayStatus = (inv) => {
+    // 1. If status is already Paid or Cancelled in the DB, respect that
+    if (inv.status === 'Paid' || inv.status === 'Cancelled') {
+      return inv.status;
+    }
+
+    // 2. NEW LOGIC: If balance is 0 or less, it should show as Paid
+    // We use <= 0 to handle potential floating point math issues or ₹-0
+    if (inv.balanceAmount <= 0) {
+      return 'Paid';
+    }
+
+    // 3. Logic for Overdue: 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dueDate = inv.dueDate ? new Date(inv.dueDate) : null;
+
+    if (inv.balanceAmount > 0 && dueDate && today > dueDate) {
+      return 'Overdue';
+    }
+
+    // 4. Check for Partial Payment logic
+    if (inv.totalPaidAmount > 0 && inv.balanceAmount > 0) {
+      return 'Partially Paid';
+    }
+
+    // 5. Fallback
+    return inv.status || 'Sent';
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6 p-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -267,11 +297,17 @@ const MyInvoice = () => {
                                         <td className="px-5 py-3 text-sm font-semibold text-gray-900">
                                           ₹{Number(inv.balanceAmount || 0).toLocaleString('en-IN')}
                                         </td>
-                                        <td className="px-5 py-3">
-                                          <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusClasses(inv.status)}`}>
-                                            {inv.status || 'Sent'}
-                                          </span>
-                                        </td>
+                                       <td className="px-5 py-3">
+  {/* We call getDisplayStatus(inv) here to get the calculated value */}
+  {(() => {
+    const currentStatus = getDisplayStatus(inv);
+    return (
+      <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusClasses(currentStatus)}`}>
+        {currentStatus}
+      </span>
+    );
+  })()}
+</td>
                                         <td className="px-5 py-3 text-sm">
                                           <div className="flex items-center gap-3">
                                             <button

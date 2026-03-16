@@ -238,7 +238,7 @@ const Invoice = () => {
 
       if (response.ok) {
         alert("Invoice generated and saved successfully! ✅");
-        navigate(-1); 
+        navigate("./invoices"); 
       } else {
         const errorData = await response.json();
         alert(`Failed to save invoice: ${errorData.message || 'Server Error'}`);
