@@ -35,6 +35,11 @@ const LoginModal = ({ isOpen, onClose }) => {
     } catch (err) { alert("Server error"); }
   };
 
+  const handleForgotPassword = () => {
+    onClose();
+    window.location.href = '/forgot-password';
+  };
+
   const SocialIcons = () => (
     <div className="flex justify-center gap-4 mb-6 mt-2">
       {[
@@ -97,6 +102,10 @@ const LoginModal = ({ isOpen, onClose }) => {
               
               <input type="password" placeholder="Password" className="w-full bg-gray-50 border border-gray-100 px-5 py-3.5 rounded-xl mb-6 outline-none focus:ring-2 focus:ring-[#4e54c8]/30 transition-all text-sm" 
                 value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} required={!isAdmin} />
+              
+              <button type="button" onClick={handleForgotPassword} className="text-xs text-[#4e54c8] hover:text-[#c326c8] mb-4 font-semibold transition-colors">
+                Forgot Password?
+              </button>
               
               {/* CROSS COLORED: Employee uses Pink/Red theme */}
               <button type="submit" className="w-full bg-gradient-to-r from-[#c33764] to-[#1d2671] text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-pink-100 hover:opacity-90 active:scale-95 transition-all text-base">
