@@ -298,16 +298,17 @@ const MyInvoice = () => {
                                           ₹{Number(inv.balanceAmount || 0).toLocaleString('en-IN')}
                                         </td>
                                        <td className="px-5 py-3">
-  {/* We call getDisplayStatus(inv) here to get the calculated value */}
-  {(() => {
-    const currentStatus = getDisplayStatus(inv);
-    return (
-      <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusClasses(currentStatus)}`}>
-        {currentStatus}
-      </span>
-    );
-  })()}
-</td>
+                                        
+                                        {/* We call getDisplayStatus(inv) here to get the calculated value */}
+                                        {(() => {
+                                          const currentStatus = getDisplayStatus(inv);
+                                          return (
+                                            <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusClasses(currentStatus)}`}>
+                                              {currentStatus}
+                                            </span>
+                                          );
+                                        })()}
+                                      </td>
                                         <td className="px-5 py-3 text-sm">
                                           <div className="flex items-center gap-3">
                                             <button

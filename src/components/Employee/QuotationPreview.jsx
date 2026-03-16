@@ -213,12 +213,6 @@ const handleSendForApprovalClick = () => {
     }
   };
 
-  const paymentTerms = [
-  { percent: 25, label: "Advance – Kickoff" },
-  { percent: 30, label: "Main + Subscription MVP" },
-  { percent: 25, label: "Payments complete" },
-  { percent: 20, label: "Admin + Launch" }
-];
 
 const calculatePayment = (percent) => {
   return Math.round((formData.totalCost * percent) / 100);
@@ -282,6 +276,8 @@ const calculateMaintenanceRange = () => {
             </div>
             <div>
               <p><strong>Client:</strong> {formData.client}</p>
+              {formData.clientOrganization && (
+              <p className="text-sm text-gray-700"><strong>Organization:</strong> {formData.clientOrganization}</p>)}
               <p><strong>Email:</strong> {formData.clientEmail}</p>
               <p><strong>Phone:</strong> {formData.clientPhone}</p>
               <p><strong>Address:</strong> {formData.clientAddress}</p>
@@ -703,10 +699,9 @@ const calculateMaintenanceRange = () => {
                   <img
                     src={formData.companyStamp}
                     alt="Company Stamp"
-                    className="w-24 h-24 object-contain"
+                    className="w-30 h-30 object-contain"
                   />
                 )}
-
               </div>
             )}
 
@@ -733,11 +728,9 @@ const calculateMaintenanceRange = () => {
                 <span className="font-semibold">Note:</span>{" "}
                 {formData.signatureNote}
               </p>
-
             </div>
-
           </div>
-</div>
+        </div>
 
 
 
