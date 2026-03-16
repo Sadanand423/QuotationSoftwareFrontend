@@ -8,10 +8,10 @@ const EmployeeManagement = () => {
   const [currentView, setCurrentView] = useState('list');
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [passwordHistory, setPasswordHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const [showSuccess, setShowSuccess] = useState(false);
-  const [showPasswordResetModal, setShowPasswordResetModal] = useState(false);
-  const [resetPasswordData, setResetPasswordData] = useState({ temporaryPassword: '', loading: false });
   
   const [formData, setFormData] = useState({
     name: '',
@@ -83,9 +83,27 @@ const handleEditEmployee = (employee) => {
 
 
 
-  const handleViewEmployee = (employee) => {
+  const handleViewEmployee = async (employee) => {
     setCurrentView('view');
     setSelectedEmployee(employee);
+
+    setHistoryLoading(true);
+    setPasswordHistory([]);
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/admin/employees/${employee.id}/password-history`);
+      if (response.ok) {
+        const data = await response.json();
+        setPasswordHistory(Array.isArray(data) ? data : []);
+      } else {
+        setPasswordHistory([]);
+      }
+    } catch (error) {
+      console.error('Failed to load password history:', error);
+      setPasswordHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
   };
 
   // ✅ ADD + UPDATE (POST / PUT)
@@ -103,7 +121,7 @@ const handleEditEmployee = (employee) => {
 
     const method = isEdit ? "PUT" : "POST";
 
-    // In edit mode, exclude password from the update (use reset-password endpoint instead)
+    // In edit mode, exclude password from the update (employees must use email-based password reset)
     const dataToSend = isEdit 
       ? { ...formData, password: selectedEmployee.password }
       : formData;
@@ -153,42 +171,7 @@ const handleEditEmployee = (employee) => {
     }
   };
 
-  // ✅ RESET PASSWORD (Secure endpoint)
-  const handleResetPassword = async () => {
-    if (!selectedEmployee) return;
-    
-    setResetPasswordData(prev => ({ ...prev, loading: true }));
-    
-    try {
-      const response = await fetch(`http://localhost:8080/api/admin/employees/reset-password/${selectedEmployee.id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" }
-      });
 
-      if (response.ok) {
-        const data = await response.json();
-        setResetPasswordData({
-          temporaryPassword: data.temporaryPassword,
-          loading: false
-        });
-        setShowPasswordResetModal(true);
-        
-        // Update the employees list to reflect the password change
-        setEmployees(employees.map(emp => 
-          emp.id === selectedEmployee.id 
-            ? { ...emp, password: '•••••••' } 
-            : emp
-        ));
-      } else {
-        alert('Failed to reset password. Please try again.');
-        setResetPasswordData(prev => ({ ...prev, loading: false }));
-      }
-    } catch (err) {
-      console.error("Reset password error", err);
-      alert('Error resetting password');
-      setResetPasswordData(prev => ({ ...prev, loading: false }));
-    }
-  };
 
   const backToList = () => {
     setCurrentView('list');
@@ -231,6 +214,19 @@ const getStrength = () => {
   if (validCount === 2 || validCount === 3)
     return { text: "Medium", color: "bg-yellow-500", width: "60%" };
   return { text: "Strong", color: "bg-green-500", width: "100%" };
+};
+
+const formatHistoryDate = (isoDate) => {
+  if (!isoDate) return 'N/A';
+  const date = new Date(isoDate);
+  if (Number.isNaN(date.getTime())) return 'N/A';
+  return date.toLocaleString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 };
 
   // Add/Edit Form View
@@ -356,7 +352,7 @@ const getStrength = () => {
   />
 
   {currentView === 'edit' && (
-    <p className="text-xs text-gray-500 mt-1.5">Password editing is restricted for security. Use the Reset Password button below.</p>
+    <p className="text-xs text-gray-500 mt-1.5">Passwords cannot be edited here. Employees must securely reset their password using the email-based password reset system.</p>
   )}
 
   {isFocused && formData.password.length > 0 && !isPasswordValid && currentView !== 'edit' && (
@@ -387,17 +383,7 @@ const getStrength = () => {
     </div>
   )}
 
-  {/* Reset Password Button (only in edit mode) */}
-  {currentView === 'edit' && (
-    <button
-      type="button"
-      onClick={handleResetPassword}
-      disabled={resetPasswordData.loading}
-      className="mt-2 w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200"
-    >
-      {resetPasswordData.loading ? '🔄 Resetting...' : '🔑 Reset Password'}
-    </button>
-  )}
+
 </div>
 
 
@@ -489,58 +475,7 @@ const getStrength = () => {
           </form>
         </div>
 
-        {/* ✅ PASSWORD RESET MODAL */}
-        {showPasswordResetModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-              <div className="text-center">
-                <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-bold text-gray-800 mb-2">Password Reset Successful ✅</h3>
-                <p className="text-sm text-gray-600 mb-4">A temporary password has been generated below.</p>
-              </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                <p className="text-xs text-gray-700 uppercase font-semibold mb-2">Temporary Password:</p>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={resetPasswordData.temporaryPassword}
-                    readOnly
-                    className="flex-1 bg-white border border-blue-300 rounded px-3 py-2 font-mono font-bold text-lg text-blue-700"
-                  />
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(resetPasswordData.temporaryPassword);
-                      alert('Password copied to clipboard!');
-                    }}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded transition-all"
-                    title="Copy to clipboard"
-                  >
-                    📋
-                  </button>
-                </div>
-              </div>
-
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                <p className="text-xs text-yellow-800">
-                  <strong>⚠️ Important:</strong> Please share this temporary password securely with the employee. 
-                  They should change it after logging in for their security.
-                </p>
-              </div>
-
-              <button
-                onClick={() => setShowPasswordResetModal(false)}
-                className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-semibold transition-all"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     );
   }
@@ -592,6 +527,25 @@ const getStrength = () => {
                 <p className="text-xs sm:text-sm font-semibold text-gray-800 mt-1">{selectedEmployee.phone}</p>
               </div>
             </div>
+          </div>
+
+          <div className="mt-4 sm:mt-6 p-3 sm:p-4 rounded-lg border border-gray-200 bg-slate-50">
+            <h3 className="text-sm sm:text-base font-bold text-gray-800 mb-2">🔐 Password Change History</h3>
+
+            {historyLoading ? (
+              <p className="text-xs sm:text-sm text-gray-500">Loading password history...</p>
+            ) : passwordHistory.length === 0 ? (
+              <p className="text-xs sm:text-sm text-gray-500">No password reset history available for this employee.</p>
+            ) : (
+              <div className="space-y-2">
+                {passwordHistory.map((entry, index) => (
+                  <div key={`${entry.changedAt}-${index}`} className="bg-white border border-gray-200 rounded-lg p-2.5 sm:p-3">
+                    <p className="text-xs sm:text-sm font-semibold text-gray-800">Changed: {formatHistoryDate(entry.changedAt)}</p>
+                    <p className="text-xs text-gray-500 mt-1">Requested: {formatHistoryDate(entry.requestedAt)}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-gray-200">
