@@ -520,7 +520,7 @@ const calculateMaintenanceRange = () => {
           </div>
 
 
-                    {/* Payment Terms */}
+          {/* Payment Terms */}
           <div>
             <h3 className="text-xl font-bold mb-3 text-gray-800">
               6. Payment Terms (Net 30 Days Invoicing)
@@ -528,7 +528,9 @@ const calculateMaintenanceRange = () => {
 
             <ul className="space-y-1 text-sm">
 
-              {paymentTerms.map((term, index) => (
+              {formData.paymentTerms
+                ?.filter(term => term.percent && term.label)
+                .map((term, index) => (
                 <li key={index} className="flex items-start gap-2">
 
                   <span className="text-green-600 text-lg font-bold">✔</span>
