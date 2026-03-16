@@ -5,6 +5,8 @@ import Navbar from './components/common/Navbar'
 import Footer from './components/common/Fotter.jsx'
 import ContactUs from './components/Homepage/ContactUs'
 import LoginModal from './components/login/LoginSelection'
+import ForgotPassword from './components/login/ForgotPassword'
+import ResetPassword from './components/login/ResetPassword'
 import AdminPanel from './components/Admin/AdminPanel'
 import EmployeePanel from './components/Employee/EmployeePanel'
 
@@ -28,6 +30,8 @@ function MainLayout() {
         <Route path="/" element={<HomePage />} />
         <Route path="/contact" element={<ContactUs />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
    
       

@@ -10,6 +10,13 @@ const QuotationManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState(null);
   const [modalType, setModalType] = useState(""); 
+  const [rejectionTooltip, setRejectionTooltip] = useState({
+    visible: false,
+    text: "",
+    x: 0,
+    y: 0,
+    placeBelow: false
+  });
 
   const statusFilters = ["All", "Draft", "Pending", "Approved", "Rejected"];
 
@@ -114,6 +121,23 @@ const handleDelete = async (quoteId) => {
   }
 };
 
+  const showRejectionTooltip = (event, text) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const placeBelow = rect.top < 170;
+
+    setRejectionTooltip({
+      visible: true,
+      text,
+      x: rect.left + rect.width / 2,
+      y: placeBelow ? rect.bottom + 8 : rect.top - 8,
+      placeBelow
+    });
+  };
+
+  const hideRejectionTooltip = () => {
+    setRejectionTooltip((prev) => ({ ...prev, visible: false }));
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case "Approved": return "bg-green-100 text-green-800";
@@ -202,7 +226,7 @@ const handleDelete = async (quoteId) => {
                 </tr>
               ) : (
                 paginatedQuotations.map((quote) => (
-                  <tr key={quote.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={quote.id} className="relative hover:z-30 hover:bg-gray-50 transition-colors">
                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm font-medium text-gray-900">
                       <div className="flex items-center">
                         <div className={`w-2 h-2 rounded-full mr-2 ${getStatusDot(quote.status)}`}></div>
@@ -214,27 +238,19 @@ const handleDelete = async (quoteId) => {
                       {quote.currency || '$'}{quote.totalCost?.toLocaleString() || '0'}
                     </td>
                     {/* ... inside your table map ... */}
-<td className="px-3 sm:px-6 py-4">
-  <div className="relative group inline-block"> 
-    <span className={`px-2 py-1 text-xs rounded-full font-medium cursor-help ${getStatusColor(quote.status)}`}>
+<td className="px-3 sm:px-6 py-4 relative overflow-visible z-20">
+  <div className="relative inline-block"> 
+    <span
+      className={`px-2 py-1 text-xs rounded-full font-medium cursor-help ${getStatusColor(quote.status)}`}
+      onMouseEnter={(event) => {
+        if (quote.status === "Rejected" && quote.rejectionReason) {
+          showRejectionTooltip(event, quote.rejectionReason);
+        }
+      }}
+      onMouseLeave={hideRejectionTooltip}
+    >
       {quote.status || 'Draft'}
     </span>
-
-    {/* Floating Window */}
-    {quote.status === "Rejected" && quote.rejectionReason && (
-      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-[9999]">
-        <div className="bg-white text-gray-800 text-sm rounded-xl p-4 shadow-2xl ring-1 ring-black/5 min-w-[200px] max-w-[350px] w-max transition-all">
-          <p className="font-bold border-b border-gray-100 pb-2 mb-2 text-red-500 text-xs uppercase tracking-wider">
-            Rejection Reason
-          </p>
-          <p className="leading-relaxed text-gray-700 font-serif whitespace-normal break-words">
-            "{quote.rejectionReason}"
-          </p>
-          {/* Arrow pointing down */}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-white drop-shadow-sm"></div>
-        </div>
-      </div>
-    )}
   </div>
 </td>
                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-600 hidden md:table-cell">{quote.date}</td>
@@ -265,6 +281,32 @@ const handleDelete = async (quoteId) => {
           </div>
         )}
       </div>
+
+      {rejectionTooltip.visible && (
+        <div
+          className="fixed z-[100000] pointer-events-none"
+          style={{
+            left: `clamp(180px, ${rejectionTooltip.x}px, calc(100vw - 180px))`,
+            top: `${rejectionTooltip.y}px`,
+            transform: rejectionTooltip.placeBelow ? 'translate(-50%, 0)' : 'translate(-50%, -100%)'
+          }}
+        >
+          <div className="bg-white text-gray-800 text-sm rounded-xl p-4 shadow-2xl ring-1 ring-black/5 min-w-[220px] max-w-[360px]">
+            <p className="font-bold border-b border-gray-100 pb-2 mb-2 text-red-500 text-xs uppercase tracking-wider">
+              Rejection Reason
+            </p>
+            <p className="leading-relaxed text-gray-700 font-serif whitespace-normal break-words">
+              "{rejectionTooltip.text}"
+            </p>
+
+            {rejectionTooltip.placeBelow ? (
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-8 border-transparent border-b-white drop-shadow-sm"></div>
+            ) : (
+              <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-white drop-shadow-sm"></div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* --- ACTION MODAL (VIEW / EDIT / DELETE) --- */}
           {showModal && selectedQuote && (
