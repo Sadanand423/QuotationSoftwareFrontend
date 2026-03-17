@@ -1,303 +1,257 @@
-import React, { useEffect, useMemo, useState } from "react";
 
-const HeroSection = ({onGetStarted}) => {
-  const [stage, setStage] = useState("globe");
+import React, { useEffect, useRef, useState } from "react";
 
-  // ===== TEXT → PARTICLE POINTS =====
-  const getTextPoints = (text) => {
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
+const HeroSection = ({ onGetStarted }) => {
+  const canvasRef = useRef(null);
+  const [showUI, setShowUI] = useState(false);
 
-  ctx.font = "bold 180px Arial";
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
 
-  const metrics = ctx.measureText(text);
-  const textWidth = metrics.width;
-  const textHeight =
-    metrics.actualBoundingBoxAscent +
-    metrics.actualBoundingBoxDescent;
+    let w = canvas.width = window.innerWidth;
+    let h = canvas.height = window.innerHeight;
 
-  canvas.width = Math.ceil(textWidth + 200);
-  canvas.height = Math.ceil(textHeight + 200);
+    const particles = [];
+    const count = 6000;
+    const r = 200;
 
-  ctx.font = "bold 180px Arial";
-  ctx.fillStyle = "white";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
+    const getTextPoints = (text) => {
+      const c = document.createElement("canvas");
+      const cx = c.getContext("2d");
 
-  ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+      cx.font = "bold 140px Arial";
+      const m = cx.measureText(text);
 
-  const points = [];
-  const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      c.width = m.width + 100;
+      c.height = 200;
 
-  const Y_OFFSET = -40;
+      cx.font = "bold 140px Arial";
+      cx.fillStyle = "white";
+      cx.textAlign = "center";
+      cx.textBaseline = "middle";
+      cx.fillText(text, c.width / 2, c.height / 2);
 
-  for (let y = 0; y < canvas.height; y += 1) {
-    for (let x = 0; x < canvas.width; x += 1) {
-      const i = (y * canvas.width + x) * 4;
-      if (data[i + 3] > 120) {
-        points.push({
-          x: x - canvas.width / 2,        // centered to screen
-          y: y - canvas.height / 2 + Y_OFFSET,
-        });
+      const data = cx.getImageData(0, 0, c.width, c.height).data;
+      const pts = [];
+
+      for (let y = 0; y < c.height; y += 3) {
+        for (let x = 0; x < c.width; x += 3) {
+          const i = (y * c.width + x) * 4;
+          if (data[i + 3] > 120) {
+            pts.push({
+              x: x - c.width / 2,
+              y: y - c.height / 2,
+            });
+          }
+        }
       }
-    }
-  }
+      return pts;
+    };
 
-  return points;
-};
+    const textPoints = getTextPoints("Smart Matrix");
 
-
-  const textPoints = useMemo(() => getTextPoints("Smart Matrix"), []);
-
-  // ===== PARTICLES (OPTIMIZED COUNT) =====
-  const particles = useMemo(() => {
-    const count = 5000; // smoother
-    const r = 220;
-
-    return Array.from({ length: count }).map((_, i) => {
+    for (let i = 0; i < count; i++) {
       const phi = Math.acos(1 - 2 * Math.random());
       const theta = 2 * Math.PI * Math.random();
 
-      const sx = r * Math.sin(phi) * Math.cos(theta);
-      const sy = r * Math.sin(phi) * Math.sin(theta);
-      const sz = r * Math.cos(phi);
+      const x = r * Math.sin(phi) * Math.cos(theta);
+      const y = r * Math.sin(phi) * Math.sin(theta);
+      const z = r * Math.cos(phi);
 
-      const cx = (Math.random() - 0.5) * window.innerWidth * 1.2;
-      const cy = (Math.random() - 0.5) * window.innerHeight * 1.2;
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 6 + Math.random() * 8;
 
-      const bx = (Math.random() - 0.5) * 600;
-      const by = (Math.random() - 0.5) * 60;
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed;
 
-const tp = textPoints[Math.floor(Math.random() * textPoints.length)];
-      return {
-        id: i,
-        sx,
-        sy,
-        sz,
-        cx,
-        cy,
-        bx,
-        by,
+      const tp = textPoints[Math.floor(Math.random() * textPoints.length)];
+
+      particles.push({
+        x, y, z,
+        vx, vy,
         tx: tp.x,
         ty: tp.y,
-        size: Math.random() * 2 + 0.6,
-      };
-    });
-  }, [textPoints]);
+        fx: (Math.random() - 0.5) * w,
+        fy: (Math.random() - 0.5) * h,
+        glow: Math.random() > 0.9,
+        glowPhase: Math.random() * Math.PI * 2
+      });
+    }
 
-  // ===== STAGES =====
-  useEffect(() => {
-    const t1 = setTimeout(() => setStage("collapse"), 3500);
-    const t2 = setTimeout(() => setStage("band"), 5500);
-    const t3 = setTimeout(() => setStage("text"), 7500);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
+    let time = 0;
+
+    const animate = () => {
+      ctx.clearRect(0, 0, w, h);
+      time += 0.016;
+
+      particles.forEach(p => {
+        let x = p.x;
+        let y = p.y;
+        let z = p.z;
+
+        const ry = time * 0.4;
+        const rx = time * 0.3;
+
+        let dx = Math.cos(ry) * x + Math.sin(ry) * z;
+        let dz = -Math.sin(ry) * x + Math.cos(ry) * z;
+        let dy = Math.cos(rx) * y - Math.sin(rx) * dz;
+
+        let drawX, drawY;
+
+        // ===== STAGES =====
+        if (time < 3) {
+          drawX = dx;
+          drawY = dy;
+        }
+
+        // 💥 REAL EXPLOSION (physics-based)
+        else if (time < 5) {
+  const t = (time - 3) / 2;
+
+  // smooth ease (important)
+  const ease = t * t * (3 - 2 * t);
+
+  // move from sphere → full screen
+  drawX = dx + (p.fx - dx) * ease;
+  drawY = dy + (p.fy - dy) * ease;
+}
+
+        // 🧲 FORM TEXT
+        else {
+          const t = Math.min((time - 5) / 3, 1);
+
+          const ex = p.fx;
+          const ey = p.fy;
+
+          drawX = ex + (p.tx - ex) * t;
+          drawY = ey + (p.ty - ey) * t;
+
+          if (t === 1) setShowUI(true);
+        }
+
+        ctx.beginPath();
+
+        // ✨ SMALL GLOW
+        if (p.glow) {
+          p.glowPhase += 0.08;
+          const glowSize = 1 + Math.sin(p.glowPhase) * 0.6;
+
+          ctx.shadowBlur = 6; // smaller glow
+          ctx.shadowColor = "#a855f7";
+          ctx.arc(w / 2 + drawX, h / 2 + drawY, glowSize, 0, Math.PI * 2);
+        } else {
+          ctx.shadowBlur = 0;
+          ctx.arc(w / 2 + drawX, h / 2 + drawY, 1, 0, Math.PI * 2);
+        }
+
+        ctx.fillStyle = "#c084fc";
+        ctx.fill();
+      });
+
+      requestAnimationFrame(animate);
     };
+
+    animate();
+
+    window.addEventListener("resize", () => {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+    });
+
   }, []);
 
   return (
     <section className="hero">
-      {stage === "text" && (
-  <div className="welcome">
-    Welcome to
-  </div>
-)}
-      <div className="scene">
-        {particles.map((p) => (
-          <div
-            key={p.id}
-            className="dot"
-            style={{
-              width: p.size,
-              height: p.size,
-              "--sx": `${p.sx}px`,
-              "--sy": `${p.sy}px`,
-              "--sz": `${p.sz}px`,
-              "--cx": `${p.cx}px`,
-              "--cy": `${p.cy}px`,
-              "--bx": `${p.bx}px`,
-              "--by": `${p.by}px`,
-              "--tx": `${p.tx}px`,
-              "--ty": `${p.ty}px`,
-              animation:
-                stage === "globe"
-                  ? "sphereRotate 12s linear infinite"
-                  : stage === "collapse"
-                  ? "collapseFull 1.8s ease forwards"
-                  : stage === "band"
-                  ? "toBand 1.6s ease forwards"
-                  : "toText 2s cubic-bezier(.25,.9,.3,1) forwards",
-            }}
-          />
-        ))}
-      </div>
+      <canvas ref={canvasRef} />
 
-      {stage === "text" && (
-  <div className="cta">
-    <div className="cta-inner">
-      <button className="cta-primary" onClick={onGetStarted}>
-        Get Started
-      </button>
-      <button className="cta-secondary">
-        Watch Demo
-      </button>
-    </div>
-  </div>
-)}
+      {showUI && (
+        <>
+          <div className="welcome">Welcome to</div>
+
+          <div className="cta">
+            <button className="primary" onClick={onGetStarted}>
+              Get Started
+            </button>
+            <button className="secondary">Watch Demo</button>
+          </div>
+        </>
+      )}
 
       <style>{`
         .hero {
-          position: relative;
           width: 100%;
-          height: 92vh;
+          height: 100vh;
           background: #050816;
+          position: relative;
           overflow: hidden;
         }
 
-        .scene {
-          position: absolute;
-          inset: 0;
-          perspective: 900px;
-        }
-
-        .dot {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          background: #c084fc;
-          border-radius: 50%;
-          box-shadow: 0 0 6px #c084fc, 0 0 12px #a855f7;
-          transform: translateZ(0);
-          will-change: transform;
-        }
-
-        /* SPHERE */
-        @keyframes sphereRotate {
-          0% {
-            transform: rotateX(0deg) rotateY(0deg)
-              translate3d(var(--sx), var(--sy), var(--sz));
-          }
-          100% {
-            transform: rotateX(360deg) rotateY(360deg)
-              translate3d(var(--sx), var(--sy), var(--sz));
-          }
-        }
-
-        /* COLLAPSE */
-        @keyframes collapseFull {
-          0% {
-            transform: translate3d(var(--sx), var(--sy), var(--sz));
-          }
-          100% {
-            transform: translate(var(--cx), var(--cy));
-          }
-        }
-
-        /* BAND */
-        @keyframes toBand {
-          0% {
-            transform: translate(var(--cx), var(--cy));
-          }
-          100% {
-            transform: translate(var(--bx), var(--by));
-          }
-        }
-
-        /* TEXT */
-        @keyframes toText {
-          0% {
-            transform: translate(var(--bx), var(--by));
-          }
-          100% {
-            transform: translate(var(--tx), var(--ty));
-          }
+        canvas {
+          display: block;
         }
 
         .welcome {
-  position: absolute;
-  top: calc(50% - 200px);
-  left: 50%;
-  transform: translateX(-50%);
-  color: #60a5fa;
-  font-weight: 700;
-  letter-spacing: 0.4em;
-  text-transform: uppercase;
-  font-size: 28px;
-  opacity: 0;
-  animation: fadeIn 1.2s ease forwards;
-}
+          position: absolute;
+          top: 30%;
+          left: 50%;
+          transform: translateX(-50%);
+          color: #60a5fa;
+          font-size: 28px;
+          font-weight: bold;
+          letter-spacing: 0.4em;
+          opacity: 0;
+          animation: fadeIn 1s forwards;
+        }
 
-@keyframes fadeIn {
-  to { opacity: 1; }
-}
+        .cta {
+          position: absolute;
+          top: 65%;
+          left: 50%;
+          transform: translateX(-50%);
+          display: flex;
+          gap: 20px;
+          opacity: 0;
+          animation: fadeUp 1s forwards;
+          animation-delay: 0.5s;
+        }
 
-.cta {
-  position: absolute;
-  top: calc(50% + 120px);
-  left: 50%;
-  transform: translateX(-50%);
-  opacity: 0;
-  animation: fadeUp 1.2s ease forwards;
-  animation-delay: 0.6s;
-}
+        .primary {
+          padding: 12px 30px;
+          background: #2563eb;
+          color: white;
+          border-radius: 9999px;
+          border: none;
+          cursor: pointer;
+        }
 
-.cta-inner {
-  display: flex;
-  gap: 24px;
-  align-items: center;
-  justify-content: center;
-}
+        .secondary {
+          padding: 12px 30px;
+          background: transparent;
+          border: 1px solid rgba(255,255,255,0.3);
+          color: white;
+          border-radius: 9999px;
+          cursor: pointer;
+        }
 
-.cta-primary {
-  padding: 12px 40px;
-  background: #2563eb;
-  color: #fff;
-  font-weight: 700;
-  border-radius: 9999px;
-  letter-spacing: .15em;
-  text-transform: uppercase;
-  font-size: 13px;
-  transition: all .3s ease;
-  box-shadow: 0 0 0 rgba(37,99,235,0);
-}
+        @keyframes fadeIn {
+          to { opacity: 1; }
+        }
 
-.cta-primary:hover {
-  box-shadow: 0 0 30px rgba(37,99,235,.8);
-}
-
-.cta-secondary {
-  padding: 12px 40px;
-  border: 1px solid rgba(255,255,255,.2);
-  color: #fff;
-  font-weight: 700;
-  border-radius: 9999px;
-  letter-spacing: .15em;
-  text-transform: uppercase;
-  font-size: 13px;
-  background: transparent;
-  transition: all .3s ease;
-}
-
-.cta-secondary:hover {
-  background: rgba(255,255,255,.05);
-}
-
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 20px);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
-}
-
+        @keyframes fadeUp {
+          from {
+            opacity: 0;
+            transform: translate(-50%, 20px);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, 0);
+          }
+        }
       `}</style>
     </section>
   );
 };
 
 export default HeroSection;
+
