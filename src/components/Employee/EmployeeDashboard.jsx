@@ -13,6 +13,59 @@ const EmployeeDashboard = ({ onCreateQuotation }) => {
   const [recentQuotations, setRecentQuotations] = useState([]);
   const currentEmpId = localStorage.getItem("empId") || "EMP-001";
 
+  const parseObjectIdTime = (id) => {
+    if (typeof id !== 'string' || !/^[a-f\d]{24}$/i.test(id)) {
+      return NaN;
+    }
+
+    return parseInt(id.slice(0, 8), 16) * 1000;
+  };
+
+  const parseDateValue = (dateValue) => {
+    if (!dateValue || typeof dateValue !== 'string') {
+      return NaN;
+    }
+
+    const normalized = dateValue.trim();
+    const direct = new Date(normalized).getTime();
+    if (!Number.isNaN(direct)) {
+      return direct;
+    }
+
+    const parts = normalized.split(/[/-]/);
+    if (parts.length === 3) {
+      const [dayPart, monthPart, yearPart] = parts;
+      const day = Number(dayPart);
+      const month = Number(monthPart);
+      const year = Number(yearPart);
+      if (!Number.isNaN(day) && !Number.isNaN(month) && !Number.isNaN(year)) {
+        return new Date(year, month - 1, day).getTime();
+      }
+    }
+
+    return NaN;
+  };
+
+  const parseQuotationTimestamp = (quote) => {
+    const objectIdTime = parseObjectIdTime(quote.id);
+    if (!Number.isNaN(objectIdTime)) {
+      return objectIdTime;
+    }
+
+    const rawDate = quote.createdAt || quote.updatedAt || quote.date;
+    const parsedDate = parseDateValue(rawDate);
+    if (!Number.isNaN(parsedDate)) {
+      return parsedDate;
+    }
+
+    const quotationNumberValue = Number((quote.quotationNumber || '').replace(/\D/g, ''));
+    if (!Number.isNaN(quotationNumberValue)) {
+      return quotationNumberValue;
+    }
+
+    return 0;
+  };
+
   useEffect(() => {
     const loadEmployeeDashboard = async () => {
       try {
@@ -43,7 +96,9 @@ const EmployeeDashboard = ({ onCreateQuotation }) => {
           );
         }).length;
 
-        const latestThree = [...quotations].reverse().slice(0, 3);
+        const latestThree = [...quotations]
+          .sort((a, b) => parseQuotationTimestamp(b) - parseQuotationTimestamp(a))
+          .slice(0, 3);
         setRecentQuotations(latestThree);
 
         // ✅ 2. Update stats using component names (No quotes around the icons)

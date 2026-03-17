@@ -38,8 +38,65 @@ const QuotationManagement = () => {
     fetchQuotations();
   }, []);
 
+  const parseObjectIdTime = (id) => {
+    if (typeof id !== 'string' || !/^[a-f\d]{24}$/i.test(id)) {
+      return NaN;
+    }
+
+    return parseInt(id.slice(0, 8), 16) * 1000;
+  };
+
+  const parseDateValue = (dateValue) => {
+    if (!dateValue || typeof dateValue !== 'string') {
+      return NaN;
+    }
+
+    const normalized = dateValue.trim();
+    const direct = new Date(normalized).getTime();
+    if (!Number.isNaN(direct)) {
+      return direct;
+    }
+
+    const parts = normalized.split(/[/-]/);
+    if (parts.length === 3) {
+      const [dayPart, monthPart, yearPart] = parts;
+      const day = Number(dayPart);
+      const month = Number(monthPart);
+      const year = Number(yearPart);
+      if (!Number.isNaN(day) && !Number.isNaN(month) && !Number.isNaN(year)) {
+        return new Date(year, month - 1, day).getTime();
+      }
+    }
+
+    return NaN;
+  };
+
+  const parseQuotationTimestamp = (quote) => {
+    const objectIdTime = parseObjectIdTime(quote.id);
+    if (!Number.isNaN(objectIdTime)) {
+      return objectIdTime;
+    }
+
+    const rawDate = quote.createdAt || quote.updatedAt || quote.date;
+    const parsedDate = parseDateValue(rawDate);
+    if (!Number.isNaN(parsedDate)) {
+      return parsedDate;
+    }
+
+    const quotationNumberValue = Number((quote.quotationNumber || '').replace(/\D/g, ''));
+    if (!Number.isNaN(quotationNumberValue)) {
+      return quotationNumberValue;
+    }
+
+    return 0;
+  };
+
+  const sortedQuotations = [...quotations].sort(
+    (a, b) => parseQuotationTimestamp(b) - parseQuotationTimestamp(a)
+  );
+
   // REPLACE your existing filteredQuotations logic with this:
-const filteredQuotations = quotations.filter((quote) => {
+const filteredQuotations = sortedQuotations.filter((quote) => {
   // 1. Fallback for status: if it's missing, treat as "Draft"
   const currentStatus = quote.status || "Draft";
   const matchesFilter = activeFilter === "All" || currentStatus === activeFilter;
@@ -57,6 +114,12 @@ const filteredQuotations = quotations.filter((quote) => {
   const totalPages = Math.ceil(filteredQuotations.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedQuotations = filteredQuotations.slice(startIndex, startIndex + itemsPerPage);
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const handleAction = async (quote, action) => {
     if (action === 'view') {
@@ -170,7 +233,10 @@ const handleDelete = async (quoteId) => {
               type="text"
               placeholder="Search quotations..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full sm:w-auto pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             />
             <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -180,12 +246,15 @@ const handleDelete = async (quoteId) => {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-visible">
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         <div className="flex flex-wrap border-b border-gray-200">
           {statusFilters.map((filter) => (
             <button
               key={filter}
-              onClick={() => setActiveFilter(filter)}
+              onClick={() => {
+                setActiveFilter(filter);
+                setCurrentPage(1);
+              }}
               className={`px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium transition-colors ${
                 activeFilter === filter ? 'bg-green-50 text-green-600 border-b-2 border-green-500' : 'text-gray-500 hover:bg-gray-50'
               }`}
@@ -195,8 +264,8 @@ const handleDelete = async (quoteId) => {
           ))}
         </div>
 
-        <div className="overflow-x-auto overflow-y-visible">
-          <table className="min-w-full !overflow-visible">
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">QUOTATION NO</th>
@@ -226,7 +295,7 @@ const handleDelete = async (quoteId) => {
                 </tr>
               ) : (
                 paginatedQuotations.map((quote) => (
-                  <tr key={quote.id} className="relative hover:z-30 hover:bg-gray-50 transition-colors">
+                  <tr key={quote.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm font-medium text-gray-900">
                       <div className="flex items-center">
                         <div className={`w-2 h-2 rounded-full mr-2 ${getStatusDot(quote.status)}`}></div>
@@ -238,7 +307,7 @@ const handleDelete = async (quoteId) => {
                       {quote.currency || '$'}{quote.totalCost?.toLocaleString() || '0'}
                     </td>
                     {/* ... inside your table map ... */}
-<td className="px-3 sm:px-6 py-4 relative overflow-visible z-20">
+<td className="px-3 sm:px-6 py-4">
   <div className="relative inline-block"> 
     <span
       className={`px-2 py-1 text-xs rounded-full font-medium cursor-help ${getStatusColor(quote.status)}`}

@@ -18,6 +18,9 @@ const Invoice = () => {
   const [remainingBalance, setRemainingBalance] = useState(0);
   const [previouslyPaid, setPreviouslyPaid] = useState(0);
   const [quotationPayments, setQuotationPayments] = useState({});
+  const [invoicedCount, setInvoicedCount] = useState(0);
+  const [availableInstallments, setAvailableInstallments] = useState([]);
+  const [selectedInstallmentIdx, setSelectedInstallmentIdx] = useState(0);
 
   // ✅ Get Employee ID
   const currentEmpId = localStorage.getItem("empId") || "EMP-001";
@@ -38,6 +41,12 @@ const Invoice = () => {
   str += (n[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[n[5][0]] + ' ' + a[n[5][1]]) : '';
   return str.trim().toUpperCase();
 };
+
+  const getOrdinal = (n) => {
+    const s = ['th', 'st', 'nd', 'rd'];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  };
 
   const [invoiceData, setInvoiceData] = useState({
     invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
@@ -73,29 +82,33 @@ const Invoice = () => {
 
   // ✅ Auto-calculate totals whenever payment fields change
  useEffect(() => {
-  const adv = parseFloat(invoiceData.advancePaid) || 0;
-  const mid = parseFloat(invoiceData.midwayPaid) || 0;
-  
-  const totalPaidThisInvoice = adv + mid;
-  const balanceAfterThis = remainingBalance - totalPaidThisInvoice;
+  if (!availableInstallments.length) return;
+  const term = availableInstallments[selectedInstallmentIdx];
+  if (!term) return;
 
   const quotationTotal = parseFloat(invoiceData.finalAmount) || 0;
-  const overallPaid = previouslyPaid + totalPaidThisInvoice;
+  const installmentAmount = Number(term.fixedAmount) || Math.round((quotationTotal * parseFloat(term.percent)) / 100);
+  const balanceAfterThis = remainingBalance - installmentAmount;
 
-  let status = "Pending";
+  const overallPaid = previouslyPaid + installmentAmount;
+  let status = 'Pending';
   if (overallPaid >= quotationTotal && quotationTotal > 0) {
-    status = "Paid";
+    status = 'Paid';
   } else if (overallPaid > 0) {
-    status = "Partially Paid";
+    status = 'Partially Paid';
   }
 
   setInvoiceData(prev => ({
     ...prev,
-    totalPaidAmount: totalPaidThisInvoice.toFixed(2),
+    advancePaid: installmentAmount,
+    advancePercentage: term.percent + '%',
+    midwayPaid: 0,
+    midwayPercentage: '0%',
+    totalPaidAmount: installmentAmount.toFixed(2),
     balanceAmount: balanceAfterThis.toFixed(2),
     paymentStatus: status
   }));
-}, [invoiceData.advancePaid, invoiceData.midwayPaid, remainingBalance, previouslyPaid, invoiceData.finalAmount]);
+}, [selectedInstallmentIdx, availableInstallments, remainingBalance, previouslyPaid, invoiceData.finalAmount]);
 
   // ✅ Fetch Approved Quotations
   useEffect(() => {
@@ -165,10 +178,12 @@ const Invoice = () => {
 
   // Fetch existing invoices for this quotation to calculate remaining balance
   let totalAlreadyPaid = 0;
+  let invoicesCount = 0;
   try {
     const res = await fetch(`http://localhost:8080/api/invoices/by-quotation/${encodeURIComponent(quotationId)}`);
     if (res.ok) {
       const existingInvoices = await res.json();
+      invoicesCount = existingInvoices.length;
       totalAlreadyPaid = existingInvoices.reduce((sum, inv) => sum + (parseFloat(inv.totalPaidAmount) || 0), 0);
     }
   } catch (err) {
@@ -182,8 +197,39 @@ const Invoice = () => {
     return;
   }
 
+  // Build installment list from quotation's paymentTerms, with fallback
+  const fallbackTerms = (finalTotal < 10000)
+    ? [
+        { percent: 40, label: 'Advance upon contract signing' },
+        { percent: 60, label: 'Final delivery and deployment' }
+      ]
+    : [
+        { percent: 25, label: 'Advance upon contract signing' },
+        { percent: 30, label: 'Midpoint milestone' },
+        { percent: 25, label: 'UAT approval' },
+        { percent: 20, label: 'Final delivery and deployment' }
+      ];
+
+  const normalizedTerms = (Array.isArray(quotation.paymentTerms) && quotation.paymentTerms.length > 0
+    ? quotation.paymentTerms
+    : fallbackTerms
+  )
+    .map(t => ({ percent: parseFloat(t.percent) || 0, label: t.label || 'Installment' }))
+    .filter(t => t.percent > 0);
+
+  const safeInvoicedCount = Math.min(invoicesCount, normalizedTerms.length);
+  let remainingTerms = normalizedTerms.slice(safeInvoicedCount);
+
+  // Safety: if all terms are used up but balance still remains, show it as final installment
+  if (remainingTerms.length === 0 && remaining > 0) {
+    remainingTerms = [{ percent: 100, label: 'Remaining balance', fixedAmount: remaining }];
+  }
+
   setPreviouslyPaid(totalAlreadyPaid);
   setRemainingBalance(remaining);
+  setInvoicedCount(safeInvoicedCount);
+  setAvailableInstallments(remainingTerms);
+  setSelectedInstallmentIdx(0);
 
   setInvoiceData((prev) => ({
     ...prev,
@@ -395,11 +441,9 @@ const handleInvoicePrint = () => {
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
           <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-4 py-4">
             <h3 className="text-lg font-bold text-white">Generate Invoice - {invoiceData.quotationId}</h3>
-            {previouslyPaid > 0 && (
               <p className="text-green-100 text-sm mt-1">
-                Previously Paid: ₹{previouslyPaid.toLocaleString('en-IN')} | Remaining Balance: ₹{remainingBalance.toLocaleString('en-IN')}
+                Remaining Balance: ₹{remainingBalance.toLocaleString('en-IN')}
               </p>
-            )}
           </div>
           
           <div className="p-4 sm:p-6 space-y-6">
@@ -480,71 +524,51 @@ const handleInvoicePrint = () => {
                   Available Balance: ₹{remainingBalance.toLocaleString('en-IN')}
                 </div>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* 1. Advance Payment */}
-                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-3">
-                  <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold text-gray-500 uppercase">1. Advance</label>
-                    <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold">REQUIRED</span>
-                  </div>
-                  <select 
-                    className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold focus:ring-2 focus:ring-purple-400 outline-none"
-                    value={invoiceData.advancePercentage.replace('%', '')}
-                    onChange={(e) => {
-                      const percent = parseFloat(e.target.value);
-                      const amt = (remainingBalance * percent) / 100;
-                      setInvoiceData(prev => ({ ...prev, advancePaid: amt.toFixed(2), advancePercentage: percent + "%" }));
-                    }}
-                  >
-                    <option value="0">Select Percentage</option>
-                    <option value="40">40% Advance</option>
-                    <option value="50">50% Advance</option>
-                    <option value="100">100% Full Payment</option>
-                  </select>
-                  <div className="text-lg font-bold text-purple-600">
-                    ₹{Number(invoiceData.advancePaid).toLocaleString('en-IN')}
-                  </div>
-                </div>
 
-                {/* 2. Mid-Way Payment */}
-                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-3">
-                  <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold text-gray-500 uppercase">2. Mid-Way</label>
-                    <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">OPTIONAL</span>
-                  </div>
-                  <select 
-                    className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold focus:ring-2 focus:ring-blue-400 outline-none"
-                    value={invoiceData.midwayPercentage.replace('%', '')}
-                    onChange={(e) => {
-                      const percent = parseFloat(e.target.value);
-                      const amt = (remainingBalance * percent) / 100;
-                      setInvoiceData(prev => ({ ...prev, midwayPaid: amt.toFixed(2), midwayPercentage: percent + "%" }));
-                    }}
-                  >
-                    <option value="0">No Mid-way (0%)</option>
-                    <option value="20">20% Milestone</option>
-                    <option value="40">40% Milestone</option>
-                  </select>
-                  <div className="text-lg font-bold text-blue-600">
-                    ₹{Number(invoiceData.midwayPaid).toLocaleString('en-IN')}
-                  </div>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {availableInstallments.map((term, i) => {
+                  const globalIdx = invoicedCount + i + 1;
+                  const ordinal = getOrdinal(globalIdx);
+                  const quotationTotal = parseFloat(invoiceData.finalAmount) || 0;
+                  const amount = Number(term.fixedAmount) || Math.round((quotationTotal * parseFloat(term.percent)) / 100);
+                  const isSelected = selectedInstallmentIdx === i;
+                  return (
+                    <div
+                      key={i}
+                      onClick={() => setSelectedInstallmentIdx(i)}
+                      className={`bg-white p-4 rounded-xl border-2 cursor-pointer transition-all shadow-sm space-y-2 ${
+                        isSelected ? 'border-purple-500 ring-2 ring-purple-200' : 'border-gray-100 hover:border-purple-300'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <label className="text-xs font-bold text-gray-500 uppercase pointer-events-none">
+                          ({ordinal} Installment)
+                        </label>
+                        {isSelected && (
+                          <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold">SELECTED</span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600">{term.label}</p>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-semibold text-gray-700">{term.percent}%</span>
+                        <span className="text-lg font-bold text-purple-600">₹{amount.toLocaleString('en-IN')}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
 
-                {/* 3. Pending Balance */}
-                <div className="bg-gradient-to-br from-orange-50 to-white p-4 rounded-xl border border-orange-100 shadow-sm space-y-3">
+              {availableInstallments.length > 0 && (
+                <div className="mt-4 bg-gradient-to-br from-orange-50 to-white p-4 rounded-xl border border-orange-100 shadow-sm">
                   <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold text-orange-600 uppercase">3. Pending Details</label>
+                    <label className="text-xs font-bold text-orange-600 uppercase">Pending Balance (after this invoice)</label>
                     <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">DUE LATER</span>
                   </div>
-                  <div className="pt-2">
-                    <div className="text-2xl font-black text-orange-700">
-                      ₹{(remainingBalance - (parseFloat(invoiceData.advancePaid) || 0) - (parseFloat(invoiceData.midwayPaid) || 0)).toLocaleString('en-IN')}
-                    </div>
-                    
+                  <div className="text-2xl font-black text-orange-700 mt-2">
+                    ₹{(remainingBalance - (parseFloat(invoiceData.advancePaid) || 0)).toLocaleString('en-IN')}
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Payment Method Selection */}
@@ -729,19 +753,12 @@ const handleInvoicePrint = () => {
             </div>
           )}
 
-          {previouslyPaid > 0 && (
-            <div className="flex justify-between p-2 text-blue-800 bg-blue-50 border-b border-blue-200">
-              <span>Previously Paid:</span>
-              <span>₹{previouslyPaid.toLocaleString("en-IN")}</span>
-            </div>
-          )}
-
-          <div className="flex justify-between p-2 text-green-900 font-bold bg-green-100">
+          <div className="flex justify-between p-2 text-black font-bold">
             <span>This Invoice Amount:</span>
             <span>₹{Number(invoiceData.totalPaidAmount).toLocaleString("en-IN")}</span>
           </div>
 
-          <div className="flex justify-between p-2 border-t-2 border-orange-500 bg-orange-50 font-bold text-orange-700">
+            <div className="flex justify-between p-2 font-bold text-black">
             <span>Remaining Balance:</span>
             <span>₹{Number(invoiceData.balanceAmount).toLocaleString("en-IN")}</span>
           </div>
