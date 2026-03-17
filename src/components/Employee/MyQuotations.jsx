@@ -46,6 +46,17 @@ const MyQuotations = () => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedQuotations = filteredQuotations.slice(startIndex, startIndex + itemsPerPage);
 
+  const getStatusColor = (status) => {
+  switch (status) {
+    case "Approved": return "bg-green-100 text-green-800";
+    case "Pending": return "bg-yellow-100 text-yellow-800";
+    case "Draft": return "bg-gray-100 text-gray-800";
+    case "Rejected": return "bg-red-100 text-red-800";
+    case "Expired": return "bg-gray-100 text-gray-800";
+    default: return "bg-gray-100 text-gray-800";
+  }
+};
+
   return (
     <div className="space-y-4 sm:space-y-6 p-4">
       {/* Header Section */}
@@ -72,7 +83,7 @@ const MyQuotations = () => {
         {/* Status Filter Tabs */}
         <div className="p-4 border-b">
           <div className="flex flex-wrap gap-2">
-            {['all', 'pending', 'approved', 'rejected'].map((status) => (
+            {['all', 'Draft', 'Pending', 'Approved', 'Rejected', 'Expired'].map((status) => (
               <button
                 key={status}
                 onClick={() => setFilter(status)}
@@ -114,12 +125,11 @@ const MyQuotations = () => {
                       {quote.currency} {(quote.finalAmount || quote.totalCost + (quote.gstAmount || 0))?.toLocaleString('en-IN')}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                        quote.status === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {quote.status || 'Pending'}
-                      </span>
-                    </td>
+  {/* Call getStatusColor(quote.status) here */}
+  <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(quote.status)}`}>
+    {quote.status || 'Pending'}
+  </span>
+</td>
                     {/* ✅ Added Date Column */}
                     <td className="px-6 py-4 text-sm text-gray-600 hidden sm:table-cell">
                       {quote.date || 'N/A'}
