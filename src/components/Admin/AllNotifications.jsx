@@ -10,6 +10,8 @@ const AllNotifications = ({ notifications, setNotifications }) => {
     switch (type) {
       case "APPROVAL": return "bg-green-100 text-green-700";
       case "REJECTION": return "bg-red-100 text-red-700";
+      case "EXPIRED": return "bg-gray-200 text-gray-700 border border-gray-400"; 
+      case "DAILY_REMINDER": return "bg-yellow-100 text-yellow-700 border border-yellow-300"; 
       case "CREATION": return "bg-blue-100 text-blue-700";
       case "SENT": return "bg-purple-100 text-purple-700";
       case "INVOICE": return "bg-orange-100 text-orange-700"; // Add this line
@@ -22,22 +24,24 @@ const AllNotifications = ({ notifications, setNotifications }) => {
 // ================= DELETE SINGLE =================
 
 const deleteNotification = async (id) => {
-  if (!id || id === "undefined") {
-    console.error("Cannot delete: ID is invalid", id);
-    return;
-  }
+  if (!id) return;
 
   try {
+    // 1. Log the ID to your console to see if it's a string or an object
+    console.log("Attempting to delete ID:", id); 
+
     const res = await fetch(`http://localhost:8080/api/notifications/delete/${id}`, {
       method: "DELETE",
     });
     
     if (res.ok) {
-      // Since we standardized the ID in AdminPanel, we just check n.id
+      // 2. Update local state so it disappears from UI immediately
       setNotifications(prev => prev.filter(n => n.id !== id));
+    } else {
+      console.error("Server refused deletion", res.status);
     }
   } catch (e) {
-    console.error("Delete failed", e);
+    console.error("Network error during delete", e);
   }
 };
 

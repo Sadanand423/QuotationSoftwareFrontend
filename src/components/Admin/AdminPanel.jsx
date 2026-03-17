@@ -26,48 +26,43 @@
       // ================= FETCH NOTIFICATIONS ================
 
 
+// Locate your existing useEffect for notifications and update it like this:
 useEffect(() => {
-  const fetchNotifications = async () => {
-    try {
-      const res = await fetch("http://localhost:8080/api/notifications/admin");
-      if (!res.ok) return;
-      const incoming = await res.json();
+    const fetchNotifications = async () => {
+      try {
+        const empId = localStorage.getItem("empId") || "ADMIN";
 
-      // This will show you exactly what is inside the data
-     // console.log("First item check:", incoming[0]); 
+        // 1. Trigger backend to process reminders/expirations
+        await fetch(`http://localhost:8080/api/quotations/trigger-reminders/${empId}`);
 
-      const formatted = incoming.map((n, index) => {
-        // MAPPING LOGIC:
-        // 1. Try n.id (Standard)
-        // 2. Try n._id (MongoDB default)
-        // 3. Try n._id.$oid (MongoDB Object format)
-        let actualId = null;
-        
-        if (n.id) {
-          actualId = n.id;
-        } else if (n._id) {
-          actualId = typeof n._id === 'object' ? n._id.$oid : n._id;
-        }
+        // 2. Fetch notifications for Admin
+        const res = await fetch(`http://localhost:8080/api/notifications/admin`);
+        if (!res.ok) return;
+        const incoming = await res.json();
 
-        return {
-          id: actualId, // If this is null, the delete button will show 'Critical Error'
-          message: n.message,
-          timestamp: n.timestamp,
-          type: n.type,
-          read: n.read === true || n.isRead === true || readInSession.current.has(actualId)
-        };
-      });
+        const formatted = incoming.map((n) => {
+          // Normalize ID handling for MongoDB or SQL
+          let actualId = n.id || (n._id && (typeof n._id === 'object' ? n._id.$oid : n._id));
+          return {
+            id: actualId,
+            message: n.message,
+            timestamp: n.timestamp,
+            type: n.type,
+            // Check both DB status and local session status
+            read: n.read === true || n.isRead === true || readInSession.current.has(actualId)
+          };
+        });
 
-      setNotifications(formatted);
-    } catch (e) {
-      console.error("Notification fetch error", e);
-    }
-  };
+        setNotifications(formatted);
+      } catch (e) {
+        console.error("Admin Notification fetch error", e);
+      }
+    };
 
-  fetchNotifications();
-  const interval = setInterval(fetchNotifications, 5000);
-  return () => clearInterval(interval);
-}, []);
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000); // 30s is healthy
+    return () => clearInterval(interval);
+  }, []);
 
       // ================= TOGGLE NOTIFICATIONS =================
       const toggleNotifications = () => {

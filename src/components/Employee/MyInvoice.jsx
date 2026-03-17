@@ -252,7 +252,7 @@ const MyInvoice = () => {
                               <tr>
                                 <th className="px-5 py-3 text-left text-xs font-bold text-teal-700 uppercase tracking-wider">Invoice Number</th>
                                 <th className="px-5 py-3 text-left text-xs font-bold text-teal-700 uppercase tracking-wider">Date</th>
-                                <th className="px-5 py-3 text-left text-xs font-bold text-teal-700 uppercase tracking-wider">Amount</th>
+                                <th className="px-5 py-3 text-left text-xs font-bold text-teal-700 uppercase tracking-wider">Total Amount</th>
                                 <th className="px-5 py-3 text-left text-xs font-bold text-teal-700 uppercase tracking-wider">Paid Amount</th>
                                 <th className="px-5 py-3 text-left text-xs font-bold text-teal-700 uppercase tracking-wider">Balance Amount</th>
                                 <th className="px-5 py-3 text-left text-xs font-bold text-teal-700 uppercase tracking-wider">Status</th>
