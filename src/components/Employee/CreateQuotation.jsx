@@ -10,9 +10,10 @@ const CreateQuotation = ({ selectedClient }) => {
   const [formData, setFormData] = useState({
     quotationNumber: `QT-${Date.now().toString().slice(-6)}`,
     date: new Date().toLocaleDateString('en-IN'),
-    validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN'),
+    validUntil: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN'),
     project: '',
     client: selectedClient?.name || '',
+    clientOrganization: '',
     clientAddress: '',
     clientEmail: '',
     clientPhone: '',
@@ -104,12 +105,12 @@ signatureNote:
 );
 
 
-
-  useEffect(() => {
+useEffect(() => {
   if (selectedClient) {
     setFormData((prev) => ({
       ...prev,
       client: selectedClient.name || '',
+      clientOrganization: selectedClient.organization || '',
       clientEmail: selectedClient.email || '',
       clientPhone: selectedClient.phone || '',
       clientAddress: selectedClient.address || ''
@@ -124,6 +125,34 @@ signatureNote:
     totalCost: total
   }));
 }, [formData.costBreakdown]);
+
+useEffect(() => {
+
+  if (formData.totalCost < 10000) {
+
+    setFormData(prev => ({
+      ...prev,
+      paymentTerms: [
+        { percent: 40, label: "Advance upon contract signing" },
+        { percent: 60, label: "Final delivery and deployment" }
+      ]
+    }));
+
+  } else {
+
+    setFormData(prev => ({
+      ...prev,
+      paymentTerms: [
+        { percent: 25, label: "Advance upon contract signing" },
+        { percent: 30, label: "Midpoint milestone" },
+        { percent: 25, label: "UAT approval" },
+        { percent: 20, label: "Final delivery and deployment" }
+      ]
+    }));
+
+  }
+
+}, [formData.totalCost]);
 
 
   // ===========  GST =====================
@@ -482,6 +511,18 @@ const removeTimelineRow = (index) => {
                     value={formData.client}
                     onChange={(e) => setFormData({...formData, client: e.target.value})}
                     placeholder="Enter client name"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600 block mb-1">
+                    Organization
+                  </label>
+
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-100"
+                    value={formData.clientOrganization}
+                    readOnly
                   />
                 </div>
                 <div>
