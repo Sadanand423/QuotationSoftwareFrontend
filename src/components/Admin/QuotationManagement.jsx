@@ -18,7 +18,7 @@ const QuotationManagement = () => {
     placeBelow: false
   });
 
-  const statusFilters = ["All", "Draft", "Pending", "Approved", "Rejected"];
+  const statusFilters = ["All", "Draft", "Pending", "Approved", "Rejected", "Expired"];
 
   const fetchQuotations = async () => {
     setIsLoading(true); // 2. Start loading before fetch
@@ -144,6 +144,7 @@ const handleDelete = async (quoteId) => {
       case "Pending": return "bg-yellow-100 text-yellow-800";
       case "Draft": return "bg-gray-100 text-gray-800";
       case "Rejected": return "bg-red-100 text-red-800";
+      case "Expired": return "bg-gray-100 text-gray-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
@@ -154,6 +155,7 @@ const handleDelete = async (quoteId) => {
       case "Pending": return "bg-yellow-500";
       case "Draft": return "bg-gray-500";
       case "Rejected": return "bg-red-500";
+      case "Expired": return "bg-gray-500";
       default: return "bg-gray-500";
     }
   };
