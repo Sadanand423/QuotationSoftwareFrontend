@@ -7,44 +7,63 @@ const Reports = () => {
   const [employees, setEmployees] = useState([]);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [invoices, setInvoices] = useState([]);
 
   // ✅ Optimized Fetching with cleanup and error handling
   useEffect(() => {
-    let isMounted = true;
-    const fetchData = async () => {
-      try {
-        const [qRes, eRes, cRes] = await Promise.all([
-          fetch('http://localhost:8080/api/quotations'),
-          fetch('http://localhost:8080/api/admin/employees'),
-          fetch('http://localhost:8080/api/clients')
-        ]);
+  let isMounted = true;
 
-        const qData = await qRes.json();
-        const eData = await eRes.json();
-        const cData = await cRes.json();
+  const fetchData = async () => {
+    try {
+      const [qRes, eRes, cRes, iRes] = await Promise.all([
+        fetch('http://localhost:8080/api/quotations'),
+        fetch('http://localhost:8080/api/admin/employees'),
+        fetch('http://localhost:8080/api/clients'),
+        fetch('http://localhost:8080/api/invoices/all-invoices') // ✅ NEW
+      ]);
 
-        if (isMounted) {
-          const extractArray = (data) => {
-            if (Array.isArray(data)) return data;
-            if (data && typeof data === 'object') {
-              return data.employees || data.content || data.data || [];
-            }
-            return [];
-          };
+      const qData = await qRes.json();
+      const eData = await eRes.json();
+      const cData = await cRes.json();
+      const iData = await iRes.json(); // ✅ NEW
 
-          setQuotations(extractArray(qData));
-          setEmployees(extractArray(eData));
-          setClients(extractArray(cData));
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error("Error fetching report data:", error);
-        if (isMounted) setLoading(false);
+      if (isMounted) {
+        const extractArray = (data) => {
+  if (Array.isArray(data)) return data;
+
+  if (data && typeof data === 'object') {
+    return (
+      data.content ||
+      data.data ||
+      data.invoices ||
+      data.results ||
+      data.items ||
+      []
+    );
+  }
+
+  return [];
+};
+
+        setQuotations(extractArray(qData));
+        setEmployees(extractArray(eData));
+        setClients(extractArray(cData));
+        setInvoices(extractArray(iData)); // ✅ NEW
+        setLoading(false);
       }
-    };
-    fetchData();
-    return () => { isMounted = false; };
-  }, []);
+    } catch (error) {
+      console.error("Error fetching report data:", error);
+      if (isMounted) setLoading(false);
+    }
+  };
+
+  fetchData();
+  return () => { isMounted = false; };
+}, []);
+
+useEffect(() => {
+  console.log("Invoices Data:", invoices);
+}, [invoices]);
 
   // ✅ MEMOIZED STATS: This only runs when 'quotations' changes.
   // This prevents the "NaN" or "0" flicker and improves speed.
@@ -54,6 +73,7 @@ const Reports = () => {
       if (!val) return 0;
       return parseFloat(String(val).replace(/[₹$,\s]/g, '')) || 0;
     };
+    
 
     const formatRupees = (num) => 
       new Intl.NumberFormat('en-IN', {
@@ -61,6 +81,7 @@ const Reports = () => {
         currency: 'INR',
         maximumFractionDigits: 0,
       }).format(num);
+
 
     const total = quotations.length;
     const approvedList = quotations.filter(q => q.status?.toLowerCase() === 'approved');
@@ -85,6 +106,37 @@ const Reports = () => {
       conversionRate: total > 0 ? ((approvedList.length / total) * 100).toFixed(1) : "0.0"
     };
   }, [quotations]);
+
+
+const getCombinedCSVData = () => {
+  return quotations.map((q) => {
+
+    // Match invoice
+    let relatedInvoice = invoices.find(
+      (inv) => inv.quotationId === q.id
+    );
+
+    if (!relatedInvoice) {
+      relatedInvoice = invoices.find(
+        (inv) =>
+          inv.clientName?.toLowerCase() === q.clientName?.toLowerCase()
+      );
+    }
+
+    return {
+      // ✅ KEEP ALL QUOTATION DATA
+      ...q,
+
+      // 🟢 ADD INVOICE DATA (RIGHT SIDE)
+      InvoiceNumber: relatedInvoice?.invoiceNumber || "",
+      InvoiceDate: relatedInvoice?.invoiceDate || "",
+      InvoiceAmount: relatedInvoice?.finalAmount || "",
+      PaidAmount: relatedInvoice?.totalPaidAmount || "",
+      Balance: relatedInvoice?.balanceAmount || "",
+      InvoiceStatus: relatedInvoice?.status || ""
+    };
+  });
+};
 
   // ✅ IMPROVED CSV EXPORT: Handles commas and quotes in data
   const exportToCSV = (data, filename) => {
@@ -111,6 +163,25 @@ const Reports = () => {
     { id: 'overview', label: 'Overview', icon: '📊' }
   ];
 
+  
+  const invoiceStats = useMemo(() => {
+  const totalInvoices = invoices.length;
+
+  const totalRevenue = invoices.reduce(
+    (sum, inv) => sum + (parseFloat(String(inv.finalAmount).replace(/[₹,]/g, '')) || 0),
+    0
+  );
+
+  return {
+    totalInvoices,
+    totalRevenueFormatted: new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format(totalRevenue)
+  };
+}, [invoices]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -119,8 +190,9 @@ const Reports = () => {
     );
   }
 
+
   return (
-    <div className="p-3 sm:p-4 md:p-6 animate-in fade-in duration-500">
+    <div className="p-3 sm:p-4 md:p-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
         <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
           Reports & Analytics
@@ -137,7 +209,7 @@ const Reports = () => {
             <option value="thisYear">This Year</option>
           </select>
           <button 
-            onClick={() => exportToCSV(quotations, 'quotations-report.csv')}
+            onClick={() => exportToCSV(getCombinedCSVData(), 'reports.csv')}
             className="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:shadow-lg active:scale-95 transition-all duration-300 font-medium text-sm"
           >
             Export CSV
@@ -168,22 +240,34 @@ const Reports = () => {
         <div className="p-3 sm:p-4 md:p-6">
           <div className="space-y-6">
             {/* KPI Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-              <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-3 sm:p-4 rounded-lg sm:rounded-xl border border-blue-200">
-                <h3 className="text-xs sm:text-sm text-blue-600 mb-1 font-medium">Total Quotations</h3>
-                <p className="text-lg sm:text-2xl font-bold text-blue-800">{stats.total}</p>
-              </div>
-              <div className="bg-gradient-to-r from-green-50 to-green-100 p-3 sm:p-4 rounded-lg sm:rounded-xl border border-green-200">
-                <h3 className="text-xs sm:text-sm text-green-600 mb-1 font-medium">Approved</h3>
-                <p className="text-lg sm:text-2xl font-bold text-green-800">{stats.approved}</p>
-              </div>
-              <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 p-3 sm:p-4 rounded-lg sm:rounded-xl border border-yellow-200">
-                <h3 className="text-xs sm:text-sm text-yellow-600 mb-1 font-medium">Pending</h3>
-                <p className="text-lg sm:text-2xl font-bold text-yellow-800">{stats.pending}</p>
-              </div>
-              <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-3 sm:p-4 rounded-lg sm:rounded-xl border border-purple-200">
-                <h3 className="text-xs sm:text-sm text-purple-600 mb-1 font-medium">Conversion Rate</h3>
-                <p className="text-lg sm:text-2xl font-bold text-purple-800">{stats.conversionRate}%</p>
+            <div className="overflow-x-auto">
+              <div className="grid grid-cols-5 gap-2 sm:gap-4 min-w-[900px]">
+                
+                <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-3 sm:p-4 rounded-lg sm:rounded-xl border border-blue-200">
+                  <h3 className="text-xs sm:text-sm text-blue-600 mb-1 font-medium">Total Quotations</h3>
+                  <p className="text-lg sm:text-2xl font-bold text-blue-800">{stats.total}</p>
+                </div>
+
+                <div className="bg-gradient-to-r from-green-50 to-green-100 p-3 sm:p-4 rounded-lg sm:rounded-xl border border-green-200">
+                  <h3 className="text-xs sm:text-sm text-green-600 mb-1 font-medium">Approved</h3>
+                  <p className="text-lg sm:text-2xl font-bold text-green-800">{stats.approved}</p>
+                </div>
+
+                <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 p-3 sm:p-4 rounded-lg sm:rounded-xl border border-yellow-200">
+                  <h3 className="text-xs sm:text-sm text-yellow-600 mb-1 font-medium">Pending</h3>
+                  <p className="text-lg sm:text-2xl font-bold text-yellow-800">{stats.pending}</p>
+                </div>
+
+                <div className="bg-gradient-to-r from-teal-50 to-teal-100 p-3 sm:p-4 rounded-lg sm:rounded-xl border border-teal-200">
+                  <h3 className="text-xs sm:text-sm text-teal-600 mb-1 font-medium">Total Invoices</h3>
+                  <p className="text-lg sm:text-2xl font-bold text-teal-800">{invoiceStats.totalInvoices}</p>
+                </div>
+
+                <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-3 sm:p-4 rounded-lg sm:rounded-xl border border-purple-200">
+                  <h3 className="text-xs sm:text-sm text-purple-600 mb-1 font-medium">Conversion Rate</h3>
+                  <p className="text-lg sm:text-2xl font-bold text-purple-800">{stats.conversionRate}%</p>
+                </div>
+
               </div>
             </div>
             
@@ -306,8 +390,11 @@ const Reports = () => {
 
               {/* System Summary Card */}
               <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                <div className="bg-gradient-to-r from-cyan-500 to-blue-600 p-5">
-                  <h3 className="text-lg font-bold text-white">📋 System Summary</h3>
+                <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-4 sm:p-6">
+                  <h3 className="text-lg sm:text-xl font-bold text-white flex items-center">
+                    <span className="mr-2">📋</span> System Summary
+                  </h3>
+                  <p className="text-blue-100 text-xs sm:text-sm mt-1">System overview</p>
                 </div>
                 <div className="p-6 space-y-4">
                   <div className="flex justify-between items-center pb-2 border-b border-gray-50">
@@ -319,9 +406,14 @@ const Reports = () => {
                     <span className="font-bold text-gray-800">{clients.length}</span>
                   </div>
                     
-                                    <div className="flex justify-between items-center pb-2 border-b border-gray-50">
+                  <div className="flex justify-between items-center pb-2 border-b border-gray-50">
                     <span className="text-gray-600 text-sm font-medium">Active Clients</span>
                     <span className="font-bold text-green-600">{clients.filter(c => c.status === 'Active').length}</span>
+                  </div>
+
+                  <div className="flex justify-between items-center pb-2 border-b border-gray-50">
+                    <span className="text-gray-600 text-sm font-medium">Total Invoices</span>
+                    <span className="font-bold text-blue-600">{invoiceStats.totalInvoices}</span>
                   </div>
 
                   <div className="flex justify-between items-center pb-2 border-b border-gray-50">
@@ -334,7 +426,6 @@ const Reports = () => {
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
         </div>
