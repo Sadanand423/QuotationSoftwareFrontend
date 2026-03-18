@@ -25,42 +25,45 @@ const EmployeePanel = () => {
   // ✅ 1. ADDED: Session shield to prevent unread count from jumping back during polling
   const readInSession = useRef(new Set());
 
-  // ================= FETCH NOTIFICATIONS ================
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const empId = localStorage.getItem("empId");
-        if (!empId) return;
+ useEffect(() => {
+  const fetchNotifications = async () => {
+    try {
+      const empId = localStorage.getItem("empId");
+      if (!empId) return;
 
-        const res = await fetch(`http://localhost:8080/api/notifications/employee/${empId}`);
-        if (!res.ok) return;
+      // STEP 1: Trigger the generation of reminder notifications on the server
+      // This MUST happen before we fetch the list below
+      await fetch(`http://localhost:8080/api/quotations/trigger-reminders/${empId}`, {
+        method: 'GET' // or POST depending on your backend
+      });
 
-        const incoming = await res.json();
+      // STEP 2: Fetch the actual notification list
+      const res = await fetch(`http://localhost:8080/api/notifications/employee/${empId}`);
+      if (!res.ok) return;
 
-        // ✅ 2. UPDATED: Improved the mapping logic to respect the session shield
-        const formatted = incoming.map((n, index) => {
-          const id = n.id || n._id || `notif-${index}`;
-          return {
-            id: id,
-            message: n.message,
-            timestamp: n.timestamp,
-            type: n.type || "INFO",
-            // Keep it read if DB says so OR if we clicked it in this browser session
-            read: n.read === true || n.isRead === true || readInSession.current.has(id)
-          };
-        });
-        
-        setNotifications(formatted);
-      } catch (e) {
-        console.error("Notification fetch error", e);
-      }
-    };
+      const incoming = await res.json();
 
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 5000);
-    return () => clearInterval(interval);
-  }, []);
+      const formatted = incoming.map((n, index) => {
+        const id = n.id || n._id || `notif-${index}`;
+        return {
+          id: id,
+          message: n.message,
+          timestamp: n.timestamp,
+          type: n.type || "INFO",
+          read: n.read === true || n.isRead === true || readInSession.current.has(id)
+        };
+      });
+      
+      setNotifications(formatted);
+    } catch (e) {
+      console.error("Employee Notification fetch error", e);
+    }
+  };
 
+  fetchNotifications();
+  const interval = setInterval(fetchNotifications, 30000); 
+  return () => clearInterval(interval);
+}, []);
   // ================= TOGGLE & MARK READ LOGIC =================
   const markAllAsRead = () => {
     const unreadCount = notifications.filter(n => !n.read).length;

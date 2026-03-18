@@ -432,13 +432,13 @@ const removeTimelineRow = (index) => {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto bg-white shadow-2xl">
         {/* Professional Header */}
-        <div className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10"></div>
+        <div className="bg-linear-to-r from-slate-800 via-slate-700 to-slate-800 relative overflow-hidden">
+          <div className="absolute inset-0 bg-linear-to-r from-blue-600/10 to-purple-600/10"></div>
           <div className="relative px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
               <div className="text-white">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 bg-linear-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center">
                     <span className="text-white font-bold text-lg">SM</span>
                   </div>
                   <div>
@@ -453,14 +453,14 @@ const removeTimelineRow = (index) => {
               </div>
             </div>
           </div>
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-orange-400 via-yellow-400 to-orange-400"></div>
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-linear-to-r from-orange-400 via-yellow-400 to-orange-400"></div>
         </div>
 
         {/* Quotation Details */}
         <div className="px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 mb-8">
             {/* Quotation Info */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 lg:p-6 rounded-xl border border-blue-100">
+            <div className="bg-linear-to-br from-blue-50 to-indigo-50 p-4 lg:p-6 rounded-xl border border-blue-100">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                 <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
                 Quotation Details
@@ -497,7 +497,7 @@ const removeTimelineRow = (index) => {
             </div>
 
             {/* Client Info */}
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 lg:p-6 rounded-xl border border-green-100">
+            <div className="bg-linear-to-br from-green-50 to-emerald-50 p-4 lg:p-6 rounded-xl border border-green-100">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                 <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
                 Client Information
@@ -559,7 +559,7 @@ const removeTimelineRow = (index) => {
             </div>
 
             {/* Project Info */}
-            <div className="bg-gradient-to-br from-orange-50 to-amber-50 p-4 lg:p-6 rounded-xl border border-orange-100">
+            <div className="bg-linear-to-br from-orange-50 to-amber-50 p-4 lg:p-6 rounded-xl border border-orange-100">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                 <span className="w-2 h-2 bg-orange-500 rounded-full mr-2"></span>
                 Project Details
@@ -614,7 +614,7 @@ const removeTimelineRow = (index) => {
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
 
               {/* Header */}
-              <div className="bg-gradient-to-r from-yellow-600 to-yellow-700 px-6 py-4">
+              <div className="bg-linear-to-r from-yellow-600 to-yellow-700 px-6 py-4">
                 <h2 className="text-xl font-bold text-white flex items-center">
                   <span className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
                     1
@@ -644,7 +644,7 @@ const removeTimelineRow = (index) => {
             <div className="bg-white rounded-xl shadow-lg border border-pink-200 overflow-hidden">
 
               {/* Header */}
-              <div className="bg-gradient-to-r from-pink-500 to-pink-600 px-6 py-4">
+              <div className="bg-linear-to-r from-pink-500 to-pink-600 px-6 py-4">
                 <h2 className="text-xl font-bold text-white flex items-center">
                   <span className="w-6 h-6 bg-white text-pink-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
                     2
@@ -673,7 +673,7 @@ const removeTimelineRow = (index) => {
           {/* ==========Technology Stack============  */}
             <div className="px-4 sm:px-6 lg:px-8 pb-6">
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+            <div className="bg-linear-to-r from-blue-600 to-indigo-600 px-6 py-4">
               <h2 className="text-xl font-bold text-white flex items-center">
                 <span className="w-6 h-6 bg-white text-blue-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">3</span>
                 Technology Stack
@@ -687,7 +687,7 @@ const removeTimelineRow = (index) => {
                     <table className="w-full border-collapse">
                       
                      <thead>
-                      <tr className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                      <tr className="bg-linear-to-r from-blue-50 to-indigo-50">
                         <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">
                           Component
                         </th>
@@ -750,7 +750,7 @@ const removeTimelineRow = (index) => {
                             </td>
 
                             {/* REMOVE BUTTON */}
-                            <td className="border border-gray-200 p-4 text-center min-w-[100px]">
+                            <td className="border border-gray-200 p-4 text-center min-w-25">
                               <button
                                 onClick={() => removeTechStack(index)}
                                 className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-colors text-xs"
@@ -769,7 +769,7 @@ const removeTimelineRow = (index) => {
                   <div className="mt-6 flex flex-col sm:flex-row gap-3">
                     <button
                       onClick={addTechStack}
-                      className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl flex items-center justify-center"
+                      className="bg-linear-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl flex items-center justify-center"
                     >
                       <span className="mr-2">+</span> Add Technology
                     </button>
@@ -784,7 +784,7 @@ const removeTimelineRow = (index) => {
         {/* Cost Breakdown */}
         <div className="px-4 sm:px-6 lg:px-8 pb-6">
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-slate-700 to-slate-800 px-6 py-4">
+            <div className="bg-linear-to-r from-slate-700 to-slate-800 px-6 py-4">
               <h2 className="text-xl font-bold text-white flex items-center">
                 <span className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center mr-3 text-sm font-bold">4</span>
                 Cost Breakdown 
@@ -795,7 +795,7 @@ const removeTimelineRow = (index) => {
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                   <thead>
-                    <tr className="bg-gradient-to-r from-gray-50 to-gray-100">
+                    <tr className="bg-linear-to-r from-gray-50 to-gray-100">
                       <th className="border border-gray-200 p-3 text-left font-semibold text-gray-700 text-sm w-20">Sr. No</th>
                       <th className="border border-gray-200 p-3 text-left font-semibold text-gray-700 text-sm">Development Area</th>
                       <th className="border border-gray-200 p-3 text-left font-semibold text-gray-700 text-sm">Scope Includes</th>
@@ -844,7 +844,7 @@ const removeTimelineRow = (index) => {
                         </td>
                       </tr>
                     ))}
-                    <tr className="bg-gradient-to-r from-orange-100 to-amber-100 font-bold">
+                    <tr className="bg-linear-to-r from-orange-100 to-amber-100 font-bold">
                       <td className="border border-gray-200 p-4 text-right" colSpan="3">
                         <span className="text-gray-800 text-lg">TOTAL PROJECT COST</span>
                       </td>
@@ -917,7 +917,7 @@ const removeTimelineRow = (index) => {
               <div className="mt-6 flex flex-col sm:flex-row gap-3">
                 <button 
                   onClick={addCostItem}
-                  className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl flex items-center justify-center"
+                  className="bg-linear-to-r from-orange-500 to-orange-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl flex items-center justify-center"
                 >
                   <span className="mr-2">+</span> Add Cost Item
                 </button>
@@ -930,7 +930,7 @@ const removeTimelineRow = (index) => {
         {/* Project Timeline */}
         <div className="px-4 sm:px-6 lg:px-8 pb-6">
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+            <div className="bg-linear-to-r from-blue-600 to-indigo-600 px-6 py-4">
               <h2 className="text-xl font-bold text-white flex items-center">
                 <span className="w-6 h-6 bg-white text-blue-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">5</span>
                 Project Timeline
@@ -941,7 +941,7 @@ const removeTimelineRow = (index) => {
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                   <thead>
-                    <tr className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                    <tr className="bg-linear-to-r from-blue-50 to-indigo-50">
                       <th className="border border-gray-200 p-3 text-left font-semibold text-gray-700 text-sm w-20">Sr. No</th>
                       <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">Phase</th>
                       <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">Duration</th>
@@ -1009,7 +1009,7 @@ const removeTimelineRow = (index) => {
                 </table>
               </div>
               
-              <div className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+              <div className="mt-6 bg-linear-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                   <span className="font-semibold text-gray-800">Total Timeline:</span>
                   <input
@@ -1022,7 +1022,7 @@ const removeTimelineRow = (index) => {
               <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <button 
                 onClick={addTimelineRow}
-                className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl flex items-center justify-center">
+                className="bg-linear-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl flex items-center justify-center">
                 <span className="mr-2">+</span> Add Phase
               </button>
             </div>
@@ -1036,7 +1036,7 @@ const removeTimelineRow = (index) => {
         <div className="px-4 sm:px-6 lg:px-8 pb-6">
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
 
-            <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
+            <div className="bg-linear-to-r from-green-600 to-emerald-600 px-6 py-4">
               <h2 className="text-xl font-bold text-white flex items-center">
                 <span className="w-6 h-6 bg-white text-green-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
                   6
@@ -1108,7 +1108,7 @@ const removeTimelineRow = (index) => {
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
 
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+            <div className="bg-linear-to-r from-blue-600 to-indigo-600 px-6 py-4">
               <h2 className="text-xl font-bold text-white flex items-center">
                 <span className="w-6 h-6 bg-white text-blue-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
                   7
@@ -1124,7 +1124,7 @@ const removeTimelineRow = (index) => {
                 <table className="w-full border-collapse">
 
                   <thead>
-                    <tr className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                    <tr className="bg-linear-to-r from-blue-50 to-indigo-50">
                       <th className="border border-gray-200 p-4 text-left font-semibold text-gray-700">
                         Plan
                       </th>
@@ -1200,7 +1200,7 @@ const removeTimelineRow = (index) => {
               <div className="mt-6">
                 <button
                   onClick={addMaintenancePlan}
-                  className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 font-medium shadow">
+                  className="bg-linear-to-r from-blue-500 to-blue-600 text-white px-6 py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 font-medium shadow">
                   + Add Plan
                 </button>
               </div>
@@ -1224,7 +1224,7 @@ const removeTimelineRow = (index) => {
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
 
             {/* Header */}
-            <div className="bg-gradient-to-r from-slate-700 to-slate-800 px-6 py-4">
+            <div className="bg-linear-to-r from-slate-700 to-slate-800 px-6 py-4">
               <h2 className="text-xl font-bold text-white flex items-center">
                 <span className="w-6 h-6 bg-white text-slate-700 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
                   8
@@ -1329,7 +1329,7 @@ const removeTimelineRow = (index) => {
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
 
             {/* Header */}
-            <div className="bg-gradient-to-r from-emerald-600 to-green-600 px-6 py-4">
+            <div className="bg-linear-to-r from-emerald-600 to-green-600 px-6 py-4">
               <h2 className="text-xl font-bold text-white flex items-center">
                 <span className="w-6 h-6 bg-white text-green-600 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
                   9
@@ -1420,7 +1420,7 @@ const removeTimelineRow = (index) => {
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
 
             {/* Header */}
-            <div className="bg-gradient-to-r from-gray-700 to-gray-800 px-6 py-4">
+            <div className="bg-linear-to-r from-gray-700 to-gray-800 px-6 py-4">
               <h2 className="text-xl font-bold text-white flex items-center">
                 <span className="w-6 h-6 bg-white text-gray-700 rounded-full flex items-center justify-center mr-3 text-sm font-bold">
                   10
@@ -1606,8 +1606,8 @@ const removeTimelineRow = (index) => {
         </div>
 
         {/* Footer */}
-        <div className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10"></div>
+        <div className="bg-linear-to-r from-slate-800 via-slate-700 to-slate-800 relative overflow-hidden">
+          <div className="absolute inset-0 bg-linear-to-r from-blue-600/10 to-purple-600/10"></div>
           <div className="relative px-4 sm:px-6 lg:px-8 py-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-white">
               <div>
@@ -1637,7 +1637,7 @@ const removeTimelineRow = (index) => {
               </div>
             </div>
           </div>
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-orange-400 via-yellow-400 to-orange-400"></div>
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-linear-to-r from-orange-400 via-yellow-400 to-orange-400"></div>
         </div>
 
         {/* Action Buttons */}
@@ -1645,7 +1645,7 @@ const removeTimelineRow = (index) => {
           <div className="flex flex-col sm:flex-row gap-8 justify-center">
             <button
                onClick={saveQuotation}
-               className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-lg hover:from-blue-600 hover:to-blue-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base">
+               className="bg-linear-to-r from-blue-500 to-blue-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-lg hover:from-blue-600 hover:to-blue-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base">
                Save Quotation
                </button> 
 
@@ -1659,7 +1659,7 @@ const removeTimelineRow = (index) => {
                 }
                 setShowPreview(true);
               }}
-              className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-8 py-4 rounded-xl hover:from-purple-600 hover:to-purple-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"> 
+              className="bg-linear-to-r from-purple-500 to-purple-600 text-white px-8 py-4 rounded-xl hover:from-purple-600 hover:to-purple-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"> 
               Preview Quotation
             </button>
           </div>

@@ -356,7 +356,7 @@ const handleInvoicePrint = () => {
     <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+          <h2 className="text-2xl sm:text-3xl font-bold bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
             Invoice Management
           </h2>
           <p className="text-gray-500 mt-1 sm:mt-2 text-sm sm:text-base">Generate invoices from approved quotations</p>
@@ -377,7 +377,7 @@ const handleInvoicePrint = () => {
 
       {!showForm ? (
         <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-4 sm:px-6 py-3 sm:py-4">
+          <div className="bg-linear-to-r from-indigo-600 to-purple-600 px-4 sm:px-6 py-3 sm:py-4">
             <h3 className="text-lg sm:text-xl font-bold text-white flex items-center">
               <span className="mr-2">✅</span>
               <span>Approved Quotations Ready for Invoice</span>
@@ -439,7 +439,7 @@ const handleInvoicePrint = () => {
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-4 py-4">
+          <div className="bg-linear-to-r from-green-600 to-emerald-600 px-4 py-4">
             <h3 className="text-lg font-bold text-white">Generate Invoice - {invoiceData.quotationId}</h3>
               <p className="text-green-100 text-sm mt-1">
                 Remaining Balance: ₹{remainingBalance.toLocaleString('en-IN')}
@@ -559,7 +559,7 @@ const handleInvoicePrint = () => {
               </div>
 
               {availableInstallments.length > 0 && (
-                <div className="mt-4 bg-gradient-to-br from-orange-50 to-white p-4 rounded-xl border border-orange-100 shadow-sm">
+                <div className="mt-4 bg-linear-to-br from-orange-50 to-white p-4 rounded-xl border border-orange-100 shadow-sm">
                   <div className="flex justify-between items-center">
                     <label className="text-xs font-bold text-orange-600 uppercase">Pending Balance (after this invoice)</label>
                     <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">DUE LATER</span>
@@ -640,7 +640,7 @@ const handleInvoicePrint = () => {
     
      {showPreview && (
   <div className="fixed inset-0 bg-black/40 overflow-y-auto z-50 p-10 flex flex-col items-center">
-    <div className="bg-white w-[794px] min-h-[900px] p-8 shadow-xl">
+    <div className="bg-white w-198.5 min-h-225 p-8 shadow-xl">
       <div ref={printRef} className="border-2 border-black h-full p-6 text-[14px] flex flex-col">
         
         {/* Header Section */}

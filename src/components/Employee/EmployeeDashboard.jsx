@@ -121,12 +121,12 @@ const EmployeeDashboard = ({ onCreateQuotation }) => {
     <div className="space-y-6 sm:space-y-8 mt-1 sm:mt-2">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
             Dashboard Overview
           </h2>
           <p className="text-gray-500 mt-2 text-sm sm:text-base">Welcome back! Here's what's happening with your work today.</p>
         </div>
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105 self-start sm:self-auto">
+        <div className="bg-linear-to-r from-blue-500 to-purple-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105 self-start sm:self-auto">
           <span className="font-semibold text-sm sm:text-base">📅 {new Date().toLocaleDateString()}</span>
         </div>
       </div>
@@ -137,10 +137,10 @@ const EmployeeDashboard = ({ onCreateQuotation }) => {
           const IconComponent = stat.icon;
           return (
             <div key={index} className="group relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-white to-gray-50 rounded-2xl shadow-lg group-hover:shadow-2xl transition-all duration-300 transform group-hover:scale-105"></div>
+              <div className="absolute inset-0 bg-linear-to-r from-white to-gray-50 rounded-2xl shadow-lg group-hover:shadow-2xl transition-all duration-300 transform group-hover:scale-105"></div>
               <div className="relative bg-white p-4 sm:p-6 rounded-2xl border border-gray-100">
                 <div className="flex items-center justify-between mb-3 sm:mb-4">
-                  <div className={`w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-r ${stat.color} rounded-xl flex items-center justify-center shadow-lg text-white`}>
+                  <div className={`w-10 h-10 sm:w-14 sm:h-14 bg-linear-to-r ${stat.color} rounded-xl flex items-center justify-center shadow-lg text-white`}>
                     {/* ✅ 4. Render icon component */}
                     <IconComponent size={24} strokeWidth={2.5} />
                   </div>
@@ -159,7 +159,7 @@ const EmployeeDashboard = ({ onCreateQuotation }) => {
       </div>
 
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 sm:p-6">
+        <div className="bg-linear-to-r from-blue-500 to-purple-600 p-4 sm:p-6">
           <h3 className="text-lg sm:text-xl font-bold text-white flex items-center">
             {/* ✅ Updated Recent Quotations header icon */}
             <History className="mr-2" size={24} />

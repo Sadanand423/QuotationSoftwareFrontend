@@ -182,6 +182,16 @@ const MyQuotations = () => {
       setCurrentPage(totalPages);
     }
   }, [currentPage, totalPages]);
+  const getStatusColor = (status) => {
+  switch (status) {
+    case "Approved": return "bg-green-100 text-green-800";
+    case "Pending": return "bg-yellow-100 text-yellow-800";
+    case "Draft": return "bg-gray-100 text-gray-800";
+    case "Rejected": return "bg-red-100 text-red-800";
+    case "Expired": return "bg-gray-100 text-gray-800";
+    default: return "bg-gray-100 text-gray-800";
+  }
+};
 
   return (
     <div className="space-y-4 sm:space-y-6 p-4">
@@ -209,7 +219,7 @@ const MyQuotations = () => {
         {/* Status Filter Tabs */}
         <div className="p-4 border-b">
           <div className="flex flex-wrap gap-2">
-            {['all', 'pending', 'approved', 'rejected'].map((status) => (
+            {['all', 'Draft', 'Pending', 'Approved', 'Rejected', 'Expired'].map((status) => (
               <button
                 key={status}
                 onClick={() => {
@@ -301,18 +311,18 @@ const MyQuotations = () => {
 
       {rejectionTooltip.visible && (
         <div
-          className="fixed z-[100000] pointer-events-none"
+          className="fixed z-100000 pointer-events-none"
           style={{
             left: `clamp(180px, ${rejectionTooltip.x}px, calc(100vw - 180px))`,
             top: `${rejectionTooltip.y}px`,
             transform: rejectionTooltip.placeBelow ? 'translate(-50%, 0)' : 'translate(-50%, -100%)',
           }}
         >
-          <div className="bg-white text-gray-800 text-sm rounded-xl p-4 shadow-2xl ring-1 ring-black/5 min-w-[220px] max-w-[360px]">
+          <div className="bg-white text-gray-800 text-sm rounded-xl p-4 shadow-2xl ring-1 ring-black/5 min-w-55 max-w-90">
             <p className="font-bold border-b border-gray-100 pb-2 mb-2 text-red-500 text-xs uppercase tracking-wider">
               Rejection Reason
             </p>
-            <p className="leading-relaxed text-gray-700 font-serif whitespace-normal break-words">
+            <p className="leading-relaxed text-gray-700 font-serif whitespace-normal wrap-break-word">
               "{rejectionTooltip.text}"
             </p>
 

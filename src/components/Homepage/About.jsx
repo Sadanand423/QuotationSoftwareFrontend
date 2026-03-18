@@ -4,7 +4,7 @@ const About = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Hero Section */}
-      <section className="pt-20 pb-16">
+      <section className="pt-20 pb-0">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           <div className="text-center mb-16">
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-6">
@@ -18,7 +18,7 @@ const About = () => {
       </section>
 
       {/* Company Overview */}
-      <section className="py-16">
+      <section className="py-0">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>

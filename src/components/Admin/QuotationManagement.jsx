@@ -18,7 +18,7 @@ const QuotationManagement = () => {
     placeBelow: false
   });
 
-  const statusFilters = ["All", "Draft", "Pending", "Approved", "Rejected"];
+  const statusFilters = ["All", "Draft", "Pending", "Approved", "Rejected", "Expired"];
 
   const fetchQuotations = async () => {
     setIsLoading(true); // 2. Start loading before fetch
@@ -207,6 +207,7 @@ const handleDelete = async (quoteId) => {
       case "Pending": return "bg-yellow-100 text-yellow-800";
       case "Draft": return "bg-gray-100 text-gray-800";
       case "Rejected": return "bg-red-100 text-red-800";
+      case "Expired": return "bg-gray-100 text-gray-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
@@ -217,6 +218,7 @@ const handleDelete = async (quoteId) => {
       case "Pending": return "bg-yellow-500";
       case "Draft": return "bg-gray-500";
       case "Rejected": return "bg-red-500";
+      case "Expired": return "bg-gray-500";
       default: return "bg-gray-500";
     }
   };
@@ -224,7 +226,7 @@ const handleDelete = async (quoteId) => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+        <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
           Quotation Management
         </h2>
         <div className="flex flex-col sm:flex-row gap-3">
@@ -353,18 +355,18 @@ const handleDelete = async (quoteId) => {
 
       {rejectionTooltip.visible && (
         <div
-          className="fixed z-[100000] pointer-events-none"
+          className="fixed z-100000 pointer-events-none"
           style={{
             left: `clamp(180px, ${rejectionTooltip.x}px, calc(100vw - 180px))`,
             top: `${rejectionTooltip.y}px`,
             transform: rejectionTooltip.placeBelow ? 'translate(-50%, 0)' : 'translate(-50%, -100%)'
           }}
         >
-          <div className="bg-white text-gray-800 text-sm rounded-xl p-4 shadow-2xl ring-1 ring-black/5 min-w-[220px] max-w-[360px]">
+          <div className="bg-white text-gray-800 text-sm rounded-xl p-4 shadow-2xl ring-1 ring-black/5 min-w-55 max-w-90">
             <p className="font-bold border-b border-gray-100 pb-2 mb-2 text-red-500 text-xs uppercase tracking-wider">
               Rejection Reason
             </p>
-            <p className="leading-relaxed text-gray-700 font-serif whitespace-normal break-words">
+            <p className="leading-relaxed text-gray-700 font-serif whitespace-normal wrap-break-word">
               "{rejectionTooltip.text}"
             </p>
 
