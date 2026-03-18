@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import mainlogo from '../../assets/mainlogo.webp';
 import { FaTwitter, FaLinkedinIn, FaFacebookF, FaInstagram } from "react-icons/fa";
 
@@ -97,10 +98,10 @@ const Footer = () => {
           <div className="text-center sm:text-left">
             <h3 className="text-cyan-400 font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-cyan-400">Home</a></li>
+              <li><Link to="/" className="hover:text-cyan-400">Home</Link></li>
               <li><a href="#" className="hover:text-cyan-400">About</a></li>
               <li><a href="#" className="hover:text-cyan-400">Features</a></li>
-              <li><a href="#" className="hover:text-cyan-400">Contact Us</a></li>
+              <li><Link to="/contact" className="hover:text-cyan-400">Contact Us</Link></li>
               {/* <li><a href="#" className="hover:text-cyan-400">Career</a></li>
               <li><a href="#" className="hover:text-cyan-400">Contact</a></li> */}
             </ul>
@@ -150,9 +151,9 @@ const Footer = () => {
         <div className="border-t border-gray-700 mt-8 pt-6 flex flex-col md:flex-row justify-between items-center text-sm">
           <p>© 2024 QuotationSoftware Digital Services Pvt. Ltd. All rights reserved.</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
-            <a href="#" className="hover:text-cyan-400">Privacy Policy</a>
-            <a href="#" className="hover:text-cyan-400">Terms of Service</a>
-            <a href="#" className="hover:text-cyan-400">Cookie Policy</a>
+            <Link to="/privacy-policy" className="hover:text-cyan-400">Privacy Policy</Link>
+            <Link to="/terms-of-service" className="hover:text-cyan-400">Terms of Service</Link>
+            <Link to="/cookie-policy" className="hover:text-cyan-400">Cookie Policy</Link>
           </div>
         </div>
       </div>
