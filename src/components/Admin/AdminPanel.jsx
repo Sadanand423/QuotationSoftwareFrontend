@@ -30,10 +30,11 @@
 useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const empId = localStorage.getItem("empId") || "ADMIN";
+        // FORCE "ADMIN" here so the backend knows to fetch ALL quotations
+        const triggerId = "ADMIN"; 
 
-        // 1. Trigger backend to process reminders/expirations
-        await fetch(`http://localhost:8080/api/quotations/trigger-reminders/${empId}`);
+        // 1. Trigger backend for ALL reminders
+        await fetch(`http://localhost:8080/api/quotations/trigger-reminders/${triggerId}`);
 
         // 2. Fetch notifications for Admin
         const res = await fetch(`http://localhost:8080/api/notifications/admin`);
