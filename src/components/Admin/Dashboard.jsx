@@ -27,6 +27,59 @@ const Dashboard = () => {
   });
   const [recentQuotations, setRecentQuotations] = useState([]);
 
+  const parseObjectIdTime = (id) => {
+    if (typeof id !== 'string' || !/^[a-f\d]{24}$/i.test(id)) {
+      return NaN;
+    }
+
+    return parseInt(id.slice(0, 8), 16) * 1000;
+  };
+
+  const parseDateValue = (dateValue) => {
+    if (!dateValue || typeof dateValue !== 'string') {
+      return NaN;
+    }
+
+    const normalized = dateValue.trim();
+    const direct = new Date(normalized).getTime();
+    if (!Number.isNaN(direct)) {
+      return direct;
+    }
+
+    const parts = normalized.split(/[/-]/);
+    if (parts.length === 3) {
+      const [dayPart, monthPart, yearPart] = parts;
+      const day = Number(dayPart);
+      const month = Number(monthPart);
+      const year = Number(yearPart);
+      if (!Number.isNaN(day) && !Number.isNaN(month) && !Number.isNaN(year)) {
+        return new Date(year, month - 1, day).getTime();
+      }
+    }
+
+    return NaN;
+  };
+
+  const parseQuotationTimestamp = (quote) => {
+    const objectIdTime = parseObjectIdTime(quote.id);
+    if (!Number.isNaN(objectIdTime)) {
+      return objectIdTime;
+    }
+
+    const rawDate = quote.createdAt || quote.updatedAt || quote.date;
+    const parsedDate = parseDateValue(rawDate);
+    if (!Number.isNaN(parsedDate)) {
+      return parsedDate;
+    }
+
+    const quotationNumberValue = Number((quote.quotationNumber || '').replace(/\D/g, ''));
+    if (!Number.isNaN(quotationNumberValue)) {
+      return quotationNumberValue;
+    }
+
+    return 0;
+  };
+
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
@@ -40,7 +93,9 @@ const Dashboard = () => {
         }
         const totalClients = clients.length;
 
-        const latestThree = [...quotations].reverse().slice(0, 3);
+        const latestThree = [...quotations]
+          .sort((a, b) => parseQuotationTimestamp(b) - parseQuotationTimestamp(a))
+          .slice(0, 3);
         setRecentQuotations(latestThree);
 
         const approvedQuotations = quotations.filter(q => q.status === "Approved").length;
@@ -80,7 +135,7 @@ const Dashboard = () => {
     <div className="space-y-6 sm:space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
             Dashboard Overview
           </h2>
           <p className="text-gray-500 mt-2 text-sm sm:text-base">Welcome back! Here's what's happening with your business today.</p>
@@ -99,11 +154,11 @@ const Dashboard = () => {
               link.click();
               document.body.removeChild(link);
             }}
-            className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all duration-300 font-medium text-sm"
+            className="bg-linear-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all duration-300 font-medium text-sm"
           >
             Export Data
           </button>
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
+          <div className="bg-linear-to-r from-blue-500 to-purple-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
             <span className="font-semibold text-sm sm:text-base">📅 {new Date().toLocaleDateString()}</span>
           </div>
         </div>
@@ -115,11 +170,11 @@ const Dashboard = () => {
     const IconComponent = stat.icon;
     return (
       <div key={index} className="group relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-white to-gray-50 rounded-xl sm:rounded-2xl shadow-lg group-hover:shadow-2xl transition-all duration-300 transform group-hover:scale-105"></div>
+        <div className="absolute inset-0 bg-linear-to-r from-white to-gray-50 rounded-xl sm:rounded-2xl shadow-lg group-hover:shadow-2xl transition-all duration-300 transform group-hover:scale-105"></div>
         <div className="relative bg-white p-3 sm:p-4 lg:p-6 rounded-xl sm:rounded-2xl border border-gray-100 flex flex-col h-full justify-between">
           
           <div className="flex items-center justify-between mb-3">
-            <div className={`shrink-0 w-8 h-8 sm:w-10 sm:h-10 lg:w-14 lg:h-14 bg-gradient-to-r ${stat.color} rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg text-white`}>
+            <div className={`shrink-0 w-8 h-8 sm:w-10 sm:h-10 lg:w-14 lg:h-14 bg-linear-to-r ${stat.color} rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg text-white`}>
               <IconComponent size={24} strokeWidth={2.5} />
             </div>
             <div className="text-right">
@@ -158,7 +213,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
         {/* Pie Chart */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-4 sm:p-6">
+          <div className="bg-linear-to-r from-purple-500 to-pink-500 p-4 sm:p-6">
             <h3 className="text-base sm:text-lg lg:text-xl font-bold text-white flex items-center">
               <PieChart className="mr-2" size={20} />
               Quotation Status
@@ -207,7 +262,7 @@ const Dashboard = () => {
 
         {/* Line Chart */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-4 sm:p-6">
+          <div className="bg-linear-to-r from-blue-500 to-cyan-500 p-4 sm:p-6">
             <h3 className="text-base sm:text-lg lg:text-xl font-bold text-white flex items-center">
               <TrendingUp className="mr-2" size={20} />
               Revenue Trend
@@ -246,7 +301,7 @@ const Dashboard = () => {
 
         {/* Recent Quotations */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden lg:col-span-2 xl:col-span-1">
-          <div className="bg-gradient-to-r from-green-500 to-teal-500 p-4 sm:p-6">
+          <div className="bg-linear-to-r from-green-500 to-teal-500 p-4 sm:p-6">
             <h3 className="text-base sm:text-lg lg:text-xl font-bold text-white flex items-center">
               <History className="mr-2" size={20} />
               Recent Quotations

@@ -10,6 +10,13 @@ const MyQuotations = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [rejectionTooltip, setRejectionTooltip] = useState({
+    visible: false,
+    text: '',
+    x: 0,
+    y: 0,
+    placeBelow: false,
+  });
 
   const currentEmpId = localStorage.getItem("empId") || "EMP-001"; 
 
@@ -32,8 +39,132 @@ const MyQuotations = () => {
     fetchMyQuotations();
   }, [currentEmpId]);
 
+  const parseObjectIdTime = (id) => {
+    if (typeof id !== 'string' || !/^[a-f\d]{24}$/i.test(id)) {
+      return NaN;
+    }
+
+    return parseInt(id.slice(0, 8), 16) * 1000;
+  };
+
+  const parseDateValue = (dateValue) => {
+    if (!dateValue || typeof dateValue !== 'string') {
+      return NaN;
+    }
+
+    const normalized = dateValue.trim();
+    const direct = new Date(normalized).getTime();
+    if (!Number.isNaN(direct)) {
+      return direct;
+    }
+
+    const parts = normalized.split(/[/-]/);
+    if (parts.length === 3) {
+      const [dayPart, monthPart, yearPart] = parts;
+      const day = Number(dayPart);
+      const month = Number(monthPart);
+      const year = Number(yearPart);
+      if (!Number.isNaN(day) && !Number.isNaN(month) && !Number.isNaN(year)) {
+        return new Date(year, month - 1, day).getTime();
+      }
+    }
+
+    return NaN;
+  };
+
+  const parseQuotationTimestamp = (quote) => {
+    const objectIdTime = parseObjectIdTime(quote.id);
+    if (!Number.isNaN(objectIdTime)) {
+      return objectIdTime;
+    }
+
+    const rawDate = quote.createdAt || quote.updatedAt || quote.date;
+    const parsedDate = parseDateValue(rawDate);
+    if (!Number.isNaN(parsedDate)) {
+      return parsedDate;
+    }
+
+    const quotationNumberValue = Number((quote.quotationNumber || '').replace(/\D/g, ''));
+    if (!Number.isNaN(quotationNumberValue)) {
+      return quotationNumberValue;
+    }
+
+    return 0;
+  };
+
+  const sortedQuotations = [...quotations].sort(
+    (a, b) => parseQuotationTimestamp(b) - parseQuotationTimestamp(a)
+  );
+
+  const getStatusBadgeClass = (status) => {
+    switch ((status || '').toLowerCase()) {
+      case 'approved':
+        return 'bg-green-100 text-green-700';
+      case 'rejected':
+        return 'bg-red-100 text-red-700';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const isRejectedStatus = (status) => (status || '').toLowerCase() === 'rejected';
+
+  const showRejectionTooltip = (event, text) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const placeBelow = rect.top < 170;
+
+    setRejectionTooltip({
+      visible: true,
+      text,
+      x: rect.left + rect.width / 2,
+      y: placeBelow ? rect.bottom + 8 : rect.top - 8,
+      placeBelow,
+    });
+  };
+
+  const hideRejectionTooltip = () => {
+    setRejectionTooltip((prev) => ({ ...prev, visible: false }));
+  };
+
+  const handleRejectedHover = async (event, quote) => {
+    if (!isRejectedStatus(quote.status)) {
+      return;
+    }
+
+    if (quote.rejectionReason) {
+      showRejectionTooltip(event, quote.rejectionReason);
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/quotations/${quote.id}`);
+      if (!response.ok) {
+        return;
+      }
+
+      const fullQuote = await response.json();
+      if (!fullQuote?.rejectionReason) {
+        return;
+      }
+
+      setQuotations((prev) =>
+        prev.map((item) =>
+          item.id === quote.id
+            ? { ...item, rejectionReason: fullQuote.rejectionReason }
+            : item
+        )
+      );
+
+      showRejectionTooltip(event, fullQuote.rejectionReason);
+    } catch (error) {
+      console.error('Failed to load rejection reason:', error);
+    }
+  };
+
   const search = searchTerm.toLowerCase();
-  const filteredQuotations = quotations.filter(quote => {
+  const filteredQuotations = sortedQuotations.filter(quote => {
     const matchesFilter = filter === 'all' || (quote.status && quote.status.toLowerCase() === filter.toLowerCase());
     const matchesSearch =
       (quote.client?.toLowerCase() || '').includes(search) ||
@@ -46,6 +177,11 @@ const MyQuotations = () => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedQuotations = filteredQuotations.slice(startIndex, startIndex + itemsPerPage);
 
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
   const getStatusColor = (status) => {
   switch (status) {
     case "Approved": return "bg-green-100 text-green-800";
@@ -86,7 +222,10 @@ const MyQuotations = () => {
             {['all', 'Draft', 'Pending', 'Approved', 'Rejected', 'Expired'].map((status) => (
               <button
                 key={status}
-                onClick={() => setFilter(status)}
+                onClick={() => {
+                  setFilter(status);
+                  setCurrentPage(1);
+                }}
                 className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-medium capitalize transition-all ${
                   filter === status ? 'bg-green-100 text-green-600' : 'text-gray-600 hover:bg-gray-100'
                 }`}
@@ -125,11 +264,17 @@ const MyQuotations = () => {
                       {quote.currency} {(quote.finalAmount || quote.totalCost + (quote.gstAmount || 0))?.toLocaleString('en-IN')}
                     </td>
                     <td className="px-6 py-4">
-  {/* Call getStatusColor(quote.status) here */}
-  <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(quote.status)}`}>
-    {quote.status || 'Pending'}
-  </span>
-</td>
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full font-medium ${isRejectedStatus(quote.status) ? 'cursor-help ' : ''}${getStatusBadgeClass(quote.status)}`}
+                        onMouseEnter={(event) => {
+                          handleRejectedHover(event, quote);
+                        }}
+                        onMouseLeave={hideRejectionTooltip}
+                        title={isRejectedStatus(quote.status) ? (quote.rejectionReason || 'Rejected quotation') : undefined}
+                      >
+                        {quote.status || 'Pending'}
+                      </span>
+                    </td>
                     {/* ✅ Added Date Column */}
                     <td className="px-6 py-4 text-sm text-gray-600 hidden sm:table-cell">
                       {quote.date || 'N/A'}
@@ -163,6 +308,32 @@ const MyQuotations = () => {
           </div>
         )}
       </div>
+
+      {rejectionTooltip.visible && (
+        <div
+          className="fixed z-100000 pointer-events-none"
+          style={{
+            left: `clamp(180px, ${rejectionTooltip.x}px, calc(100vw - 180px))`,
+            top: `${rejectionTooltip.y}px`,
+            transform: rejectionTooltip.placeBelow ? 'translate(-50%, 0)' : 'translate(-50%, -100%)',
+          }}
+        >
+          <div className="bg-white text-gray-800 text-sm rounded-xl p-4 shadow-2xl ring-1 ring-black/5 min-w-55 max-w-90">
+            <p className="font-bold border-b border-gray-100 pb-2 mb-2 text-red-500 text-xs uppercase tracking-wider">
+              Rejection Reason
+            </p>
+            <p className="leading-relaxed text-gray-700 font-serif whitespace-normal wrap-break-word">
+              "{rejectionTooltip.text}"
+            </p>
+
+            {rejectionTooltip.placeBelow ? (
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-8 border-transparent border-b-white drop-shadow-sm"></div>
+            ) : (
+              <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-white drop-shadow-sm"></div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* --- VIEW QUOTATION MODAL --- */}
       {selectedQuote && (
