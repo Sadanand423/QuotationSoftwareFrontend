@@ -189,14 +189,15 @@ const Dashboard = () => {
               {stat.title}
             </h3>
             
-            {/* ✅ AUTO-SCALING TEXT: No wrap, scales font-size based on container width */}
+            {/* ✅ AUTO-SCALING TEXT: Aggressive scaling for Total Revenue to fit any amount */}
             <p 
-              className="font-bold text-gray-800 whitespace-nowrap"
+              className={`font-bold text-gray-800 ${stat.title === 'Total Revenue' ? 'break-words' : 'whitespace-nowrap'}`}
               style={{
-                // clamp(min, preferred, max)
-                // This reduces the font size automatically as the container gets smaller
-                fontSize: 'clamp(0.875rem, 1.5vw + 0.5rem, 1.875rem)', 
-                lineHeight: '1.2'
+                fontSize: stat.title === 'Total Revenue' 
+                  ? 'clamp(0.65rem, 3vw, 1.25rem)'  // More aggressive scaling for revenue
+                  : 'clamp(0.875rem, 1.5vw + 0.5rem, 1.875rem)',
+                lineHeight: '1.1',
+                wordBreak: stat.title === 'Total Revenue' ? 'break-word' : 'normal'
               }}
               title={stat.value}
             >
