@@ -65,8 +65,7 @@ useEffect(() => {
   console.log("Invoices Data:", invoices);
 }, [invoices]);
 
-  // ✅ MEMOIZED STATS: This only runs when 'quotations' changes.
-  // This prevents the "NaN" or "0" flicker and improves speed.
+    // ✅ STATS.
   const stats = useMemo(() => {
     const parseAmount = (val) => {
       if (typeof val === 'number') return val;
@@ -111,53 +110,89 @@ useEffect(() => {
 const getCombinedCSVData = () => {
   return quotations.map((q) => {
 
-    // Match invoice
-    let relatedInvoice = invoices.find(
-      (inv) => inv.quotationId === q.id
+    // ✅ GET ALL INVOICES (instead of find)
+    const relatedInvoices = invoices.filter(
+      (inv) =>
+        inv.quotationId === q.quotationNumber ||
+        inv.quotationId === q.quotationId ||
+        inv.quotationId === q.id
     );
 
-    if (!relatedInvoice) {
-      relatedInvoice = invoices.find(
-        (inv) =>
-          inv.clientName?.toLowerCase() === q.clientName?.toLowerCase()
-      );
-    }
+    // ✅ SORT BY DATE (important for order)
+    const sortedInvoices = relatedInvoices.sort(
+      (a, b) => new Date(a.invoiceDate) - new Date(b.invoiceDate)
+    );
+
+    // ✅ EXTRACT PAYMENTS
+    const payments = sortedInvoices
+      .filter(inv => inv.totalPaidAmount > 0)
+      .map(inv => inv.totalPaidAmount);
+
+    // ✅ GET LAST INVOICE (latest)
+    const latestInvoice =
+      sortedInvoices.length > 0
+        ? sortedInvoices[sortedInvoices.length - 1]
+        : {};
 
     return {
-      // ✅ KEEP ALL QUOTATION DATA
+      // ✅ KEEP QUOTATION DATA
       ...q,
 
-      // 🟢 ADD INVOICE DATA (RIGHT SIDE)
-      InvoiceNumber: relatedInvoice?.invoiceNumber || "",
-      InvoiceDate: relatedInvoice?.invoiceDate || "",
-      InvoiceAmount: relatedInvoice?.finalAmount || "",
-      PaidAmount: relatedInvoice?.totalPaidAmount || "",
-      Balance: relatedInvoice?.balanceAmount || "",
-      InvoiceStatus: relatedInvoice?.status || ""
+      // 🟢 BASIC INVOICE INFO (latest)
+      InvoiceNumber: latestInvoice.invoiceNumber || "",
+      InvoiceDate: latestInvoice.invoiceDate || "",
+      DueDate: latestInvoice.dueDate || "",
+
+      TotalAmount: latestInvoice.totalAmount || "",
+      TaxRate: latestInvoice.taxRate || "",
+      TaxAmount: latestInvoice.taxAmount || "",
+      FinalAmount: latestInvoice.finalAmount || "",
+
+      // 🟢 INSTALLMENT PAYMENTS
+      Payment1: payments[0] || 0,
+      Payment2: payments[1] || 0,
+      Payment3: payments[2] || 0,
+      FinalPayment: payments[3] || 0,
+
+      // 🟢 EXTRA FIELDS (YOU WANTED THIS 👇)
+      TotalPaidAmount: payments.reduce((sum, val) => sum + val, 0),
+      BalanceAmount: latestInvoice.balanceAmount || 0,
+      PaymentMethod: latestInvoice.paymentMethod || "",
+      PaymentStatus: Number(latestInvoice.balanceAmount) === 0 ? "Paid" : (latestInvoice.paymentStatus || "") 
     };
   });
 };
 
   // ✅ IMPROVED CSV EXPORT: Handles commas and quotes in data
   const exportToCSV = (data, filename) => {
-    if (!data.length) return;
-    const headers = Object.keys(data[0]).join(",");
-    const csvRows = data.map(row => 
-      Object.values(row).map(value => {
-        const escaped = ('' + value).replace(/"/g, '""');
-        return `"${escaped}"`;
-      }).join(",")
-    );
-    
-    const csvContent = "data:text/csv;charset=utf-8," + [headers, ...csvRows].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  if (!data.length) {
+    alert("No data available to export");
+    return;
+  }
+
+  const headers = Object.keys(data[0]).join(",");
+
+  const csvRows = data.map(row =>
+    Object.values(row).map(value => {
+      const escaped = ('' + value).replace(/"/g, '""');
+      return `"${escaped}"`;
+    }).join(",")
+  );
+
+  const csvContent =
+    "data:text/csv;charset=utf-8," +
+    [headers, ...csvRows].join("\n");
+
+  const encodedUri = encodeURI(csvContent);
+
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", filename);
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
 
   const reportTabs = [
     { id: 'overview', label: 'Overview', icon: '📊' }
@@ -189,6 +224,16 @@ const getCombinedCSVData = () => {
       </div>
     );
   }
+
+    // ✅ PIE CHART CALCULATION (ADD HERE)
+      const total = stats.total || 1;
+
+      const approvedPercent = stats.approved / total;
+      const pendingPercent = stats.pending / total;
+      const draftPercent = stats.draft / total;
+      const rejectedPercent = 1 - (approvedPercent + pendingPercent + draftPercent);
+
+      const CIRCUMFERENCE = 251.2;
 
 
   return (
@@ -270,47 +315,66 @@ const getCombinedCSVData = () => {
 
               </div>
             </div>
+
+            
             
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
               {/* Status Distribution Card */}
               <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
                 <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 sm:p-6">
                   <h3 className="text-lg sm:text-xl font-bold text-white flex items-center">
-                    <span className="mr-2">📊</span> Status Distribution
+                  Status Distribution
                   </h3>
-                  <p className="text-indigo-100 text-xs sm:text-sm mt-1">Quotation breakdown</p>
+                  <p className="text-indigo-100 text-xs sm:text-sm mt-1">  Quotation breakdown</p>
                 </div>
                 <div className="p-6 flex flex-col items-center">
                   <div className="relative w-40 h-40 mb-6">
+                    
                     <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                       <circle cx="50" cy="50" r="40" fill="none" stroke="#e5e7eb" strokeWidth="8"/>
-                      <circle 
-                        cx="50" cy="50" r="40" fill="none" stroke="#10b981" strokeWidth="8" 
-                        strokeDasharray={`${(stats.approved / (stats.total || 1)) * 251.2} 251.2`} 
-                        strokeLinecap="round" 
-                        className="transition-all duration-1000 ease-out"
-                      />
-                      <circle 
-                        cx="50" cy="50" r="40" fill="none" stroke="#f59e0b" strokeWidth="8" 
-                        strokeDasharray={`${(stats.pending / (stats.total || 1)) * 251.2} 251.2`} 
-                        strokeDashoffset={`-${(stats.approved / (stats.total || 1)) * 251.2}`}
-                        strokeLinecap="round" 
-                        className="transition-all duration-1000 ease-out"
-                      />
-                      <circle 
-                        cx="50" cy="50" r="40" fill="none" stroke="#6b7280" strokeWidth="8" 
-                        strokeDasharray={`${(stats.draft / (stats.total || 1)) * 251.2} 251.2`} 
-                        strokeDashoffset={`-${((stats.approved + stats.pending) / (stats.total || 1)) * 251.2}`}
-                        strokeLinecap="round" 
-                        className="transition-all duration-1000 ease-out"
-                      />
-                      <circle 
-                        cx="50" cy="50" r="40" fill="none" stroke="#ef4444" strokeWidth="8" 
-                        strokeDasharray={`${(stats.rejected / (stats.total || 1)) * 251.2} 251.2`} 
-                        strokeDashoffset={`-${((stats.approved + stats.pending + stats.draft) / (stats.total || 1)) * 251.2}`}
-                        strokeLinecap="round" 
-                        className="transition-all duration-1000 ease-out"
-                      />
+
+                    {/* Approved */}
+                    <circle
+                      cx="50" cy="50" r="40"
+                      fill="none"
+                      stroke="#10b981"
+                      strokeWidth="8"
+                      strokeDasharray={`${approvedPercent * CIRCUMFERENCE} ${CIRCUMFERENCE}`}
+                      strokeLinecap="round"
+                    />
+
+                    {/* Pending */}
+                    <circle
+                      cx="50" cy="50" r="40"
+                      fill="none"
+                      stroke="#f59e0b"
+                      strokeWidth="8"
+                      strokeDasharray={`${pendingPercent * CIRCUMFERENCE} ${CIRCUMFERENCE}`}
+                      strokeDashoffset={`-${approvedPercent * CIRCUMFERENCE}`}
+                      strokeLinecap="round"
+                    />
+
+                    {/* Draft */}
+                    <circle
+                      cx="50" cy="50" r="40"
+                      fill="none"
+                      stroke="#6b7280"
+                      strokeWidth="8"
+                      strokeDasharray={`${draftPercent * CIRCUMFERENCE} ${CIRCUMFERENCE}`}
+                      strokeDashoffset={`-${(approvedPercent + pendingPercent) * CIRCUMFERENCE}`}
+                      strokeLinecap="round"
+                    />
+
+                    {/* Rejected (fills remaining perfectly) */}
+                    <circle
+                      cx="50" cy="50" r="40"
+                      fill="none"
+                      stroke="#ef4444"
+                      strokeWidth="8"
+                      strokeDasharray={`${rejectedPercent * CIRCUMFERENCE} ${CIRCUMFERENCE}`}
+                      strokeDashoffset={`-${(approvedPercent + pendingPercent + draftPercent) * CIRCUMFERENCE}`}
+                      strokeLinecap="round"
+                    />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="text-center">
@@ -349,7 +413,7 @@ const getCombinedCSVData = () => {
               <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
                 <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-4 sm:p-6">
                   <h3 className="text-lg sm:text-xl font-bold text-white flex items-center">
-                    <span className="mr-2">📈</span> Revenue Analytics
+                  Revenue Analytics
                   </h3>
                   <p className="text-blue-100 text-xs sm:text-sm mt-1">6-month trend</p>
                 </div>
@@ -392,7 +456,7 @@ const getCombinedCSVData = () => {
               <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
                 <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-4 sm:p-6">
                   <h3 className="text-lg sm:text-xl font-bold text-white flex items-center">
-                    <span className="mr-2">📋</span> System Summary
+                  System Summary
                   </h3>
                   <p className="text-blue-100 text-xs sm:text-sm mt-1">System overview</p>
                 </div>

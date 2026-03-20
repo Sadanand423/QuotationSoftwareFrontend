@@ -127,7 +127,7 @@ const EmployeeDashboard = ({ onCreateQuotation }) => {
           <p className="text-gray-500 mt-2 text-sm sm:text-base">Welcome back! Here's what's happening with your work today.</p>
         </div>
         <div className="bg-linear-to-r from-blue-500 to-purple-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105 self-start sm:self-auto">
-          <span className="font-semibold text-sm sm:text-base">📅 {new Date().toLocaleDateString()}</span>
+          <span className="font-semibold text-sm sm:text-base">{new Date().toLocaleDateString()}</span>
         </div>
       </div>
       

@@ -246,16 +246,16 @@ const markAllAsRead = () => {
                           </div>
 
                           {/* VIEW ALL */}
-<div
-  onClick={() => {
-    markAllAsRead(); // 👈 Add this call here
-    setActiveModule("allNotifications");
-    setShowNotifications(false);
-  }}
-  className="px-4 py-3 text-center text-sm font-semibold text-indigo-600 hover:bg-indigo-50 cursor-pointer"
->
-  View All Notifications →
-</div>
+                          <div
+                            onClick={() => {
+                              markAllAsRead(); // 👈 Add this call here
+                              setActiveModule("allNotifications");
+                              setShowNotifications(false);
+                            }}
+                            className="px-4 py-3 text-center text-sm font-semibold text-indigo-600 hover:bg-indigo-50 cursor-pointer"
+                          >
+                            View All Notifications →
+                          </div>
                         </div>
                       </div>
                     )}
@@ -307,11 +307,18 @@ const markAllAsRead = () => {
 
                   {/* 👤 ADMIN */}
                   <div className="relative" ref={dropdownRef}>
-                    <div
-                      onClick={() => setShowDropdown(!showDropdown)}
-                      className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium cursor-pointer"
-                    >
-                      👤 Admin Panel
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowDropdown(!showDropdown)}
+                        className="w-10 h-10 flex items-center justify-center rounded-full 
+                                  bg-gradient-to-r from-blue-500 to-purple-600
+                                  text-white shadow-lg hover:scale-105 transition-transform"
+                      >
+                        {/* User Icon */}
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5z"/>
+                        </svg>
+                      </button>
                     </div>
 
                     {showDropdown && (

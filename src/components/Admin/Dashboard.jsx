@@ -159,7 +159,7 @@ const Dashboard = () => {
             Export Data
           </button>
           <div className="bg-linear-to-r from-blue-500 to-purple-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
-            <span className="font-semibold text-sm sm:text-base">📅 {new Date().toLocaleDateString()}</span>
+            <span className="font-semibold text-sm sm:text-base">{new Date().toLocaleDateString()}</span>
           </div>
         </div>
       </div>
