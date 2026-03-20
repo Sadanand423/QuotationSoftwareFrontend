@@ -243,16 +243,21 @@ const EmployeePanel = () => {
 
               {/* 👤 EMPLOYEE PANEL DROPDOWN */}
               <div className="relative" ref={dropdownRef}>
-                <div
+                <button
                   onClick={() => setShowDropdown(!showDropdown)}
-                  className="bg-gradient-to-r from-green-400 to-blue-500 text-white px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium shadow-lg cursor-pointer"
-                >
-                  👤 Employee Panel
-                </div>
+                  className="w-10 h-10 flex items-center justify-center rounded-full 
+                             bg-gradient-to-r from-blue-500 to-purple-600
+                            text-white shadow-lg hover:scale-105 transition-transform"
+                            >
+                  {/* User Icon */}
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                   <path d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5z"/>
+                  </svg>
+                </button>
                 {showDropdown && (
                   <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-xl border z-50">
-                    <button onClick={handleProfile} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">👤 Profile</button>
-                    <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">🚪 Logout</button>
+                    <button onClick={handleProfile} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"> Profile</button>
+                    <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"> Logout</button>
                   </div>
                 )}
               </div>

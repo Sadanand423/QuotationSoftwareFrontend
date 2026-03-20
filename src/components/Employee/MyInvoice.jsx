@@ -449,25 +449,25 @@ const MyInvoice = () => {
               </div>
               <div className="col-span-2 border-t pt-2 mt-2">
                 <div className="flex justify-between text-lg font-bold">
-                  <span className="text-gray-800">Total Payable</span>
-                  <span className="text-teal-600">₹{Number(selectedInvoice.finalAmount).toLocaleString('en-IN')}</span>
+                  <span className="text-gray-800">Total Amount</span>
+                  <span className="text-black-900">₹{Number(selectedInvoice.finalAmount).toLocaleString('en-IN')}</span>
+                </div>
+                {/* Paid */}
+                <div className="flex justify-between text-base font-semibold">
+                  <span className="text-green-700">Paid Amount</span>
+                  <span className="text-green-600">
+                    ₹{Number(selectedInvoice.totalPaidAmount || 0).toLocaleString('en-IN')}
+                  </span>
+                </div>
+
+                {/* Balance */}
+                <div className="flex justify-between text-base font-semibold">
+                  <span className="text-red-700">Balance Amount</span>
+                  <span className="text-red-600">
+                    ₹{Number(selectedInvoice.balanceAmount || 0).toLocaleString('en-IN')}
+                  </span>
                 </div>
               </div>
-            </div>
-
-            <div className="mt-8 flex gap-3">
-              <button
-                onClick={() => setSelectedInvoice(null)}
-                className="flex-1 bg-gray-100 text-gray-800 py-2 rounded-lg font-semibold hover:bg-gray-200"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => handlePrint(selectedInvoice)}
-                className="flex-1 bg-teal-600 text-white py-2 rounded-lg font-semibold hover:bg-teal-700"
-              >
-                Print PDF
-              </button>
             </div>
           </div>
         </div>
