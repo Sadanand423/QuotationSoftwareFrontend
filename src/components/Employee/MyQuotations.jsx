@@ -19,6 +19,7 @@ const MyQuotations = () => {
   });
 
   const currentEmpId = localStorage.getItem("empId") || "EMP-001"; 
+  
 
   const fetchMyQuotations = async () => {
     setIsLoading(true);
@@ -247,6 +248,7 @@ const MyQuotations = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                 {/* ✅ Added Date Header */}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Action Date</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
@@ -279,6 +281,10 @@ const MyQuotations = () => {
                     <td className="px-6 py-4 text-sm text-gray-600 hidden sm:table-cell">
                       {quote.date || 'N/A'}
                     </td>
+                   {/* 2. Added Action Date Data Cell */}
+                    <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-600">
+    {quote.actionDate || "--"} 
+</td>
                     <td className="px-6 py-4 text-sm space-x-3">
                       <button 
                         onClick={() => setSelectedQuote(quote)} 
@@ -287,6 +293,15 @@ const MyQuotations = () => {
                         View
                       </button>
                     
+                    {/* ✅ Added Edit Button */}
+  {(quote.status === "Draft" || quote.status === "Pending") && (
+    <button 
+      onClick={() => navigate(`/create-quotation/${quote.id}`)} 
+      className="text-blue-600 hover:text-blue-800 font-medium"
+    >
+      Edit
+    </button>
+  )}
                     </td>
                   </tr>
                 ))
@@ -366,7 +381,20 @@ const MyQuotations = () => {
                 <span className="text-gray-500">Created Date</span>
                 <span className="text-gray-900">{selectedQuote.date || 'N/A'}</span>
               </div>
+
+              {/* ✅ Added Action Date Row */}
+<div className="flex justify-between border-b border-gray-50 pb-2">
+  <span className="text-gray-500">Action Date</span>
+  <span className="text-blue-700 font-medium">{selectedQuote.actionDate || 'Not processed'}</span>
+</div>
             </div>
+
+             {selectedQuote.status === "Rejected" && selectedQuote.rejectionReason && (
+                  <div className="mt-2 p-3 bg-red-50 border border-red-100 rounded-lg">
+                    <p className="text-xs font-bold text-red-700 uppercase mb-1">Client Feedback</p>
+                    <p className="text-sm text-gray-700 italic">"{selectedQuote.rejectionReason}"</p>
+                  </div>
+                )}
 
             <button 
               onClick={() => setSelectedQuote(null)}
