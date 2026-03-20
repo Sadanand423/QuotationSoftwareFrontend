@@ -2,14 +2,14 @@ import React, { useState, useEffect } from "react";
 
 const QuotationManagement = () => {
   const [quotations, setQuotations] = useState([]);
-  const [isLoading, setIsLoading] = useState(true); // 1. Added Loading State
+  const [isLoading, setIsLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [showModal, setShowModal] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState(null);
-  const [modalType, setModalType] = useState(""); 
+  const [modalType, setModalType] = useState("");
   const [rejectionTooltip, setRejectionTooltip] = useState({
     visible: false,
     text: "",
@@ -21,7 +21,7 @@ const QuotationManagement = () => {
   const statusFilters = ["All", "Draft", "Pending", "Approved", "Rejected", "Expired"];
 
   const fetchQuotations = async () => {
-    setIsLoading(true); // 2. Start loading before fetch
+    setIsLoading(true);
     try {
       const response = await fetch("http://localhost:8080/api/quotations");
       if (!response.ok) throw new Error("Failed to fetch quotations");
@@ -30,7 +30,7 @@ const QuotationManagement = () => {
     } catch (error) {
       console.error("Error fetching quotations:", error);
     } finally {
-      setIsLoading(false); // 3. Stop loading regardless of success/fail
+      setIsLoading(false);
     }
   };
 
@@ -39,24 +39,15 @@ const QuotationManagement = () => {
   }, []);
 
   const parseObjectIdTime = (id) => {
-    if (typeof id !== 'string' || !/^[a-f\d]{24}$/i.test(id)) {
-      return NaN;
-    }
-
+    if (typeof id !== 'string' || !/^[a-f\d]{24}$/i.test(id)) return NaN;
     return parseInt(id.slice(0, 8), 16) * 1000;
   };
 
   const parseDateValue = (dateValue) => {
-    if (!dateValue || typeof dateValue !== 'string') {
-      return NaN;
-    }
-
+    if (!dateValue || typeof dateValue !== 'string') return NaN;
     const normalized = dateValue.trim();
     const direct = new Date(normalized).getTime();
-    if (!Number.isNaN(direct)) {
-      return direct;
-    }
-
+    if (!Number.isNaN(direct)) return direct;
     const parts = normalized.split(/[/-]/);
     if (parts.length === 3) {
       const [dayPart, monthPart, yearPart] = parts;
@@ -67,27 +58,15 @@ const QuotationManagement = () => {
         return new Date(year, month - 1, day).getTime();
       }
     }
-
     return NaN;
   };
 
   const parseQuotationTimestamp = (quote) => {
     const objectIdTime = parseObjectIdTime(quote.id);
-    if (!Number.isNaN(objectIdTime)) {
-      return objectIdTime;
-    }
-
+    if (!Number.isNaN(objectIdTime)) return objectIdTime;
     const rawDate = quote.createdAt || quote.updatedAt || quote.date;
     const parsedDate = parseDateValue(rawDate);
-    if (!Number.isNaN(parsedDate)) {
-      return parsedDate;
-    }
-
-    const quotationNumberValue = Number((quote.quotationNumber || '').replace(/\D/g, ''));
-    if (!Number.isNaN(quotationNumberValue)) {
-      return quotationNumberValue;
-    }
-
+    if (!Number.isNaN(parsedDate)) return parsedDate;
     return 0;
   };
 
@@ -95,21 +74,16 @@ const QuotationManagement = () => {
     (a, b) => parseQuotationTimestamp(b) - parseQuotationTimestamp(a)
   );
 
-  // REPLACE your existing filteredQuotations logic with this:
-const filteredQuotations = sortedQuotations.filter((quote) => {
-  // 1. Fallback for status: if it's missing, treat as "Draft"
-  const currentStatus = quote.status || "Draft";
-  const matchesFilter = activeFilter === "All" || currentStatus === activeFilter;
-
-  // 2. Safe Search: use optional chaining and fallbacks for strings
-  const search = searchTerm.toLowerCase();
-  const matchesSearch =
-    (quote.client?.toLowerCase() || "").includes(search) ||
-    (quote.quotationNumber?.toLowerCase() || "").includes(search) ||
-    (quote.preparedBy?.toLowerCase() || "").includes(search);
-
-  return matchesFilter && matchesSearch;
-});
+  const filteredQuotations = sortedQuotations.filter((quote) => {
+    const currentStatus = quote.status || "Draft";
+    const matchesFilter = activeFilter === "All" || currentStatus === activeFilter;
+    const search = searchTerm.toLowerCase();
+    const matchesSearch =
+      (quote.client?.toLowerCase() || "").includes(search) ||
+      (quote.quotationNumber?.toLowerCase() || "").includes(search) ||
+      (quote.preparedBy?.toLowerCase() || "").includes(search);
+    return matchesFilter && matchesSearch;
+  });
 
   const totalPages = Math.ceil(filteredQuotations.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -138,56 +112,52 @@ const filteredQuotations = sortedQuotations.filter((quote) => {
   };
 
 const updateQuotationStatus = async (quotationId, newStatus) => {
+  // Matches backend format: dd/MM/yyyy HH:mm
+  const today = new Date();
+  const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()} ${String(today.getHours()).padStart(2, '0')}:${String(today.getMinutes()).padStart(2, '0')}`;
+
   try {
     const response = await fetch(`http://localhost:8080/api/quotations/${quotationId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus }) // Sending only the status field
+      body: JSON.stringify({ 
+        status: newStatus,
+        actionDate: formattedDate // Changed from statusDate to actionDate
+      })
     });
 
     if (response.ok) {
-      // DYNAMIC UPDATE: This updates the local state immediately
-      setQuotations(prev => 
-        prev.map(q => q.id === quotationId ? { ...q, status: newStatus } : q)
+      setQuotations(prev =>
+        prev.map(q => q.id === quotationId ? { ...q, status: newStatus, actionDate: formattedDate } : q)
       );
-      
-      // Update the modal view if it's open
-      setSelectedQuote(prev => ({ ...prev, status: newStatus }));
-      
-      console.log("Status synced with database!");
+      setSelectedQuote(prev => ({ ...prev, status: newStatus, actionDate: formattedDate }));
     }
   } catch (error) {
-    console.error("CORS or Network Error:", error);
+    console.error("Update Error:", error);
   }
 };
 
-
- // REPLACE your handleDelete with this:
-const handleDelete = async (quoteId) => {
-  if (!window.confirm("Are you sure you want to delete this quotation?")) return;
-
-  try {
-    const response = await fetch(`http://localhost:8080/api/quotations/${quoteId}`, {
-      method: "DELETE",
-    });
-
-    if (response.ok) {
-      // Remove from local state immediately
-      setQuotations(prev => prev.filter((q) => q.id !== quoteId));
-      setShowModal(false);
-    } else {
-      alert("Delete failed on server ❌");
+  const handleDelete = async (quoteId) => {
+    if (!window.confirm("Are you sure you want to delete this quotation?")) return;
+    try {
+      const response = await fetch(`http://localhost:8080/api/quotations/${quoteId}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        setQuotations(prev => prev.filter((q) => q.id !== quoteId));
+        setShowModal(false);
+      } else {
+        alert("Delete failed on server ❌");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("Failed to delete ❌");
     }
-  } catch (error) {
-    console.error("Delete error:", error);
-    alert("Failed to delete ❌");
-  }
-};
+  };
 
   const showRejectionTooltip = (event, text) => {
     const rect = event.currentTarget.getBoundingClientRect();
     const placeBelow = rect.top < 170;
-
     setRejectionTooltip({
       visible: true,
       text,
@@ -275,14 +245,14 @@ const handleDelete = async (quoteId) => {
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">AMOUNT</th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">STATUS</th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">DATE</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ACTION DATE</th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ACTIONS</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {/* 4. LOADING & EMPTY STATE LOGIC ADDED HERE */}
               {isLoading ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-20 text-center">
+                  <td colSpan="7" className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center">
                       <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-500 mb-3"></div>
                       <p className="text-gray-500 font-medium">Loading quotations...</p>
@@ -291,7 +261,7 @@ const handleDelete = async (quoteId) => {
                 </tr>
               ) : paginatedQuotations.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
                     No quotations found matching your criteria.
                   </td>
                 </tr>
@@ -308,23 +278,26 @@ const handleDelete = async (quoteId) => {
                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm font-semibold hidden sm:table-cell">
                       {quote.currency || '$'}{quote.totalCost?.toLocaleString() || '0'}
                     </td>
-                    {/* ... inside your table map ... */}
-<td className="px-3 sm:px-6 py-4">
-  <div className="relative inline-block"> 
-    <span
-      className={`px-2 py-1 text-xs rounded-full font-medium cursor-help ${getStatusColor(quote.status)}`}
-      onMouseEnter={(event) => {
-        if (quote.status === "Rejected" && quote.rejectionReason) {
-          showRejectionTooltip(event, quote.rejectionReason);
-        }
-      }}
-      onMouseLeave={hideRejectionTooltip}
-    >
-      {quote.status || 'Draft'}
-    </span>
-  </div>
-</td>
+                    <td className="px-3 sm:px-6 py-4">
+                      <div className="relative inline-block"> 
+                        <span
+                          className={`px-2 py-1 text-xs rounded-full font-medium cursor-help ${getStatusColor(quote.status)}`}
+                          onMouseEnter={(event) => {
+                            if (quote.status === "Rejected" && quote.rejectionReason) {
+                              showRejectionTooltip(event, quote.rejectionReason);
+                            }
+                          }}
+                          onMouseLeave={hideRejectionTooltip}
+                        >
+                          {quote.status || 'Draft'}
+                        </span>
+                      </div>
+                    </td>
                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-600 hidden md:table-cell">{quote.date}</td>
+                    {/* 2. Added Action Date Data Cell */}
+                    <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-600">
+    {quote.actionDate || "--"} 
+</td>
                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm">
                       <div className="flex gap-3">
                         <button onClick={() => handleAction(quote, 'view')} className="text-green-600 hover:text-green-800 font-medium">View</button>
@@ -339,7 +312,6 @@ const handleDelete = async (quoteId) => {
           </table>
         </div>
         
-        {/* Pagination logic */}
         {!isLoading && totalPages > 1 && (
           <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
             <div className="text-sm text-gray-700">
@@ -369,7 +341,6 @@ const handleDelete = async (quoteId) => {
             <p className="leading-relaxed text-gray-700 font-serif whitespace-normal wrap-break-word">
               "{rejectionTooltip.text}"
             </p>
-
             {rejectionTooltip.placeBelow ? (
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-8 border-transparent border-b-white drop-shadow-sm"></div>
             ) : (
@@ -379,151 +350,95 @@ const handleDelete = async (quoteId) => {
         </div>
       )}
 
-      {/* --- ACTION MODAL (VIEW / EDIT / DELETE) --- */}
-          {showModal && selectedQuote && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-              <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all animate-in fade-in zoom-in duration-200">
-
-                {/* Header */}
-                <div className="flex justify-between items-center border-b pb-3 mb-4">
-                  <h3 className="text-xl font-bold text-gray-800 capitalize">
-                    {modalType} Quotation
-                  </h3>
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="text-gray-400 hover:text-gray-600 text-2xl"
-                  >
-                    &times;
-                  </button>
-                </div>
-
-                {/* VIEW */}
-                {modalType === "view" && (
-                  <div className="space-y-4">
-                    <div className="flex justify-between border-b border-gray-50 pb-2">
-                      <span className="text-gray-500">Quotation No</span>
-                      <span className="text-gray-900 font-bold">
-                        {selectedQuote.quotationNumber}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between border-b border-gray-50 pb-2">
-                      <span className="text-gray-500">Client</span>
-                      <span className="text-gray-900">
-                        {selectedQuote.client}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between border-b border-gray-50 pb-2">
-                      <span className="text-gray-500">Amount</span>
-                      <span className="text-green-600 font-bold">
-                        {selectedQuote.currency}{" "}
-                        {selectedQuote.totalCost?.toLocaleString()}
-                      </span>
-                    </div>
-
-                    {/* Inside {modalType === "view" && (...)} */}
-<div className="flex justify-between border-b border-gray-50 pb-2">
-  <span className="text-gray-500">Status</span>
-  <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(selectedQuote.status)}`}>
-    {selectedQuote.status || "Draft"}
-  </span>
-</div>
-
-{/* ADD THIS BLOCK FOR THE REJECTION REASON */}
-{selectedQuote.status === "Rejected" && selectedQuote.rejectionReason && (
-  <div className="mt-2 p-3 bg-red-50 border border-red-100 rounded-lg">
-    <p className="text-xs font-bold text-red-700 uppercase mb-1">Client Feedback</p>
-    <p className="text-sm text-gray-700 italic">"{selectedQuote.rejectionReason}"</p>
-  </div>
-)}
-
-
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Date</span>
-                      <span className="text-gray-900">
-                        {selectedQuote.date}
-                      </span>
-                    </div>
-
-                    <button
-                      onClick={() => setShowModal(false)}
-                      className="mt-8 w-full bg-gray-800 text-white py-3 rounded-xl font-semibold hover:bg-gray-900 transition-colors"
-                    >
-                      Close Details
-                    </button>
-                  </div>
-                )}
-
-                {/* EDIT */}
-                {modalType === "edit" && (
-                  <div className="space-y-4">
-                    <p className="text-sm text-gray-500">
-                      Update status for{" "}
-                      <span className="font-semibold text-gray-900">
-                        {selectedQuote.quotationNumber}
-                      </span>
-                    </p>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      {["Draft", "Pending", "Approved", "Rejected"].map((status) => (
-                        <button
-                          key={status}
-                          onClick={() =>
-                            updateQuotationStatus(selectedQuote.id, status)
-                          }
-                          className={`px-4 py-2 rounded-xl border text-sm transition-all ${
-                            selectedQuote.status === status
-                              ? "bg-blue-50 border-blue-500 text-blue-600"
-                              : "hover:bg-gray-50"
-                          }`}
-                        >
-                          {status}
-                        </button>
-                      ))}
-                    </div>
-
-                    <button
-                      onClick={() => setShowModal(false)}
-                      className="mt-6 w-full bg-gray-800 text-white py-3 rounded-xl font-semibold hover:bg-gray-900 transition-colors"
-                    >
-                      Done
-                    </button>
-                  </div>
-                )}
-
-                {/* DELETE */}
-                {modalType === "delete" && (
-                  <div className="space-y-5">
-                    <p className="text-gray-600 text-sm leading-relaxed">
-                      Are you sure you want to delete quotation{" "}
-                      <span className="font-semibold text-gray-900">
-                        {selectedQuote.quotationNumber}
-                      </span>
-                      ?
-                    </p>
-
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => handleDelete(selectedQuote.id)}
-                        className="flex-1 bg-red-600 text-white py-3 rounded-xl font-semibold hover:bg-red-700 transition-colors"
-                      >
-                        Delete
-                      </button>
-
-                      <button
-                        onClick={() => setShowModal(false)}
-                        className="flex-1 bg-gray-200 text-gray-800 py-3 rounded-xl font-semibold hover:bg-gray-300 transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+      {showModal && selectedQuote && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center border-b pb-3 mb-4">
+              <h3 className="text-xl font-bold text-gray-800 capitalize">
+                {modalType} Quotation
+              </h3>
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
-          )}
 
+            {modalType === "view" && (
+              <div className="space-y-4">
+                <div className="flex justify-between border-b border-gray-50 pb-2">
+                  <span className="text-gray-500">Quotation No</span>
+                  <span className="text-gray-900 font-bold">{selectedQuote.quotationNumber}</span>
+                </div>
+                <div className="flex justify-between border-b border-gray-50 pb-2">
+                  <span className="text-gray-500">Client</span>
+                  <span className="text-gray-900">{selectedQuote.client}</span>
+                </div>
+                <div className="flex justify-between border-b border-gray-50 pb-2">
+                  <span className="text-gray-500">Amount</span>
+                  <span className="text-green-600 font-bold">
+                    {selectedQuote.currency}{" "}{selectedQuote.totalCost?.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between border-b border-gray-50 pb-2">
+                  <span className="text-gray-500">Status</span>
+                  <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(selectedQuote.status)}`}>
+                    {selectedQuote.status || "Draft"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Date</span>
+                  <span className="text-gray-900">{selectedQuote.date}</span>
+                </div>
+                <div className="flex justify-between border-b border-gray-50 pb-2">
+  <span className="text-gray-500">Action Date</span>
+  <span className="text-gray-900">{selectedQuote.actionDate || "--"}</span>
+</div>
+                {selectedQuote.status === "Rejected" && selectedQuote.rejectionReason && (
+                  <div className="mt-2 p-3 bg-red-50 border border-red-100 rounded-lg">
+                    <p className="text-xs font-bold text-red-700 uppercase mb-1">Client Feedback</p>
+                    <p className="text-sm text-gray-700 italic">"{selectedQuote.rejectionReason}"</p>
+                  </div>
+                )}
+                
+                <button onClick={() => setShowModal(false)} className="mt-8 w-full bg-gray-800 text-white py-3 rounded-xl font-semibold hover:bg-gray-900 transition-colors">
+                  Close Details
+                </button>
+              </div>
+            )}
+
+            {modalType === "edit" && (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-500">
+                  Update status for <span className="font-semibold text-gray-900">{selectedQuote.quotationNumber}</span>
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {["Draft", "Pending", "Approved", "Rejected"].map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => updateQuotationStatus(selectedQuote.id, status)}
+                      className={`px-4 py-2 rounded-xl border text-sm transition-all ${
+                        selectedQuote.status === status ? "bg-blue-50 border-blue-500 text-blue-600" : "hover:bg-gray-50"
+                      }`}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={() => setShowModal(false)} className="mt-6 w-full bg-gray-800 text-white py-3 rounded-xl font-semibold hover:bg-gray-900 transition-colors">Done</button>
+              </div>
+            )}
+
+            {modalType === "delete" && (
+              <div className="space-y-5">
+                <p className="text-gray-600 text-sm leading-relaxed">
+                  Are you sure you want to delete quotation <span className="font-semibold text-gray-900">{selectedQuote.quotationNumber}</span>?
+                </p>
+                <div className="flex gap-3">
+                  <button onClick={() => handleDelete(selectedQuote.id)} className="flex-1 bg-red-600 text-white py-3 rounded-xl font-semibold hover:bg-red-700 transition-colors">Delete</button>
+                  <button onClick={() => setShowModal(false)} className="flex-1 bg-gray-200 text-gray-800 py-3 rounded-xl font-semibold hover:bg-gray-300 transition-colors">Cancel</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

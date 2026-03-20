@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import QuotationPreview from './QuotationPreview';
 
 
-const CreateQuotation = ({ selectedClient }) => {
+const CreateQuotation = ({ selectedClient,editData }) => {
   const [showPreview, setShowPreview] = useState(false);
 
   const [clients, setClients] = useState([]);
@@ -106,7 +106,14 @@ signatureNote:
 
 
 useEffect(() => {
-  if (selectedClient) {
+  // 1. Logic for EDITING an existing quotation
+  if (editData) {
+    setFormData(editData);
+    console.log("Mode: Editing existing quotation");
+  } 
+  
+  // 2. Logic for CREATING a new quotation for a specific client
+  else if (selectedClient) {
     setFormData((prev) => ({
       ...prev,
       client: selectedClient.name || '',
@@ -115,8 +122,9 @@ useEffect(() => {
       clientPhone: selectedClient.phone || '',
       clientAddress: selectedClient.address || ''
     }));
+    console.log("Mode: Creating new quote for client");
   }
-}, [selectedClient]);
+}, [editData, selectedClient]); // ✅ Added editData to the dependency array
   
   useEffect(() => {
   const total = calculateTotal();
@@ -248,7 +256,7 @@ useEffect(() => {
     gstAmount: gstAmount,
     finalAmount: finalAmount,
     preparedBy: currentEmpId,
-    status: "Pending"
+    status: "Draft"
   };
 
   try {
