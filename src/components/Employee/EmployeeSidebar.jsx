@@ -14,7 +14,8 @@ const EmployeeSidebar = ({ activeModule, setActiveModule, onClose }) => {
 ];
 
   return (
-<div className="w-64 bg-gradient-to-b from-[#171b4d] via-[#370b3b] to-[#a82d55] text-white shadow-2xl h-full">      <div className="p-4 sm:p-6 border-b border-gray-700">
+<div className="w-64 bg-gradient-to-b from-[#171b4d] via-[#370b3b] to-[#a82d55] text-white shadow-2xl h-full">  
+      <div className="p-4 sm:p-6 border-b border-gray-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2 sm:space-x-3">
            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white rounded-lg flex items-center justify-center overflow-hidden p-0.5 shadow-inner">

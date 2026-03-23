@@ -100,14 +100,14 @@ const HeroSection = ({ onGetStarted }) => {
         let drawX, drawY;
 
         // ===== STAGES =====
-        if (time < 3) {
+        if (time < 1.5) {
           drawX = dx;
           drawY = dy;
         }
 
         // 💥 REAL EXPLOSION (physics-based)
-        else if (time < 5) {
-  const t = (time - 3) / 2;
+        else if (time < 2.5) {
+  const t = (time - 1.5) / 1;
 
   // smooth ease (important)
   const ease = t * t * (3 - 2 * t);
@@ -119,7 +119,7 @@ const HeroSection = ({ onGetStarted }) => {
 
         // 🧲 FORM TEXT
         else {
-          const t = Math.min((time - 5) / 3, 1);
+          const t = Math.min((time - 2.5) / 2, 1);
 
           const ex = p.fx;
           const ey = p.fy;

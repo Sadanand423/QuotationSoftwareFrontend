@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import mainlogo from "../../assets/mainlogo.webp";
+import signatureImg from "../../assets/Smartmatrix_CEO.png";
+import stampImg from "../../assets/Smartmatrix_stamp.png";
 
 const Invoice = () => {
   const navigate = useNavigate();
-  const [signature, setSignature] = useState(null);
+  const [signature, setSignature] = useState(signatureImg);
+  const [stamp, setStamp] = useState(stampImg);
   const [selectedQuotation, setSelectedQuotation] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -587,44 +590,77 @@ const handleInvoicePrint = () => {
                 <option value="Bank Transfer">NEFT / Bank Transfer</option>
               </select>
             </div>
-                      <div className="mt-4">
-              <label className="block text-sm font-bold text-gray-700 mb-2">
-                Authorized Signature
-              </label>
-              <div className="flex items-center gap-4 p-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors relative">
-                {/* Icon or Preview */}
-                <div className="w-16 h-12 border bg-white rounded flex items-center justify-center overflow-hidden">
-                  {signature ? (
-                    <img src={signature} alt="Sign" className="h-full object-contain" />
-                  ) : (
-                    <span className="text-gray-400 text-xs text-center">No sign</span>
-                  )}
-                </div>
 
-                {/* Text and Hidden Input */}
+
+            <div className="bg-[#f0f7ff] p-4 sm:p-6 rounded-xl border border-blue-100 shadow-sm mt-4">
+              <h4 className="text-gray-700 font-bold mb-4 text-base">
+                Authorization Details
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+                {/* ✍️ Signature FIRST */}
                 <div>
-                  <p className="text-sm font-medium text-indigo-600">Click to upload image</p>
-                  <p className="text-xs text-gray-500">PNG, JPG or JPEG</p>
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">
+                    Authorized Signature
+                  </label>
+
+                  <div className="relative w-full h-24 border border-gray-300 rounded-lg bg-white flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-all overflow-hidden">
+                    {signature ? (
+                      <img 
+                        src={signature} 
+                        alt="Signature" 
+                        className="h-full object-contain"
+                      />
+                    ) : (
+                      <span className="text-gray-400 text-sm">
+                        Upload Signature
+                      </span>
+                    )}
+
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) setSignature(URL.createObjectURL(file));
+                      }}
+                    />
+                  </div>
                 </div>
 
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  className="absolute inset-0 opacity-0 cursor-pointer" 
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) setSignature(URL.createObjectURL(file));
-                  }} 
-                />
+                {/* 🏷️ Stamp SECOND */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">
+                    Company Stamp
+                  </label>
+
+                  <div className="relative w-full h-24 border border-gray-300 rounded-lg bg-white flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-all overflow-hidden">
+                    {stamp ? (
+                      <img 
+                        src={stamp} 
+                        alt="Stamp" 
+                        className="h-full object-contain opacity-90"
+                      />
+                    ) : (
+                      <span className="text-gray-400 text-sm">
+                        Upload Stamp
+                      </span>
+                    )}
+
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) setStamp(URL.createObjectURL(file));
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
-              {signature && (
-                <button 
-                  onClick={() => setSignature(null)}
-                  className="text-xs text-red-500 mt-2 underline"
-                >
-                  Clear signature
-                </button>
-              )}
             </div>
 
             <div className="flex gap-4 pt-4">
@@ -638,7 +674,7 @@ const handleInvoicePrint = () => {
 
       
     
-     {showPreview && (
+{showPreview && (
   <div className="fixed inset-0 bg-black/40 overflow-y-auto z-50 p-10 flex flex-col items-center">
     <div className="bg-white w-198.5 min-h-225 p-8 shadow-xl">
       <div ref={printRef} className="border-2 border-black h-full p-6 text-[14px] flex flex-col">
@@ -727,7 +763,7 @@ const handleInvoicePrint = () => {
           {numberToWords(Math.round(invoiceData.finalAmount))} RUPEES ONLY
         </p>
           </div>
-                  <div className="p-0 text-sm">
+          <div className="p-0 text-sm">
           <div className="flex justify-between p-2 border-b border-gray-300">
             <span>Total Project Amount:</span>
             <span>₹{Number(invoiceData.totalAmount).toLocaleString("en-IN")}</span>
@@ -746,12 +782,6 @@ const handleInvoicePrint = () => {
             <span>₹{Number(invoiceData.finalAmount).toLocaleString("en-IN")}</span>
           </div>
 
-          {/* Show inclusive tax message if GST = 0 */}
-          {invoiceData.taxRate === 0 && (
-            <div className="px-2 pb-2 text-xs text-gray-700 italic">
-              ( Amount is inclusive of all applicable taxes.)
-            </div>
-          )}
 
           <div className="flex justify-between p-2 text-black font-bold">
             <span>This Invoice Amount:</span>
@@ -768,13 +798,40 @@ const handleInvoicePrint = () => {
         {/* Signature */}
         
         
-        <div className="flex justify-end mt-13">
-          <div className="text-center">
-            {signature ? <img src={signature} alt="Signature" className="h-12 mx-auto mb-1" /> : <div className="h-12"></div>}
-            <div className="w-48 border-t border-black"></div>
-            <p className="text-[11px] font-bold uppercase mt-1">Authorized Signature</p>
-          </div>
-        </div>
+        <div className="flex justify-end items-end gap-10 mt-13">
+
+  {/* 🏷️ Stamp (LEFT of signature) */}
+  <div className="text-center">
+    {stamp ? (
+      <img 
+        src={stamp} 
+        alt="Stamp" 
+        className="h-23 mx-auto mb-1 opacity-90 -mt-6"
+      />
+    ) : (
+      <div className="h-23"></div>
+    )}
+   
+  </div>
+
+  {/* ✍️ Signature (RIGHT) */}
+  <div className="text-center">
+    {signature ? (
+      <img 
+        src={signature} 
+        alt="Signature" 
+        className="h-12 mx-auto mb-1"
+      />
+    ) : (
+      <div className="h-12"></div>
+    )}
+    <div className="w-48 border-t border-black"></div>
+    <p className="text-[11px] font-bold uppercase mt-1">
+      Authorized Signature
+    </p>
+  </div>
+
+</div>
       </div>
     </div>
     <div className="flex gap-4 mt-6">

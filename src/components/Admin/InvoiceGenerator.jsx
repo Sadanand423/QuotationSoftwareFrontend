@@ -192,10 +192,10 @@ const InvoiceGenerator = () => {
                   </td>
                   <td className="px-6 py-4 text-sm">
                     <div className="flex gap-3">
-                      <button onClick={() => { setSelectedInvoice(invoice); setIsEditMode(false); }} className="text-green-600">View</button>
-                      <button onClick={() => { setSelectedInvoice(invoice); setIsEditMode(true); setNewStatus(invoice.status); }} className="text-blue-600">Edit</button>
+                      <button onClick={() => { setSelectedInvoice(invoice); setIsEditMode(false); }} className="text-green-600 hover:text-green-800 font-medium">View</button>
+                      <button onClick={() => { setSelectedInvoice(invoice); setIsEditMode(true); setNewStatus(invoice.status); }} className="text-blue-600 hover:text-blue-800 font-medium">Edit</button>
                       {/* ✅ Set state for Delete Modal */}
-                      <button onClick={() => setInvoiceToDelete(invoice)} className="text-red-600">Delete</button>
+                      <button onClick={() => setInvoiceToDelete(invoice)} className="text-red-600 hover:text-red-800 font-medium">Delete</button>
                     </div>
                   </td>
                 </tr>

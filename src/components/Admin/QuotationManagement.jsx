@@ -301,7 +301,6 @@ const updateQuotationStatus = async (quotationId, newStatus) => {
                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm">
                       <div className="flex gap-3">
                         <button onClick={() => handleAction(quote, 'view')} className="text-green-600 hover:text-green-800 font-medium">View</button>
-                        <button onClick={() => handleAction(quote, 'edit')} className="text-blue-600 hover:text-blue-800 font-medium">Edit</button>
                         <button onClick={() => handleAction(quote, 'delete')} className="text-red-600 hover:text-red-800 font-medium">Delete</button>
                       </div>
                     </td>
