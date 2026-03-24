@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import QuotationPreview from './QuotationPreview';
+import signatureImg from "../../assets/Smartmatrix_CEO.png";
+import stampImg from "../../assets/Smartmatrix_stamp.png";
 
 
 const CreateQuotation = ({ selectedClient,editData }) => {
@@ -95,10 +97,8 @@ signatureNote:
       "3 months defect-free guarantee, priority support"
     ]
   },
-    projectManager: 'Sagar Solanke',
-    operationManager: 'Bikram Burman',
-    projectManagerSignature: null,
-    operationManagerSignature: null
+    signature: signatureImg,
+    companyStamp: stampImg
   
     
   }
