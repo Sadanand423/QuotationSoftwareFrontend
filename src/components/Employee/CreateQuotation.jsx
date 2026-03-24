@@ -2,9 +2,16 @@ import React, { useState, useEffect } from 'react';
 import QuotationPreview from './QuotationPreview';
 import signatureImg from "../../assets/Smartmatrix_CEO.png";
 import stampImg from "../../assets/Smartmatrix_stamp.png";
+import { useLocation } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 
-const CreateQuotation = ({ selectedClient,editData }) => {
+const CreateQuotation = ({ selectedClient }) => {
+
+  const location = useLocation();
+  const { id } = useParams();
+  const editData = location.state?.editData;
+
   const [showPreview, setShowPreview] = useState(false);
 
   const [clients, setClients] = useState([]);
@@ -99,8 +106,6 @@ signatureNote:
   },
     signature: signatureImg,
     companyStamp: stampImg
-  
-    
   }
 );
 
@@ -108,10 +113,12 @@ signatureNote:
 useEffect(() => {
   // 1. Logic for EDITING an existing quotation
   if (editData) {
-    setFormData(editData);
-    console.log("Mode: Editing existing quotation");
+    setFormData(prev => ({
+      ...prev,   // keep default structure
+      ...editData // override with edit values
+    }));    console.log("Mode: Editing existing quotation");
   } 
-  
+
   // 2. Logic for CREATING a new quotation for a specific client
   else if (selectedClient) {
     setFormData((prev) => ({
@@ -125,6 +132,17 @@ useEffect(() => {
     console.log("Mode: Creating new quote for client");
   }
 }, [editData, selectedClient]); // ✅ Added editData to the dependency array
+
+useEffect(() => {
+  if (!editData && id) {
+    fetch(`http://localhost:8080/api/quotations/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        setFormData(data);
+      })
+      .catch(err => console.error("Fetch error:", err));
+  }
+}, [id, editData]);
   
   useEffect(() => {
   const total = calculateTotal();
@@ -715,7 +733,7 @@ const removeTimelineRow = (index) => {
                     </thead>
 
                       <tbody>
-                        {formData.techStack.map((tech, index) => (
+                        {formData.techStack?.map((tech, index) => (
                           <tr key={index} className="hover:bg-blue-50 transition-colors">
 
                             <td className="border border-gray-200 p-4">
@@ -812,7 +830,7 @@ const removeTimelineRow = (index) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {formData.costBreakdown.map((item, index) => (
+                    {formData.costBreakdown?.map((item, index) => (
                       <tr key={index} className="hover:bg-gray-50 transition-colors">
                         <td className="border border-gray-200 p-3 text-center font-medium text-gray-600">{item.srNo}</td>
                         <td className="border border-gray-200 p-3">
@@ -958,7 +976,7 @@ const removeTimelineRow = (index) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {formData.timeline.map((phase, index) => (
+                    {formData.timeline?.map((phase, index) => (
 
                       <tr key={index} className="hover:bg-blue-50 transition-colors">
                         <td className="border border-gray-200 p-3 text-center font-medium text-gray-600">
@@ -1055,7 +1073,7 @@ const removeTimelineRow = (index) => {
 
             <div className="p-6 space-y-3">
 
-              {formData.paymentTerms.map((term, index) => (
+              {formData.paymentTerms?.map((term, index) => (
                 <div key={index} className="flex items-center gap-3">
 
                   <input

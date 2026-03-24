@@ -246,7 +246,7 @@ const MyQuotations = () => {
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">CLIENT</th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">AMOUNT</th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">STATUS</th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">DATE</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">CREATED DATE</th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ACTION DATE</th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ACTIONS</th>
               </tr>
@@ -318,9 +318,11 @@ const MyQuotations = () => {
 
                         {(quote.status === "Draft" || quote.status === "Pending") && (
                           <button 
-                            onClick={() => navigate(`/create-quotation/${quote.id}`)} 
-                            className="text-blue-600 hover:text-blue-800 font-medium"
-                          >
+                            onClick={() => {
+                              console.log("Navigating with:", quote);
+                              navigate(`/create-quotation/${quote.quotationNumber}`, { state: { editData: quote } });
+                            }}                            
+                            className="text-blue-600 hover:text-blue-800 font-medium">
                             Edit
                           </button>
                         )}
@@ -407,10 +409,10 @@ const MyQuotations = () => {
               </div>
 
               {/* ✅ Added Action Date Row */}
-<div className="flex justify-between border-b border-gray-50 pb-2">
-  <span className="text-gray-500">Action Date</span>
-  <span className="text-blue-700 font-medium">{selectedQuote.actionDate || 'Not processed'}</span>
-</div>
+              <div className="flex justify-between border-b border-gray-50 pb-2">
+                <span className="text-gray-500">Action Date</span>
+                <span className="text-blue-700 font-medium">{selectedQuote.actionDate || 'Not processed'}</span>
+              </div>
             </div>
 
              {selectedQuote.status === "Rejected" && selectedQuote.rejectionReason && (

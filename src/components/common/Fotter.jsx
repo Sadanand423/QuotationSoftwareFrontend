@@ -53,7 +53,7 @@ const Footer = () => {
 
 </div>
 
-<style jsx>{`
+<style>{`
   .icon-btn {
     padding: 10px;
     border-radius: 9999px;
