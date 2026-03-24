@@ -9,7 +9,6 @@ const InvoiceGenerator = () => {
   const [itemsPerPage] = useState(10);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [newStatus, setNewStatus] = useState('');
   
   // ✅ NEW: State for Delete Confirmation Modal
   const [invoiceToDelete, setInvoiceToDelete] = useState(null);
@@ -72,7 +71,6 @@ const InvoiceGenerator = () => {
       const response = await fetch(`http://localhost:8080/api/invoices/update-status/${selectedInvoice.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
       });
       if (response.ok) {
         setSelectedInvoice(null);
@@ -193,7 +191,6 @@ const InvoiceGenerator = () => {
                   <td className="px-6 py-4 text-sm">
                     <div className="flex gap-3">
                       <button onClick={() => { setSelectedInvoice(invoice); setIsEditMode(false); }} className="text-green-600 hover:text-green-800 font-medium">View</button>
-                      <button onClick={() => { setSelectedInvoice(invoice); setIsEditMode(true); setNewStatus(invoice.status); }} className="text-blue-600 hover:text-blue-800 font-medium">Edit</button>
                       {/* ✅ Set state for Delete Modal */}
                       <button onClick={() => setInvoiceToDelete(invoice)} className="text-red-600 hover:text-red-800 font-medium">Delete</button>
                     </div>
@@ -227,11 +224,6 @@ const InvoiceGenerator = () => {
             <div className="space-y-3 text-sm">
               <p><strong>Client:</strong> {selectedInvoice.clientName}</p>
               <p><strong>Amount:</strong> ₹{selectedInvoice.finalAmount}</p>
-              {isEditMode ? (
-                <select className="w-full p-2 border rounded-lg" value={newStatus} onChange={(e) => setNewStatus(e.target.value)}>
-                  {statusFilters.filter(f => f !== 'All').map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              ) : <p><strong>Status:</strong> {selectedInvoice.status}</p>}
             </div>
             <div className="flex gap-3 mt-6">
               <button onClick={() => setSelectedInvoice(null)} className="flex-1 bg-gray-100 py-2 rounded-lg">Close</button>

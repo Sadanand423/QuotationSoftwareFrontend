@@ -186,12 +186,7 @@ const handleDelete = async (clientId) => {
                       >
                         View
                       </button>
-                      <button 
-                        onClick={() => handleAction(client, 'edit')}
-                        className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200"
-                      >
-                        Edit
-                      </button>
+                      
                       <button 
                         onClick={() => handleAction(client, 'delete')}
                         className="text-red-600 hover:text-red-800 font-medium transition-colors duration-200"
@@ -321,7 +316,6 @@ const handleDelete = async (clientId) => {
       <div className="flex justify-between items-center border-b pb-3 mb-4">
         <h3 className="text-xl font-bold text-gray-800">
           {modalType === 'view' && 'Client Summary'}
-          {modalType === 'edit' && 'Edit Client Status'}
           {modalType === 'delete' && 'Delete Client'}
         </h3>
         <button
