@@ -216,7 +216,7 @@ const MyQuotations = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border">
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         {/* Status Filter Tabs */}
         <div className="p-4 border-b">
           <div className="flex flex-wrap gap-2">
@@ -242,14 +242,13 @@ const MyQuotations = () => {
           <table className="min-w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quotation No</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                {/* ✅ Added Date Header */}
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Action Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">QUOTATION NO</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">CLIENT</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">AMOUNT</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">STATUS</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">DATE</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ACTION DATE</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ACTIONS</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -259,57 +258,82 @@ const MyQuotations = () => {
                 <tr><td colSpan="6" className="px-6 py-10 text-center text-gray-500">No quotations found.</td></tr>
               ) : (
                 paginatedQuotations.map((quote) => (
-                  <tr key={quote.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-medium">{quote.quotationNumber}</td>
-                    <td className="px-6 py-4 text-sm text-gray-800">{quote.client}</td>
-                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">
-                      {quote.currency} {(quote.finalAmount || quote.totalCost + (quote.gstAmount || 0))?.toLocaleString('en-IN')}
+                  <tr key={quote.id} className="hover:bg-gray-50 transition-colors">
+
+                    {/* Quotation No */}
+                    <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm font-medium text-gray-900">
+                      <div className="flex items-center">
+                        <div className={`w-2 h-2 rounded-full mr-2 ${
+                          quote.status === "Approved" ? "bg-green-500" :
+                          quote.status === "Pending" ? "bg-yellow-500" :
+                          quote.status === "Rejected" ? "bg-red-500" :
+                          "bg-gray-500"
+                        }`}></div>
+                        {quote.quotationNumber}
+                      </div>
                     </td>
-                    <td className="px-6 py-4">
+
+                    {/* Client */}
+                    <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-900">
+                      {quote.client}
+                    </td>
+
+                    {/* Amount */}
+                    <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm font-semibold hidden sm:table-cell">
+                      ₹{(quote.finalAmount || quote.totalCost + (quote.gstAmount || 0))?.toLocaleString('en-IN')}
+                    </td>
+
+                    {/* Status */}
+                    <td className="px-3 sm:px-6 py-4">
                       <span
-                        className={`px-2 py-1 text-xs rounded-full font-medium ${isRejectedStatus(quote.status) ? 'cursor-help ' : ''}${getStatusBadgeClass(quote.status)}`}
-                        onMouseEnter={(event) => {
-                          handleRejectedHover(event, quote);
-                        }}
+                        className={`px-2 py-1 text-xs rounded-full font-medium ${
+                          getStatusColor(quote.status)
+                        } ${quote.status === "Rejected" ? "cursor-help" : ""}`}
+                        onMouseEnter={(event) => handleRejectedHover(event, quote)}
                         onMouseLeave={hideRejectionTooltip}
-                        title={isRejectedStatus(quote.status) ? (quote.rejectionReason || 'Rejected quotation') : undefined}
                       >
-                        {quote.status || 'Pending'}
+                        {quote.status || 'Draft'}
                       </span>
                     </td>
-                    {/* ✅ Added Date Column */}
-                    <td className="px-6 py-4 text-sm text-gray-600 hidden sm:table-cell">
-                      {quote.date || 'N/A'}
+
+                    {/* Date */}
+                    <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-600 hidden md:table-cell">
+                      {quote.date || "--"}
                     </td>
-                   {/* 2. Added Action Date Data Cell */}
+
+                    {/* Action Date */}
                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-600">
-    {quote.actionDate || "--"} 
-</td>
-                    <td className="px-6 py-4 text-sm space-x-3">
-                      <button 
-                        onClick={() => setSelectedQuote(quote)} 
-                        className="text-green-600 hover:text-green-800 font-medium"
-                      >
-                        View
-                      </button>
-                    
-                    {/* ✅ Added Edit Button */}
-  {(quote.status === "Draft" || quote.status === "Pending") && (
-    <button 
-      onClick={() => navigate(`/create-quotation/${quote.id}`)} 
-      className="text-blue-600 hover:text-blue-800 font-medium"
-    >
-      Edit
-    </button>
-  )}
+                      {quote.actionDate || "--"}
                     </td>
+
+                    {/* Actions */}
+                    <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm">
+                      <div className="flex gap-3">
+                        <button 
+                          onClick={() => setSelectedQuote(quote)} 
+                          className="text-green-600 hover:text-green-800 font-medium"
+                        >
+                          View
+                        </button>
+
+                        {(quote.status === "Draft" || quote.status === "Pending") && (
+                          <button 
+                            onClick={() => navigate(`/create-quotation/${quote.id}`)} 
+                            className="text-blue-600 hover:text-blue-800 font-medium"
+                          >
+                            Edit
+                          </button>
+                        )}
+                      </div>
+                    </td>
+
                   </tr>
                 ))
               )}
             </tbody>
           </table>
         </div>
-
+        
         {/* Pagination */}
         {!isLoading && totalPages > 1 && (
           <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">

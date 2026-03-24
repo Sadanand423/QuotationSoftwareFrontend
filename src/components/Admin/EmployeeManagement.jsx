@@ -327,70 +327,63 @@ const formatHistoryDate = (isoDate) => {
 
           
           <div className="relative">
-  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-    🔐 Password
-  </label>
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+              🔐 Password
+            </label>
 
-  <input
-    type="password"
-    name="password"
-    autoComplete="new-password"
-    value={formData.password}
-    onChange={currentView === 'edit' ? undefined : handleChange}
-    onFocus={() => currentView !== 'edit' && setIsFocused(true)}
-    onBlur={() => setIsFocused(false)}
-    readOnly={currentView === 'edit'}
-    className={`w-full p-2 rounded-lg text-xs sm:text-sm border transition-all duration-300 ${
-      currentView === 'edit' 
-        ? 'bg-gray-100 text-gray-600 border-gray-300 cursor-not-allowed'
-        : (isFocused && isPasswordValid
-          ? "border-green-500 bg-green-50 focus:ring-2 focus:ring-green-500"
-          : "border-gray-300 focus:ring-2 focus:ring-blue-500")
-    }`}
-    placeholder={currentView === 'edit' ? "Password is secured" : "Enter strong password"}
-    required
-  />
+            <input
+              type="password"
+              name="password"
+              autoComplete="new-password"
+              value={formData.password}
+              onChange={currentView === 'edit' ? undefined : handleChange}
+              onFocus={() => currentView !== 'edit' && setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              readOnly={currentView === 'edit'}
+              className={`w-full p-2 rounded-lg text-xs sm:text-sm border transition-all duration-300 ${
+                currentView === 'edit' 
+                  ? 'bg-gray-100 text-gray-600 border-gray-300 cursor-not-allowed'
+                  : (isFocused && isPasswordValid
+                    ? "border-green-500 bg-green-50 focus:ring-2 focus:ring-green-500"
+                    : "border-gray-300 focus:ring-2 focus:ring-blue-500")
+              }`}
+              placeholder={currentView === 'edit' ? "Password is secured" : "Enter strong password"}
+              required
+            />
 
-  {currentView === 'edit' && (
-    <p className="text-xs text-gray-500 mt-1.5">Passwords cannot be edited here. Employees must securely reset their password using the email-based password reset system.</p>
-  )}
+            {currentView === 'edit' && (
+              <p className="text-xs text-gray-500 mt-1.5">Passwords cannot be edited here. Employees must securely reset their password using the email-based password reset system.</p>
+            )}
 
-  {isFocused && formData.password.length > 0 && !isPasswordValid && currentView !== 'edit' && (
-    <div
-      className="absolute left-0 top-full mt-2 w-full z-20 
-                 bg-red-50 border border-red-300 text-red-600 
-                 text-xs px-3 py-2 rounded-lg shadow-lg animate-slideFade 
-                 flex items-start gap-2"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-4 w-4 mt-0.5 flex-shrink-0"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={2}
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M12 9v2m0 4h.01M10.29 3.86l-7.2 12.48A1 1 0 004 18h16a1 1 0 00.91-1.66l-7.2-12.48a1 1 0 00-1.72 0z"
-        />
-      </svg>
+            {isFocused && formData.password.length > 0 && !isPasswordValid && currentView !== 'edit' && (
+              <div
+                className="absolute left-0 top-full mt-2 w-full z-20 
+                          bg-red-50 border border-red-300 text-red-600 
+                          text-xs px-3 py-2 rounded-lg shadow-lg animate-slideFade 
+                          flex items-start gap-2"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 mt-0.5 flex-shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v2m0 4h.01M10.29 3.86l-7.2 12.48A1 1 0 004 18h16a1 1 0 00.91-1.66l-7.2-12.48a1 1 0 00-1.72 0z"
+                  />
+                </svg>
 
-      <span>
-        Password must be at least 8 characters and include an uppercase letter, number and special character.
-      </span>
-    </div>
-  )}
+                <span>
+                  Password must be at least 8 characters and include an uppercase letter, number and special character.
+                </span>
+              </div>
+            )}
 
-
-</div>
-
-
-
-
-
-
+          </div>
             
             <div>
               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">📅 Join Date</label>
@@ -423,40 +416,40 @@ const formatHistoryDate = (isoDate) => {
              
              <div className="col-span-1 sm:col-span-2 flex items-center justify-between gap-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
   
-  {/* Photo Preview */}
-  <div className="flex items-center gap-3">
-    <div className="w-14 h-14 rounded-full bg-blue-100 border-2 border-blue-400 overflow-hidden flex items-center justify-center">
-      {formData.photo ? (
-        <img
-          src={formData.photo}
-          alt="Employee"
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        <span className="text-blue-600 font-bold text-sm">IMG</span>
-      )}
-    </div>
+            {/* Photo Preview */}
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-full bg-blue-100 border-2 border-blue-400 overflow-hidden flex items-center justify-center">
+                {formData.photo ? (
+                  <img
+                    src={formData.photo}
+                    alt="Employee"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-blue-600 font-bold text-sm">IMG</span>
+                )}
+              </div>
 
-    <div>
-      <p className="text-sm font-semibold text-gray-700">Profile Photo</p>
-      <p className="text-xs text-gray-500">PNG / JPG up to 2MB</p>
-    </div>
-  </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">Profile Photo</p>
+                <p className="text-xs text-gray-500">PNG / JPG up to 2MB</p>
+              </div>
+            </div>
 
-  {/* Upload Button */}
-  <label className="cursor-pointer">
-    <input
-      type="file"
-      accept="image/*"
-      onChange={handlePhotoChange}
-      className="hidden"
-    />
-    <span className="bg-green-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg text-xs sm:text-sm font-medium">
-      Upload
-    </span>
-  </label>
+            {/* Upload Button */}
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                className="hidden"
+              />
+              <span className="bg-green-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg text-xs sm:text-sm font-medium">
+                Upload
+              </span>
+            </label>
 
-</div>
+          </div>
 
             <div className="col-span-1 sm:col-span-2 pt-3 sm:pt-4">
              <button
@@ -474,8 +467,6 @@ const formatHistoryDate = (isoDate) => {
             </div>
           </form>
         </div>
-
-
       </div>
     );
   }
@@ -530,7 +521,7 @@ const formatHistoryDate = (isoDate) => {
           </div>
 
           <div className="mt-4 sm:mt-6 p-3 sm:p-4 rounded-lg border border-gray-200 bg-slate-50">
-            <h3 className="text-sm sm:text-base font-bold text-gray-800 mb-2">🔐 Password Change History</h3>
+            <h3 className="text-sm sm:text-base font-bold text-gray-800 mb-2"> Password Change History</h3>
 
             {historyLoading ? (
               <p className="text-xs sm:text-sm text-gray-500">Loading password history...</p>
@@ -553,13 +544,13 @@ const formatHistoryDate = (isoDate) => {
               onClick={() => handleEditEmployee(selectedEmployee)}
               className="bg-blue-500 text-white px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm"
             >
-              ✏️ Edit Employee
+               Edit Employee
             </button>
             <button
               onClick={() => deleteEmployee(selectedEmployee.id)}
               className="bg-red-500 text-white px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm"
             >
-              🗑️ Delete Employee
+               Delete Employee
             </button>
           </div>
         </div>
