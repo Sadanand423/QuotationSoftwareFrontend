@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import ClientInfoModal from './ClientInfoModal';
 
 const MyClients = ({ onCreateQuotation }) => {
   const [showForm, setShowForm] = useState(false);
   const [clients, setClients] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedClient, setSelectedClient] = useState(null);
   const [newClient, setNewClient] = useState({
     name: '',
     email: '',
-    phone: '',
+    phone: '',  
     organization: '',
     address: '',
     status: 'Active'
@@ -147,14 +149,23 @@ const MyClients = ({ onCreateQuotation }) => {
       {/* Clients List */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredClients.map((client) => (
-          <div key={client.id} className="bg-white p-4 rounded-lg shadow-sm border">
-            <div className="flex justify-between mb-3">
-              <h3 className="text-lg font-semibold">{client.name}</h3>
+          <div key={client.id} className="bg-white p-4 rounded-lg shadow-sm border relative">
+            <div className="flex justify-between items-start mb-3">
               <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
                 {client.clientId}
               </span>
+              <button
+                onClick={() => setSelectedClient(client)}
+                title="View client information"
+                className="text-xl text-gray-500 hover:text-blue-600 transition-colors font-bold leading-none bg-gray-100 hover:bg-blue-100 rounded-full w-7 h-7 flex items-center justify-center"
+              >
+                ℹ️
+              </button>
             </div>
-            {/* 3. CONDITIONAL RENDERING: ONLY SHOWS IF ORGANIZATION EXISTS */}
+            <div className="flex justify-between mb-3">
+              <h3 className="text-lg font-semibold">{client.name}</h3>
+            </div>
+            {/* CONDITIONAL RENDERING: ONLY SHOWS IF ORGANIZATION EXISTS */}
             {client.organization && (
               <p className="text-xs  text-black-600 mb-2  tracking-wide">
                 Organization: {client.organization}
@@ -172,6 +183,14 @@ const MyClients = ({ onCreateQuotation }) => {
           </div>
         ))}
       </div>
+
+      {/* Client Info Modal */}
+      {selectedClient && (
+        <ClientInfoModal
+          client={selectedClient}
+          onClose={() => setSelectedClient(null)}
+        />
+      )}
     </div>
   );
 };
