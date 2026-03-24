@@ -672,174 +672,186 @@ const handleInvoicePrint = () => {
         </div>
       )}
 
-      
-    
-{showPreview && (
-  <div className="fixed inset-0 bg-black/40 overflow-y-auto z-50 p-10 flex flex-col items-center">
-    <div className="bg-white w-198.5 min-h-225 p-8 shadow-xl">
-      <div ref={printRef} className="border-2 border-black h-full p-6 text-[14px] flex flex-col">
-        
-        {/* Header Section */}
-        <div className="flex justify-between items-start border-b border-gray-400 pb-4">
-          <div className="flex gap-4">
-            <img src={mainlogo} alt="Logo" className="w-30 border p-1" />
-            <div>
-              <h1 className="text-lg font-bold">SMARTMATRIX Digital Services</h1>
-              <p className="text-[13px] leading-tight">First Floor, Survey No. 21, Ganesham Commercial-A, Office No 102-A,
-                Aundh-Ravet BRTS Rd, Pimple Saudagar, Pune 411027</p>
-              <p className="text-[13px]">Phone: 9112108484</p>
-              <p className="text-[13px]">GSTIN: 27ABCDE1234F1Z5</p>
+      {showPreview && (
+        <div className="fixed inset-0 bg-black/40 overflow-y-auto z-50 p-10 flex flex-col items-center">
+          <div className="bg-white w-198.5 min-h-225 p-8 shadow-xl">
+            <div ref={printRef} className="border-2 border-black h-full p-6 text-[14px] flex flex-col">
+              
+              {/* Header Section */}
+              <div className="flex justify-between items-start border-b border-gray-400 pb-4">
+                <div className="flex gap-4">
+                  <img src={mainlogo} alt="Logo" className="w-30 border p-1" />
+                  <div>
+                    <h1 className="text-lg font-bold">SMARTMATRIX Digital Services</h1>
+                    <p className="text-[13px] leading-tight">First Floor, Survey No. 21, Ganesham Commercial-A, Office No 102-A,
+                      Aundh-Ravet BRTS Rd, Pimple Saudagar, Pune 411027</p>
+                    <p className="text-[13px]">Phone: 9112108484</p>
+                    <p className="text-[13px]">GSTIN: 27ABCDE1234F1Z5</p>
+                  </div>
+                </div>
+                <h1 className="text-3xl font-bold tracking-tighter">INVOICE</h1>
+              </div>
+
+              {/* TAX TITLE */}
+              <div className="text-center text-gray-500 font-bold text-base py-3 border-b">
+
+              TAX INVOICE
+
+              </div>
+
+              {/* Info Grid */}
+              <div className="grid grid-cols-2 border-b border-gray-400">
+                <div className="p-3 border-r border-gray-400 space-y-1">
+                  <h3 className="font-bold text-sm">BILL TO:</h3>
+                  <p><span className="font-bold">Client Name:</span> {invoiceData.clientName}</p>
+                  <p><span className="font-bold">Phone:</span> {invoiceData.clientPhone}</p>
+                  <p><span className="font-bold">Email:</span> {invoiceData.clientEmail}</p>
+                  <p><span className="font-bold">Address:</span> {invoiceData.clientAddress}</p>
+                </div>
+                <div className="p-3 text-sm flex flex-col justify-between">
+                  <div className="flex justify-between border-b border-gray-300 py-1"><span>Invoice No:</span><span className="font-medium">{invoiceData.invoiceNumber}</span></div>
+                  <div className="flex justify-between border-b border-gray-300 py-1"><span>Invoice Date:</span><span className="font-medium">{invoiceData.invoiceDate}</span></div>
+                  <div className="flex justify-between border-b border-gray-300 py-1"><span>Employee:</span><span className="font-medium">{currentEmpName}</span></div>
+              
+              
+                {/* Replace the hardcoded line with this dynamic one */}
+                <div className="flex justify-between border-b border-gray-300 py-1">
+                  <span>Payment Method:</span>
+                  <span className="font-bold text-green-600">
+                    {invoiceData.paymentMethod}
+                  </span>
+                </div>
+                  <div className="flex justify-between py-1">
+                    <span>Payment Status:</span>
+                    <span className={`font-bold ${invoiceData.paymentStatus === 'Paid' ? 'text-green-600' : 'text-red-600'}`}>
+                      {invoiceData.paymentStatus}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Item Table */}
+              <table className="w-full border-collapse mt-4">
+                <thead>
+                  <tr className="bg-gray-100 border-b border-gray-400">
+                    <th className="border border-gray-400 p-2 w-16 text-gray-700">Sr No.</th>
+                    <th className="border border-gray-400 p-2 text-left text-gray-700">Name of Project/Service</th>
+                    <th className="border border-gray-400 p-2 w-24 text-gray-700">Price</th>
+                    <th className="border border-gray-400 p-2 w-32 text-gray-700">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="h-20">
+                    <td className="border border-gray-400 text-center pt-2 align-top">1</td>
+                    <td className="border border-gray-400 p-2 align-top font-medium">{invoiceData.projectName}</td>
+                    <td className="border border-gray-400 text-center pt-2 align-top">₹{Number(invoiceData.totalAmount).toLocaleString("en-IN")}</td>
+                    <td className="border border-gray-400 text-center p-2 align-top font-bold text-gray-800">₹{Number(invoiceData.finalAmount).toLocaleString("en-IN")}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+            {/* Totals Section */}
+              <div className="grid grid-cols-2 border border-gray-400 mt-4">
+                
+                {/* Amount in Words */}
+                <div className="p-4 border-r border-gray-300 bg-gray-50">
+                  <p className="text-[11px] font-semibold uppercase text-gray-600 tracking-wide mb-2">
+                    Amount in Words
+                  </p>
+
+                  <p 
+                    style={{ fontSize: '15px' }} 
+                    className="uppercase leading-snug text-gray-900 tracking-wide font-medium"
+                  >
+                    {numberToWords(Math.round(invoiceData.finalAmount))} Rupees Only
+                  </p>
+                </div>
+
+                {/* Amount Breakdown */}
+                <div className="text-sm">
+                  
+                  <div className="flex justify-between px-3 py-2 border-b border-gray-200">
+                    <span className="text-gray-600">Total Project Amount</span>
+                    <span className="font-medium text-gray-900">
+                      ₹{Number(invoiceData.totalAmount).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+
+                  {invoiceData.taxRate > 0 && (
+                    <div className="flex justify-between px-3 py-2 border-b border-gray-200">
+                      <span className="text-gray-600">GST ({invoiceData.taxRate}%)</span>
+                      <span className="font-medium text-gray-900">
+                        ₹{Number(invoiceData.taxAmount).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between px-3 py-2 border-b border-gray-300 bg-gray-50">
+                    <span className="font-semibold text-gray-800">Final Amount</span>
+                    <span className="font-bold text-base text-gray-900">
+                      ₹{Number(invoiceData.finalAmount).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between px-3 py-2 border-b border-gray-200">
+                    <span className="text-gray-600">Amount Paid</span>
+                    <span className="font-semibold text-gray-900">
+                      ₹{Number(invoiceData.totalPaidAmount).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+
+                  {/* Balance Due (same place, just enhanced) */}
+                  <div className="flex justify-between px-3 py-2">
+                    <span className="font-semibold text-gray-800">Balance Due</span>
+                    <span className="font-bold text-base text-gray-900">
+                      ₹{Number(invoiceData.balanceAmount).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Signature */}
+              <div className="flex justify-end items-end gap-10 mt-13">
+
+              {/* 🏷️ Stamp (LEFT of signature) */}
+              <div className="text-center">
+                {stamp ? (
+                  <img 
+                    src={stamp} 
+                    alt="Stamp" 
+                    className="h-23 mx-auto mb-1 opacity-90 -mt-6"
+                  />
+                ) : (
+                  <div className="h-23"></div>
+                )}
+              </div>
+
+              {/* ✍️ Signature (RIGHT) */}
+              <div className="text-center">
+                {signature ? (
+                  <img 
+                    src={signature} 
+                    alt="Signature" 
+                    className="h-12 mx-auto mb-1"
+                  />
+                ) : (
+                  <div className="h-12"></div>
+                )}
+                <div className="w-48 border-t border-black"></div>
+                <p className="text-[11px] font-bold uppercase mt-1">
+                  Authorized Signature
+                </p>
+              </div>
+            </div>
             </div>
           </div>
-          <h1 className="text-3xl font-bold tracking-tighter">INVOICE</h1>
-        </div>
-
-        {/* TAX TITLE */}
-        <div className="text-center text-gray-500 font-bold text-base py-3 border-b">
-
-        TAX INVOICE
-
-        </div>
-
-        {/* Info Grid */}
-        <div className="grid grid-cols-2 border-b border-gray-400">
-          <div className="p-3 border-r border-gray-400 space-y-1">
-            <h3 className="font-bold text-sm">BILL TO:</h3>
-            <p><span className="font-bold">Client Name:</span> {invoiceData.clientName}</p>
-            <p><span className="font-bold">Phone:</span> {invoiceData.clientPhone}</p>
-            <p><span className="font-bold">Email:</span> {invoiceData.clientEmail}</p>
-            <p><span className="font-bold">Address:</span> {invoiceData.clientAddress}</p>
-          </div>
-          <div className="p-3 text-sm flex flex-col justify-between">
-            <div className="flex justify-between border-b border-gray-300 py-1"><span>Invoice No:</span><span className="font-medium">{invoiceData.invoiceNumber}</span></div>
-            <div className="flex justify-between border-b border-gray-300 py-1"><span>Invoice Date:</span><span className="font-medium">{invoiceData.invoiceDate}</span></div>
-            <div className="flex justify-between border-b border-gray-300 py-1"><span>Employee:</span><span className="font-medium">{currentEmpName}</span></div>
-         
-         
-          {/* Replace the hardcoded line with this dynamic one */}
-          <div className="flex justify-between border-b border-gray-300 py-1">
-            <span>Payment Method:</span>
-            <span className="font-bold text-green-600">
-              {invoiceData.paymentMethod}
-            </span>
-          </div>
-            <div className="flex justify-between py-1">
-              <span>Payment Status:</span>
-              <span className={`font-bold ${invoiceData.paymentStatus === 'Paid' ? 'text-green-600' : 'text-red-600'}`}>
-                {invoiceData.paymentStatus}
-              </span>
-            </div>
+          <div className="flex gap-4 mt-6">
+            <button onClick={handleInvoicePrint} className="bg-blue-600 text-white px-10 py-2 rounded-full font-bold shadow-lg hover:bg-blue-700">Print Invoice</button>
+            <button onClick={() => setShowPreview(false)} className="bg-white text-gray-800 px-10 py-2 rounded-full font-bold border hover:bg-gray-50">Close</button>
           </div>
         </div>
-
-        {/* Item Table */}
-        <table className="w-full border-collapse mt-4">
-          <thead>
-            <tr className="bg-gray-100 border-b border-gray-400">
-              <th className="border border-gray-400 p-2 w-16 text-gray-700">Sr No.</th>
-              <th className="border border-gray-400 p-2 text-left text-gray-700">Name of Project/Service</th>
-              <th className="border border-gray-400 p-2 w-24 text-gray-700">Price</th>
-              <th className="border border-gray-400 p-2 w-32 text-gray-700">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="h-20">
-              <td className="border border-gray-400 text-center pt-2 align-top">1</td>
-              <td className="border border-gray-400 p-2 align-top font-medium">{invoiceData.projectName}</td>
-              <td className="border border-gray-400 text-center pt-2 align-top">₹{Number(invoiceData.totalAmount).toLocaleString("en-IN")}</td>
-              <td className="border border-gray-400 text-center p-2 align-top font-bold text-gray-800">₹{Number(invoiceData.finalAmount).toLocaleString("en-IN")}</td>
-            </tr>
-          </tbody>
-        </table>
-
-       {/* Totals Section */}
-        <div className="grid grid-cols-2 border border-gray-400 mt-4">
-          <div className="p-4 border-r-2 border-gray-400 justify-center bg-gray-50/50">
-            <p className="font-bold text-[12px] uppercase text-gray-700 mb-1">Total in words:</p>   <br />
-            <p 
-          style={{ fontSize: '15px' }} 
-          className="uppercase leading-tight text-gray-900 tracking-wide font-medium"
-        >
-          {numberToWords(Math.round(invoiceData.finalAmount))} RUPEES ONLY
-        </p>
-          </div>
-          <div className="p-0 text-sm">
-          <div className="flex justify-between p-2 border-b border-gray-300">
-            <span>Total Project Amount:</span>
-            <span>₹{Number(invoiceData.totalAmount).toLocaleString("en-IN")}</span>
-          </div>
-
-          {/* Show GST only if GST exists */}
-          {invoiceData.taxRate > 0 && (
-            <div className="flex justify-between p-2 border-b border-gray-300 text-gray-900">
-              <span>GST ({invoiceData.taxRate}%):</span>
-              <span>₹{Number(invoiceData.taxAmount).toLocaleString("en-IN")}</span>
-            </div>
-          )}
-
-          <div className="flex justify-between p-2 font-black text-base">
-            <span>Final Amount:</span>
-            <span>₹{Number(invoiceData.finalAmount).toLocaleString("en-IN")}</span>
-          </div>
-
-
-          <div className="flex justify-between p-2 text-black font-bold">
-            <span>This Invoice Amount:</span>
-            <span>₹{Number(invoiceData.totalPaidAmount).toLocaleString("en-IN")}</span>
-          </div>
-
-            <div className="flex justify-between p-2 font-bold text-black">
-            <span>Remaining Balance:</span>
-            <span>₹{Number(invoiceData.balanceAmount).toLocaleString("en-IN")}</span>
-          </div>
-        </div>
-        </div>
-
-        {/* Signature */}
-        
-        
-        <div className="flex justify-end items-end gap-10 mt-13">
-
-  {/* 🏷️ Stamp (LEFT of signature) */}
-  <div className="text-center">
-    {stamp ? (
-      <img 
-        src={stamp} 
-        alt="Stamp" 
-        className="h-23 mx-auto mb-1 opacity-90 -mt-6"
-      />
-    ) : (
-      <div className="h-23"></div>
-    )}
-   
-  </div>
-
-  {/* ✍️ Signature (RIGHT) */}
-  <div className="text-center">
-    {signature ? (
-      <img 
-        src={signature} 
-        alt="Signature" 
-        className="h-12 mx-auto mb-1"
-      />
-    ) : (
-      <div className="h-12"></div>
-    )}
-    <div className="w-48 border-t border-black"></div>
-    <p className="text-[11px] font-bold uppercase mt-1">
-      Authorized Signature
-    </p>
-  </div>
-
-</div>
-      </div>
-    </div>
-    <div className="flex gap-4 mt-6">
-      <button onClick={handleInvoicePrint} className="bg-blue-600 text-white px-10 py-2 rounded-full font-bold shadow-lg hover:bg-blue-700">Print Invoice</button>
-      <button onClick={() => setShowPreview(false)} className="bg-white text-gray-800 px-10 py-2 rounded-full font-bold border hover:bg-gray-50">Close</button>
-    </div>
-  </div>
-)}
+      )}
     </div> 
   );
 };
