@@ -13,6 +13,7 @@ import ForgotPassword from './components/login/ForgotPassword'
 import ResetPassword from './components/login/ResetPassword'
 import AdminPanel from './components/Admin/AdminPanel'
 import EmployeePanel from './components/Employee/EmployeePanel'
+import CreateQuotation from './components/Employee/CreateQuotation';
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function MainLayout() {
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/cookie-policy" element={<CookiePolicy />} />
+        <Route path="/create-quotation/:id" element={<CreateQuotation />} />
       </Routes>
    
       
