@@ -29,6 +29,17 @@ const Invoice = () => {
   const currentEmpId = localStorage.getItem("empId") || "EMP-001";
   const [currentEmpName, setCurrentEmpName] = useState("");
 
+  // ✅ Adjustment Bucket State (Carry-Forward Amount)
+  const [adjustmentAmount, setAdjustmentAmount] = useState(0); // Amount from previous invoice
+  const [quotationAdjustmentAmount, setQuotationAdjustmentAmount] = useState(0); // Full quotation adjustment
+
+  // ✅ Custom Percentage State
+  const [showCustomPercentage, setShowCustomPercentage] = useState(false);
+  const [customPercentage, setCustomPercentage] = useState("");
+  const [customComment, setCustomComment] = useState("");
+  const [carryForwardPercentage, setCarryForwardPercentage] = useState(0);
+  const [customPercentageError, setCustomPercentageError] = useState("");
+
   const numberToWords = (num) => {
   const a = ['', 'one ', 'two ', 'three ', 'four ', 'five ', 'six ', 'seven ', 'eight ', 'nine ', 'ten ', 'eleven ', 'twelve ', 'thirteen ', 'fourteen ', 'fifteen ', 'sixteen ', 'seventeen ', 'eighteen ', 'nineteen '];
   const b = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
@@ -90,10 +101,13 @@ const Invoice = () => {
   if (!term) return;
 
   const quotationTotal = parseFloat(invoiceData.finalAmount) || 0;
-  const installmentAmount = Number(term.fixedAmount) || Math.round((quotationTotal * parseFloat(term.percent)) / 100);
-  const balanceAfterThis = remainingBalance - installmentAmount;
+  const baseInstallmentAmount = Number(term.fixedAmount) || Math.round((quotationTotal * parseFloat(term.percent)) / 100);
+  
+  // ✅ CRITICAL: Apply adjustment bucket to final amount
+  const finalPaidAmount = baseInstallmentAmount + adjustmentAmount;
+  const balanceAfterThis = remainingBalance - finalPaidAmount;
 
-  const overallPaid = previouslyPaid + installmentAmount;
+  const overallPaid = previouslyPaid + finalPaidAmount;
   let status = 'Pending';
   if (overallPaid >= quotationTotal && quotationTotal > 0) {
     status = 'Paid';
@@ -103,15 +117,81 @@ const Invoice = () => {
 
   setInvoiceData(prev => ({
     ...prev,
-    advancePaid: installmentAmount,
+    advancePaid: finalPaidAmount,
     advancePercentage: term.percent + '%',
     midwayPaid: 0,
     midwayPercentage: '0%',
-    totalPaidAmount: installmentAmount.toFixed(2),
+    totalPaidAmount: finalPaidAmount.toFixed(2),
     balanceAmount: balanceAfterThis.toFixed(2),
-    paymentStatus: status
+    paymentStatus: status,
+    adjustmentAmount: adjustmentAmount
   }));
-}, [selectedInstallmentIdx, availableInstallments, remainingBalance, previouslyPaid, invoiceData.finalAmount]);
+}, [selectedInstallmentIdx, availableInstallments, remainingBalance, previouslyPaid, invoiceData.finalAmount, adjustmentAmount]);
+
+  // ✅ Handle custom percentage calculation
+  const handleCustomPercentageChange = () => {
+    setCustomPercentageError("");
+    
+    if (!customPercentage || customPercentage === "") {
+      setInvoiceData(prev => ({
+        ...prev,
+        advancePaid: 0,
+        advancePercentage: '0%',
+        midwayPaid: 0,
+        midwayPercentage: '0%',
+        totalPaidAmount: '0',
+        balanceAmount: remainingBalance.toFixed(2)
+      }));
+      setCarryForwardPercentage(0);
+      return;
+    }
+
+    const percentage = parseFloat(customPercentage);
+    const quotationTotal = parseFloat(invoiceData.finalAmount) || 0;
+
+    // Validation
+    if (percentage <= 0) {
+      setCustomPercentageError("Percentage must be greater than 0");
+      return;
+    }
+
+    // Get current selected installment to check remaining
+    const currentTerm = availableInstallments[selectedInstallmentIdx];
+    const maxAllowedPercentage = currentTerm?.percent || 100;
+
+    if (percentage > maxAllowedPercentage) {
+      setCustomPercentageError(`Entered percentage (${percentage}%) exceeds remaining limit (${maxAllowedPercentage}%)`);
+      return;
+    }
+
+    // Calculate amount
+    const calculatedAmount = Math.round((quotationTotal * percentage) / 100);
+    
+    // Calculate carry-forward: planned - actual = remaining to carry forward
+    const carryForward = maxAllowedPercentage - percentage;
+    setCarryForwardPercentage(carryForward);
+
+    const balanceAfterThis = remainingBalance - calculatedAmount;
+
+    const overallPaid = previouslyPaid + calculatedAmount;
+    let status = 'Pending';
+    if (overallPaid >= quotationTotal && quotationTotal > 0) {
+      status = 'Paid';
+    } else if (overallPaid > 0) {
+      status = 'Partially Paid';
+    }
+
+    setInvoiceData(prev => ({
+      ...prev,
+      advancePaid: calculatedAmount,
+      advancePercentage: percentage + '%',
+      midwayPaid: 0,
+      midwayPercentage: '0%',
+      totalPaidAmount: calculatedAmount.toFixed(2),
+      balanceAmount: balanceAfterThis.toFixed(2),
+      paymentStatus: status
+    }));
+  };
 
   // ✅ Fetch Approved Quotations
   useEffect(() => {
@@ -179,6 +259,25 @@ const Invoice = () => {
   const gstAmount = quotation.gstAmount || 0;
   const finalTotal = quotation.finalAmount || rawAmount + gstAmount;
 
+  // ✅ CRITICAL: Fetch adjustment bucket from quotation
+  let adjustmentBucketAmount = 0;
+  try {
+    // First, try to get adjustment from quotation directly (if backend provides it)
+    if (quotation.adjustmentAmount) {
+      adjustmentBucketAmount = parseFloat(quotation.adjustmentAmount) || 0;
+    }
+    // Otherwise, fetch from backend
+    if (adjustmentBucketAmount === 0) {
+      const quotRes = await fetch(`http://localhost:8080/api/quotations/${encodeURIComponent(quotationId)}`);
+      if (quotRes.ok) {
+        const quotData = await quotRes.json();
+        adjustmentBucketAmount = parseFloat(quotData.adjustmentAmount) || 0;
+      }
+    }
+  } catch (err) {
+    console.error("Error fetching adjustment bucket:", err);
+  }
+
   // Fetch existing invoices for this quotation to calculate remaining balance
   let totalAlreadyPaid = 0;
   let invoicesCount = 0;
@@ -233,6 +332,10 @@ const Invoice = () => {
   setInvoicedCount(safeInvoicedCount);
   setAvailableInstallments(remainingTerms);
   setSelectedInstallmentIdx(0);
+  
+  // ✅ Set adjustment amount in state
+  setAdjustmentAmount(adjustmentBucketAmount);
+  setQuotationAdjustmentAmount(adjustmentBucketAmount);
 
   setInvoiceData((prev) => ({
     ...prev,
@@ -273,7 +376,12 @@ const Invoice = () => {
         employeeName: savedName,
         // Ensure status is 'Sent' so the Admin knows it's active
         status: 'Sent', 
-        date: new Date().toLocaleDateString('en-IN')
+        date: new Date().toLocaleDateString('en-IN'),
+        // ✅ Include carry-forward percentage if custom percentage is used
+        carryForwardPercentage: showCustomPercentage ? carryForwardPercentage : 0,
+        // ✅ Include adjustment bucket (carry-forward amount) from previous invoice
+        adjustmentAmount: adjustmentAmount,
+        customComment: customComment || ""
       };
 
       // Ensure the URL matches your Controller: /api/invoices/create
@@ -287,7 +395,8 @@ const Invoice = () => {
 
       if (response.ok) {
         alert("Invoice generated and saved successfully! ✅");
-        navigate("./invoices"); 
+        // ✅ Reload the page after successful save
+        window.location.reload();
       } else {
         const errorData = await response.json();
         alert(`Failed to save invoice: ${errorData.message || 'Server Error'}`);
@@ -523,42 +632,183 @@ const handleInvoicePrint = () => {
                 <div className="flex items-center gap-2">
                   <span>🗓️</span> Payment Details
                 </div>
-                <div className="text-sm font-bold text-indigo-600">
-                  Available Balance: ₹{remainingBalance.toLocaleString('en-IN')}
+                <div className="flex items-center gap-3">
+                  <div className="text-sm font-bold text-indigo-600">
+                    Available Balance: ₹{remainingBalance.toLocaleString('en-IN')}
+                  </div>
+                  {/* ✅ Custom Percentage Toggle Button */}
+                  <button
+                    onClick={() => {
+                      setShowCustomPercentage(!showCustomPercentage);
+                      if (!showCustomPercentage) {
+                        setSelectedInstallmentIdx(-1); // Deselect predefined when opening custom
+                      } else {
+                        setCustomPercentage("");
+                        setCustomComment("");
+                        setCustomPercentageError("");
+                        setCarryForwardPercentage(0);
+                        setSelectedInstallmentIdx(0); // Select first predefined
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                      showCustomPercentage
+                        ? 'bg-emerald-600 text-white shadow-md'
+                        : 'bg-white border-2 border-emerald-400 text-emerald-600 hover:bg-emerald-50'
+                    }`}
+                  >
+                    {showCustomPercentage ? '✓ Custom Percentage' : '+ Custom Percentage'}
+                  </button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {availableInstallments.map((term, i) => {
-                  const globalIdx = invoicedCount + i + 1;
-                  const ordinal = getOrdinal(globalIdx);
-                  const quotationTotal = parseFloat(invoiceData.finalAmount) || 0;
-                  const amount = Number(term.fixedAmount) || Math.round((quotationTotal * parseFloat(term.percent)) / 100);
-                  const isSelected = selectedInstallmentIdx === i;
-                  return (
-                    <div
-                      key={i}
-                      onClick={() => setSelectedInstallmentIdx(i)}
-                      className={`bg-white p-4 rounded-xl border-2 cursor-pointer transition-all shadow-sm space-y-2 ${
-                        isSelected ? 'border-purple-500 ring-2 ring-purple-200' : 'border-gray-100 hover:border-purple-300'
-                      }`}
-                    >
-                      <div className="flex justify-between items-center">
-                        <label className="text-xs font-bold text-gray-500 uppercase pointer-events-none">
-                          ({ordinal} Installment)
-                        </label>
-                        {isSelected && (
-                          <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold">SELECTED</span>
+              {/* ✅ Custom Percentage Card */}
+              {showCustomPercentage ? (
+                <div className="mb-4">
+                  <div className="bg-white p-4 rounded-xl border-2 border-emerald-500 ring-2 ring-emerald-100 space-y-3">
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-bold text-gray-500 uppercase">
+                        CUSTOM INSTALLMENT
+                      </label>
+                      <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">
+                        ACTIVE
+                      </span>
+                    </div>
+
+                    {/* Error Message */}
+                    {customPercentageError && (
+                      <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-3 py-2 rounded-lg">
+                        ⚠️ {customPercentageError}
+                      </div>
+                    )}
+
+                    {/* Percentage Input */}
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-2">
+                        Percentage (%)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        placeholder="Enter percentage"
+                        value={customPercentage}
+                        onChange={(e) => {
+                          setCustomPercentage(e.target.value);
+                          // Trigger calculation on change
+                          setTimeout(() => {
+                            setCustomPercentage(e.target.value);
+                          }, 0);
+                        }}
+                        onBlur={handleCustomPercentageChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+
+                    {/* Comment Field */}
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-2">
+                        Comment (Optional)
+                      </label>
+                      <textarea
+                        placeholder="Enter reason / comment"
+                        value={customComment}
+                        onChange={(e) => setCustomComment(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        rows="2"
+                      />
+                    </div>
+
+                    {/* Display Calculated Amount */}
+                    {customPercentage && !customPercentageError && (
+                      <div className="pt-2 border-t border-gray-200 space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-semibold text-gray-700">
+                            Total Amount:
+                          </span>
+                          <span className="text-lg font-bold text-emerald-600">
+                            ₹{(Math.round((parseFloat(invoiceData.finalAmount) * parseFloat(customPercentage)) / 100)).toLocaleString('en-IN')}
+                          </span>
+                        </div>
+                        
+                        {/* Carry-Forward Display */}
+                        {carryForwardPercentage > 0 && (
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+                            <p className="text-xs text-blue-700">
+                              <strong>💡 Carry-Forward:</strong> Remaining {carryForwardPercentage.toFixed(2)}% will be carried forward to next invoice
+                            </p>
+                          </div>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600">{term.label}</p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-semibold text-gray-700">{term.percent}%</span>
-                        <span className="text-lg font-bold text-purple-600">₹{amount.toLocaleString('en-IN')}</span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* ✅ Predefined Installments Grid */
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {availableInstallments.map((term, i) => {
+                    const globalIdx = invoicedCount + i + 1;
+                    const ordinal = getOrdinal(globalIdx);
+                    const quotationTotal = parseFloat(invoiceData.finalAmount) || 0;
+                    const amount = Number(term.fixedAmount) || Math.round((quotationTotal * parseFloat(term.percent)) / 100);
+                    const isSelected = selectedInstallmentIdx === i;
+                    return (
+                      <div
+                        key={i}
+                        onClick={() => {
+                          setSelectedInstallmentIdx(i);
+                          setShowCustomPercentage(false);
+                          setCustomPercentage("");
+                          setCustomComment("");
+                          setCustomPercentageError("");
+                          setCarryForwardPercentage(0);
+                        }}
+                        className={`bg-white p-4 rounded-xl border-2 cursor-pointer transition-all shadow-sm space-y-2 ${
+                          isSelected ? 'border-purple-500 ring-2 ring-purple-200' : 'border-gray-100 hover:border-purple-300'
+                        }`}
+                      >
+                        <div className="flex justify-between items-center">
+                          <label className="text-xs font-bold text-gray-500 uppercase pointer-events-none">
+                            ({ordinal} Installment)
+                          </label>
+                          {isSelected && (
+                            <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold">SELECTED</span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">{term.label}</p>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-semibold text-gray-700">{term.percent}%</span>
+                          <span className="text-lg font-bold text-purple-600">₹{amount.toLocaleString('en-IN')}</span>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* ✅ ADJUSTMENT BUCKET CARD - Always visible, shows amount & percentage */}
+              <div className="mt-4">
+                <div className="bg-yellow-50 p-4 rounded-xl border-2 border-yellow-300 shadow-sm space-y-2">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-bold text-gray-600 uppercase">
+                      Adjustment (Carry Forward)
+                    </label>
+                  </div>
+                  <div className="flex justify-between items-center pt-2">
+                    <span className="text-sm font-semibold text-gray-700">Amount:</span>
+                    <span className="text-lg font-bold text-amber-700">
+                      ₹{adjustmentAmount.toLocaleString('en-IN')} 
+                      <span className="text-xs font-normal text-gray-600 ml-2">
+                        ({((adjustmentAmount / (parseFloat(invoiceData.finalAmount) || 1)) * 100).toFixed(2)}%)
+                      </span>
+                    </span>
+                  </div>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5 mt-2">
+                    <p className="text-xs text-blue-700">
+                      <strong>ℹ️ Note:</strong> Unpaid amount from previous invoice, automatically applied to this invoice total.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {availableInstallments.length > 0 && (
