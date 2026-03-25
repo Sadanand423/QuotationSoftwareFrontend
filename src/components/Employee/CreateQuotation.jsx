@@ -6,11 +6,9 @@ import { useLocation } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
 
 
-const CreateQuotation = ({ selectedClient }) => {
+const CreateQuotation = ({ selectedClient, editData }) => {
 
-  const location = useLocation();
   const { id } = useParams();
-  const editData = location.state?.editData;
 
   const [showPreview, setShowPreview] = useState(false);
 
@@ -82,6 +80,7 @@ companyName: "SmartMatrix Digital Solutions Pvt. Ltd",
 contactNumber: "+91 9765400796",
 contactEmail: "sanjay.k@smartmatrixds.com",
 location: "Pune, Maharashtra, India",
+signatureUpload: null,
 companyStamp: null,
 signatureNote:
   "Once discussion is finalized, the SOW will be initiated along with the contractual obligations.",

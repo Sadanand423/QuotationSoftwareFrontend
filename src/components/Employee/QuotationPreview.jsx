@@ -4,13 +4,12 @@ import footerImg from "../../assets/footer.jpg";
 import html2pdf from "html2pdf.js";
 import watermark from "../../assets/Smartmatrix_watermark.png";
 
-
-
-
 const QuotationPreview = ({ formData, onClose }) => {
   const fileInputRef = useRef(null);
   console.log("Preview formData:", formData);
-  if (!formData) return null;
+  if (!formData || Object.keys(formData).length === 0) {
+  return <div className="p-6 text-center">No data available</div>;
+}
 
   const formatIndianCurrency = (amount) => {
     if (!amount || amount === 0) return "₹ 0";
@@ -382,7 +381,7 @@ const calculateMaintenanceRange = () => {
                       tech.technology?.trim() ||
                       tech.rationale?.trim()
                   )
-                  .map((tech, index) => {
+                  ?.map((tech, index) => {
                     const isLast =
                       index ===
                       formData.techStack.filter(
@@ -454,14 +453,14 @@ const calculateMaintenanceRange = () => {
 
               {/* Body */}
               <tbody>
-                {formData.costBreakdown.map((item, index) => (
+                {formData.costBreakdown?.map((item, index) => (
                   <tr
                     key={index}
                     className="border-b border-gray-200"
                   >
                     <td className="p-3 text-center">{item.srNo}</td>
                     <td className="p-3">{item.area}</td>
-                    <td className="p-3 whitespace-pre-wrap break-words">{item.scope}</td>
+                    <td className="p-3 whitespace-pre-wrap break-words">{item.resources || item.scope}</td>
                     <td className="p-3 text-left font-semibold text-black">{item.amount}
                     </td>
                   </tr>
@@ -523,7 +522,7 @@ const calculateMaintenanceRange = () => {
               </thead>
 
               <tbody>
-                {formData.timeline.map((phase, index) => (
+                {formData.timeline?.map((phase, index) => (
                   <tr
                     key={index}
                     className={`border-gray-200 ${
@@ -554,8 +553,7 @@ const calculateMaintenanceRange = () => {
             <ul className="space-y-1 text-sm">
 
               {formData.paymentTerms
-                ?.filter(term => term.percent && term.label)
-                .map((term, index) => (
+                ?.filter(term => term.percent && term.label)?.map((term, index) => (
                 <li key={index} className="flex items-start gap-2">
 
                   <span className="text-green-600 text-lg font-bold">✔</span>

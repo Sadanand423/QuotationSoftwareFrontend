@@ -9,6 +9,7 @@ import Invoice from './Invoice';
 import MyInvoice from './MyInvoice';
 import MyProfile from './MyProfile';
 import AllNotifications from "./AllNotifications";
+import QuotationPreview from './QuotationPreview';
 
 const EmployeePanel = () => {
   const [activeModule, setActiveModule] = useState('dashboard');
@@ -17,6 +18,7 @@ const EmployeePanel = () => {
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
 
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
@@ -133,8 +135,28 @@ const EmployeePanel = () => {
     switch (activeModule) {
       case 'dashboard': return <EmployeeDashboard onCreateQuotation={() => setActiveModule('create')} />;
       case 'clients': return <MyClients onCreateQuotation={handleCreateQuotation} />;
-      case 'create': return <CreateQuotation selectedClient={selectedClient} />;
-      case 'quotations': return <MyQuotations />;
+      case 'create': return <CreateQuotation selectedClient={selectedClient} editData={previewData}  />;
+      case 'quotations':
+        return (
+          <MyQuotations 
+            onEdit={(quote) => {
+              setSelectedClient(null); // optional
+              setPreviewData(quote);   // reuse this state
+              setActiveModule('create'); // 🔥 OPEN CREATE PAGE
+            }}
+          />
+        );
+      case 'preview':
+  if (!previewData) {
+    return <div className="p-6 text-center">Loading preview...</div>;
+  }
+
+  return (
+    <QuotationPreview 
+      formData={previewData} 
+      onClose={() => setActiveModule('quotations')} 
+    />
+  );
       case 'invoice': return <Invoice />;
       case 'myinvoice': return <MyInvoice />;
       case 'profile': return <MyProfile />;
