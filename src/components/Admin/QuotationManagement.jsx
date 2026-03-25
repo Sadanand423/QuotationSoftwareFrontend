@@ -276,7 +276,7 @@ const updateQuotationStatus = async (quotationId, newStatus) => {
                     </td>
                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-900">{quote.client}</td>
                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm font-semibold hidden sm:table-cell">
-                      {quote.currency || '$'}{quote.totalCost?.toLocaleString() || '0'}
+                     ₹{(quote.finalAmount || quote.totalCost + (quote.gstAmount || 0))?.toLocaleString('en-IN')}
                     </td>
                     <td className="px-3 sm:px-6 py-4">
                       <div className="relative inline-block"> 
@@ -372,8 +372,10 @@ const updateQuotationStatus = async (quotationId, newStatus) => {
                 <div className="flex justify-between border-b border-gray-50 pb-2">
                   <span className="text-gray-500">Amount</span>
                   <span className="text-green-600 font-bold">
-                    {selectedQuote.currency}{" "}{selectedQuote.totalCost?.toLocaleString()}
-                  </span>
+  {selectedQuote.currency}{" "}
+  {(selectedQuote.finalAmount || selectedQuote.totalCost + (selectedQuote.gstAmount || 0))
+    ?.toLocaleString('en-IN')}
+</span>
                 </div>
                 <div className="flex justify-between border-b border-gray-50 pb-2">
                   <span className="text-gray-500">Status</span>
