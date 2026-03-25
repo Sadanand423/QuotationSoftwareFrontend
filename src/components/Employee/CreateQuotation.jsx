@@ -824,7 +824,7 @@ const removeTimelineRow = (index) => {
                     <tr className="bg-linear-to-r from-gray-50 to-gray-100">
                       <th className="border border-gray-200 p-3 text-left font-semibold text-gray-700 text-sm w-20">Sr. No</th>
                       <th className="border border-gray-200 p-3 text-left font-semibold text-gray-700 text-sm">Development Area</th>
-                      <th className="border border-gray-200 p-3 text-left font-semibold text-gray-700 text-sm">Scope Includes</th>
+                      <th className="border border-gray-200 p-3 text-left font-semibold text-gray-700 text-sm">Resources Assigned</th>
                       <th className="border border-gray-200 p-3 text-left font-semibold text-gray-700 text-sm w-32">Amount (₹)</th>
                       <th className="border border-gray-200 p-3 text-left font-semibold text-gray-700 text-sm w-20">Action</th>
                     </tr>
@@ -848,7 +848,7 @@ const removeTimelineRow = (index) => {
                             rows="3"
                             value={item.scope}
                             onChange={(e) => updateCostItem(index, 'scope', e.target.value)}
-                            placeholder="Enter scope details"
+                            placeholder="Enter resources assigne details"
                           />
                         </td>
                         <td className="border border-gray-200 p-3">

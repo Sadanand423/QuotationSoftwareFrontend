@@ -2,6 +2,7 @@ import React, { useRef } from "react";
 import headerImg from "../../assets/header.jpg";
 import footerImg from "../../assets/footer.jpg";
 import html2pdf from "html2pdf.js";
+import watermark from "../../assets/Smartmatrix_watermark.png";
 
 
 
@@ -34,150 +35,174 @@ const finalAmount = formData.totalCost + gstAmount;
 
   
 const handlePrint = () => {
-  const printContent = document.querySelector("#print-section .content").innerHTML;
+  const iframe = document.createElement("iframe");
+  iframe.style.position = "absolute";
+  iframe.style.width = "0px";
+  iframe.style.height = "0px";
+  iframe.style.border = "none";
+  document.body.appendChild(iframe);
 
+const original = document.querySelector("#print-section").cloneNode(true);
+
+// ❌ Remove header & footer from clone
+original.querySelector(".header")?.remove();
+original.querySelector(".footer")?.remove();
+original.querySelector("img[alt='watermark']")?.remove(); // 🔥 IMPORTANT
+
+const printContent = original.innerHTML;
   const headerURL = new URL(headerImg, window.location.href).href;
   const footerURL = new URL(footerImg, window.location.href).href;
+  const watermarkURL = new URL(watermark, window.location.href).href;
 
-  const printWindow = window.open("", "", "width=1200,height=800");
+  const styles = Array.from(document.styleSheets)
+    .map(sheet => {
+      try {
+        return Array.from(sheet.cssRules).map(rule => rule.cssText).join("");
+      } catch {
+        return "";
+      }
+    })
+    .join("");
 
-  printWindow.document.write(`
+  const doc = iframe.contentWindow.document;
+
+  doc.open();
+doc.write(`
 <html>
 <head>
-<title>Quotation</title>
-${Array.from(document.styleSheets)
-  .map(sheet => {
-    try {
-      if (sheet.href) {
-        return `<link rel="stylesheet" href="${sheet.href}">`;
-      } else if (sheet.ownerNode && sheet.ownerNode.innerHTML) {
-        return `<style>${sheet.ownerNode.innerHTML}</style>`;
-      }
-    } catch (e) {
-      return "";
-    }
-  })
-
-  .join("")}
 <style>
-  /* 1. Kill browser default margins completely */
+  ${styles}
+
   @page {
     size: A4;
     margin: 0;
   }
 
-  html, body {
+  body {
     margin: 0;
     padding: 0;
-    width: 100%;
-    height: 100%;
-    font-family: Arial, sans-serif;
     -webkit-print-color-adjust: exact;
   }
 
-  /* 2. REPEATING HEADER */
+  /* HEADER REPEAT */
   thead {
     display: table-header-group;
   }
 
-  /* 3. THE FIXED FOOTER FIX */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  /* HEADER */
+  .page-header img {
+  width: 100%;
+  display: block;
+}
+
+/* control spacing properly */
+.page-header td {
+  padding-bottom: 7px;
+}
+
+  /* CONTENT */
+  .page-content {
+  padding: 0px 20px;
+  vertical-align: top;
+}
+
+  /* FIXED FOOTER (REAL FIX) */
   .footer-fixed {
     position: fixed;
-    bottom: 0; /* Pinned to the very bottom */
+    bottom: 0;
     left: 0;
     width: 100%;
-    height: auto;
-    z-index: 9999;
-    line-height: 0; 
-    font-size: 0;    
   }
 
   .footer-fixed img {
     width: 100%;
-    display: block; /* Removes inline spacing */
-    margin: 0;
-    padding: 0;
   }
 
-  .page-header img {
-    width: 100%;
-    display: block;
+  /* WATERMARK */
+  .watermark {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 300px;
+    opacity: 0.30;
+    transform: translate(-50%, -50%);
+    z-index: 0;
   }
 
-  /* Space under header */
-  .page-header td {
-    padding-bottom: 44px;
+  img {
+    -webkit-print-color-adjust: exact;
   }
 
-  /* RESERVES SPACE AT BOTTOM SO TEXT DOESN'T OVERLAP IMAGE */
+  tr {
+    page-break-inside: avoid;
+  }
+
   tfoot {
-    display: table-footer-group;
-  }
+  display: table-footer-group;
+}
 
-  .footer-spacer {
-    height: 60px; /* Adjust this to match your footer height */
-  }
-
-  /* CONTENT AREA SPACING */
-  .page-content {
-    padding: 0 40px;
-    vertical-align: top;
-  }
-
- 
-  .page-content > div { margin-bottom: 26px; }
-  .page-content h3 { margin-bottom: 16px; font-weight: bold; font-size: 1.1rem; }
-  .page-content table { margin-top: 16px; margin-bottom: 24px; width: 100%; border-collapse: collapse; }
-  .page-content ul { margin-top: 12px; margin-bottom: 30px; }
-  .page-content th, .page-content td { padding: 10px; border: none; }
-
-  tr { page-break-inside: avoid; }
+.footer-spacer {
+  height: 60px; /* match your footer height */
+}
 </style>
 </head>
 
 <body>
-  <div class="footer-fixed">
-    <img src="${footerURL}" />
-  </div>
 
-  <table style="width: 100%; border-collapse: collapse; margin: 0;">
-    <thead class="page-header">
-      <tr>
-        <td>
-          <img src="${headerURL}" />
-        </td>
-      </tr>
-    </thead>
+<img src="${watermarkURL}" class="watermark" />
 
-    <tbody>
-      <tr>
-        <td class="page-content">
-          ${printContent}
-        </td>
-      </tr>
-    </tbody>
+<table>
 
-    <tfoot>
-      <tr>
-        <td class="footer-spacer"></td>
-      </tr>
-    </tfoot>
-  </table>
+  <!-- HEADER -->
+  <thead class="page-header">
+    <tr>
+      <td>
+        <img src="${headerURL}" />
+      </td>
+    </tr>
+  </thead>
 
-  <script>
-    window.onload = () => {
-      setTimeout(() => {
-        window.print();
-      }, 700);
-    };
-  </script>
+  <!-- CONTENT -->
+  <tbody>
+    <tr>
+      <td class="page-content">
+        ${printContent}
+      </td>
+    </tr>
+  </tbody>
+
+  <tfoot>
+  <tr>
+    <td class="footer-spacer"></td>
+  </tr>
+</tfoot>
+
+</table>
+
+<!-- ✅ FOOTER (FIXED, ALWAYS BOTTOM) -->
+<div class="footer-fixed">
+  <img src="${footerURL}" />
+</div>
+
+<script>
+  window.onload = function() {
+    window.print();
+    setTimeout(() => {
+      window.frameElement.remove();
+    }, 100);
+  };
+</script>
+
 </body>
 </html>
 `);
-
-  printWindow.document.close();
+doc.close();
 };
-
 
 
 const handleSendForApprovalClick = () => {
@@ -265,8 +290,13 @@ const calculateMaintenanceRange = () => {
       </div>
 
         {/* BODY */}
-        <div className="content p-8 space-y-6 text-gray-800">
-
+        <div className="content relative p-8 space-y-6 text-gray-800 overflow-hidden">
+          {/* WATERMARK */}
+            <img
+              src={watermark}
+              alt="watermark"
+              className="absolute top-1/2 left-1/2 w-[280px] opacity-25 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+            />
           {/* Quotation Info */}
           <div className="grid grid-cols-2 gap-6 text-sm">
             <div>
@@ -416,8 +446,8 @@ const calculateMaintenanceRange = () => {
               <thead>
                 <tr className="bg-gray-100 border-b border-gray-300">
                   <th className="p-3 w-[8%] text-left">Sr</th>
-                  <th className="p-3 w-[25%] text-left">Development Area</th>
-                  <th className="p-3 w-[45%] text-left">Scope</th>
+                  <th className="p-3 w-[30%] text-left">Development Area</th>
+                  <th className="p-3 w-[40%] text-left">Resources Assigned</th>
                   <th className="p-3 w-[22%] text-left">Amount</th>
                 </tr>
               </thead>
@@ -432,8 +462,7 @@ const calculateMaintenanceRange = () => {
                     <td className="p-3 text-center">{item.srNo}</td>
                     <td className="p-3">{item.area}</td>
                     <td className="p-3 whitespace-pre-wrap break-words">{item.scope}</td>
-                    <td className="p-3 text-center font-semibold text-black">
-                      {item.amount}
+                    <td className="p-3 text-left font-semibold text-black">{item.amount}
                     </td>
                   </tr>
                 ))}
@@ -443,7 +472,7 @@ const calculateMaintenanceRange = () => {
                   <td colSpan="3" className="p-3 text-right">
                     TOTAL PROJECT COST
                   </td>
-                  <td className="p-3 text-center text-black">
+                  <td className="p-3 text-left text-black">
                     {formatIndianCurrency(formData.totalCost)}
                   </td>
                 </tr>
@@ -454,7 +483,7 @@ const calculateMaintenanceRange = () => {
                     <td colSpan="3" className="p-3 text-right font-semibold">
                       GST ({gstPercent}%)
                     </td>
-                    <td className="p-3 text-center text-black">
+                    <td className="p-3 text-left text-black">
                       {formatIndianCurrency(gstAmount)}
                     </td>
                   </tr>
@@ -466,7 +495,7 @@ const calculateMaintenanceRange = () => {
                     <td colSpan="3" className="p-3 text-right">
                       FINAL AMOUNT
                     </td>
-                    <td className="p-3 text-center text-lg text-black">
+                    <td className="p-3 text-left text-lg text-black">
                       {formatIndianCurrency(finalAmount)}
                     </td>
                   </tr>
