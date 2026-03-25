@@ -117,6 +117,7 @@ const EmployeePanel = () => {
 
   // ================= NAVIGATION =================
   const handleCreateQuotation = (client = null) => {
+    setPreviewData(null); 
     setSelectedClient(client);
     setActiveModule('create');
   };
@@ -175,13 +176,31 @@ const EmployeePanel = () => {
         <div className="fixed inset-0 z-50 sm:hidden">
           <div className="fixed inset-0 bg-black opacity-50" onClick={() => setSidebarOpen(false)} />
           <div className="fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white shadow-2xl z-50">
-            <EmployeeSidebar activeModule={activeModule} setActiveModule={setActiveModule} onClose={() => setSidebarOpen(false)} />
+            <EmployeeSidebar 
+  activeModule={activeModule} 
+  setActiveModule={(module) => {
+    if (module !== 'create') {
+      setPreviewData(null);
+    }
+    setActiveModule(module);
+    setSidebarOpen(false);
+  }} 
+/>
           </div>
         </div>
       )}
 
       <div className="hidden sm:block">
-        <EmployeeSidebar activeModule={activeModule} setActiveModule={setActiveModule} />
+        <EmployeeSidebar 
+          activeModule={activeModule} 
+          setActiveModule={(module) => {
+            if (module !== 'create') {
+              setPreviewData(null);
+            }
+            setActiveModule(module);
+            setSidebarOpen(false);
+          }} 
+        />
       </div>
 
       <div className="flex-1 overflow-auto">
