@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import AdminClientInfoModal from './AdminClientInfoModal';
 
 const ClientManagement = () => {
   const [clients, setClients] = useState([]);
@@ -307,15 +308,23 @@ const handleDelete = async (clientId) => {
         </div>
       )}
 
-      {/* --- ACTION MODAL (VIEW / EDIT / DELETE) --- */}
-{showModal && selectedClient && (
+      {/* --- CLIENT INFO MODAL (VIEW WITH QUOTATIONS & INVOICES) --- */}
+      {showModal && modalType === 'view' && selectedClient && (
+        <AdminClientInfoModal 
+          client={selectedClient}
+          onClose={() => setShowModal(false)}
+        />
+      )}
+
+      {/* --- ACTION MODAL (EDIT / DELETE) --- */}
+{showModal && (modalType === 'edit' || modalType === 'delete') && selectedClient && (
   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
     <div className="bg-white/90 rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all animate-in fade-in zoom-in duration-200 border border-white/30 backdrop-blur-md">
       
       {/* Header */}
       <div className="flex justify-between items-center border-b pb-3 mb-4">
         <h3 className="text-xl font-bold text-gray-800">
-          {modalType === 'view' && 'Client Summary'}
+          {modalType === 'edit' && 'Edit Client Status'}
           {modalType === 'delete' && 'Delete Client'}
         </h3>
         <button
@@ -325,54 +334,6 @@ const handleDelete = async (clientId) => {
           &times;
         </button>
       </div>
-
-      {/* VIEW */}
-      {modalType === 'view' && (
-        <div className="space-y-4">
-          <div className="flex justify-between border-b border-gray-50 pb-2">
-            <span className="text-gray-500">Client ID</span>
-            <span className="text-gray-900 font-bold">{selectedClient.clientId}</span>
-          </div>
-
-          <div className="flex justify-between border-b border-gray-50 pb-2">
-            <span className="text-gray-500">Name</span>
-            <span className="text-gray-900 font-medium">{selectedClient.name}</span>
-          </div>
-
-          <div className="flex justify-between border-b border-gray-50 pb-2">
-            <span className="text-gray-500">Email</span>
-            <span className="text-gray-900">{selectedClient.email}</span>
-          </div>
-
-          <div className="flex justify-between border-b border-gray-50 pb-2">
-            <span className="text-gray-500">Phone</span>
-            <span className="text-gray-900">{selectedClient.phone}</span>
-          </div>
-
-          <div className="flex justify-between border-b border-gray-50 pb-2">
-            <span className="text-gray-500">Status</span>
-            <span className={`px-3 py-1 text-xs rounded-full font-medium ${
-              selectedClient.status === 'Active'
-                ? 'bg-green-100 text-green-700'
-                : 'bg-gray-100 text-gray-700'
-            }`}>
-              {selectedClient.status}
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span className="text-gray-500">Join Date</span>
-            <span className="text-gray-900">{selectedClient.joinDate || 'N/A'}</span>
-          </div>
-
-          <button
-            onClick={() => setShowModal(false)}
-            className="mt-8 w-full bg-gray-800 text-white py-3 rounded-xl font-semibold hover:bg-gray-900 transition-colors"
-          >
-            Close Details
-          </button>
-        </div>
-      )}
 
       {/* EDIT */}
       {modalType === 'edit' && (
