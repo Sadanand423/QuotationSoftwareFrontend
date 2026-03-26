@@ -81,7 +81,7 @@ contactNumber: "+91 9765400796",
 contactEmail: "sanjay.k@smartmatrixds.com",
 location: "Pune, Maharashtra, India",
 signatureUpload: null,
-companyStamp: null,
+companyStamp: stampImg,
 signatureNote:
   "Once discussion is finalized, the SOW will be initiated along with the contractual obligations.",
 
@@ -112,37 +112,52 @@ useEffect(() => {
   // 1. Logic for EDITING an existing quotation
   if (editData) {
     setFormData(prev => ({
-      ...prev,   // keep default structure
-      ...editData // override with edit values
-    }));    console.log("Mode: Editing existing quotation");
-  } 
+      ...prev,
+      ...editData,
+      clientOrganization: editData.clientOrganization || prev.clientOrganization || "",
+      assumptions: editData.assumptions || {
+        included: [],
+        excluded: [],
+        warranty: []
+      }
+    }));
 
-  // 2. Logic for CREATING a new quotation for a specific client
-  else if (selectedClient) {
+    // 🔥 FETCH ORGANIZATION IF MISSING
+  if (!editData.clientOrganization && editData.client) {
+    fetch(`http://localhost:8080/api/clients`)
+      .then(res => res.json())
+      .then(data => {
+        const matchedClient = data.find(
+          c => c.name === editData.client
+        );
+
+        if (matchedClient) {
+          setFormData(prev => ({
+            ...prev,
+            clientOrganization: matchedClient.organization || ""
+          }));
+        }
+      })
+      .catch(err => console.error("Error fetching organization:", err));
+  }
+
+    console.log("Mode: Editing existing quotation");
+
+  } else if (!editData && selectedClient) {   // 🔥 IMPORTANT FIX
     setFormData((prev) => ({
       ...prev,
       client: selectedClient.name || '',
-      clientOrganization: selectedClient.organization || '',
       clientEmail: selectedClient.email || '',
       clientPhone: selectedClient.phone || '',
-      clientAddress: selectedClient.address || ''
+      clientAddress: selectedClient.address || '',
+      clientOrganization: selectedClient.organization || ""
+
     }));
     console.log("Mode: Creating new quote for client");
   }
-}, [editData, selectedClient]); // ✅ Added editData to the dependency array
-
-useEffect(() => {
-  if (!editData && id) {
-    fetch(`http://localhost:8080/api/quotations/${id}`)
-      .then(res => res.json())
-      .then(data => {
-        setFormData(data);
-      })
-      .catch(err => console.error("Fetch error:", err));
-  }
-}, [id, editData]);
+}, [id, editData, selectedClient]);
   
-  useEffect(() => {
+useEffect(() => {
   const total = calculateTotal();
   setFormData((prev) => ({
     ...prev,
@@ -268,6 +283,7 @@ useEffect(() => {
     // 2. Prepare the payload with the dynamic fields
     const payload = {
     ...formData,
+      clientOrganization: formData.clientOrganization ?? "",
     totalCost: formData.totalCost,
     gstAmount: gstAmount,
     finalAmount: finalAmount,
@@ -532,7 +548,7 @@ const removeTimelineRow = (index) => {
                   <input 
                     type="text" 
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-sm"
-                    value={formData.client}
+                    value={formData.client || ""}
                     onChange={(e) => setFormData({...formData, client: e.target.value})}
                     placeholder="Enter client name"
                   />
@@ -545,7 +561,7 @@ const removeTimelineRow = (index) => {
                   <input
                     type="text"
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-100"
-                    value={formData.clientOrganization}
+                    value={formData.clientOrganization ?? ""}
                     readOnly
                   />
                 </div>
@@ -554,7 +570,7 @@ const removeTimelineRow = (index) => {
                   <input 
                     type="email" 
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-sm"
-                    value={formData.clientEmail}
+                    value={formData.clientEmail || ""}
                     onChange={(e) => setFormData({...formData, clientEmail: e.target.value})}
                     placeholder="Enter email address"
                   />
@@ -564,7 +580,7 @@ const removeTimelineRow = (index) => {
                   <input 
                     type="tel" 
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-sm"
-                    value={formData.clientPhone}
+                    value={formData.clientPhone || ""}
                     onChange={(e) => setFormData({...formData, clientPhone: e.target.value})}
                     placeholder="Enter phone number"
                   />
@@ -574,7 +590,7 @@ const removeTimelineRow = (index) => {
                   <textarea 
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-sm resize-none"
                     rows="2"
-                    value={formData.clientAddress}
+                    value={formData.clientAddress || ""}
                     onChange={(e) => setFormData({...formData, clientAddress: e.target.value})}
                     placeholder="Enter client address"
                   />
@@ -594,7 +610,7 @@ const removeTimelineRow = (index) => {
                   <input 
                     type="text" 
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none text-sm"
-                    value={formData.project}
+                    value={formData.project || ""}
                     onChange={(e) => setFormData({...formData, project: e.target.value})}
                     placeholder="Enter project name"/>
                 </div>

@@ -8,7 +8,7 @@ const ClientManagement = () => {
   const [selectedClient, setSelectedClient] = useState(null);
   const [modalType, setModalType] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newClient, setNewClient] = useState({ name: '', email: '', phone: '', status: 'Active' });
+  const [newClient, setNewClient] = useState({ name: '', email: '', phone: '', organization: '', status: 'Active' });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
@@ -273,6 +273,17 @@ const handleDelete = async (clientId) => {
                     type="tel"
                     value={newClient.phone}
                     onChange={(e) => setNewClient({...newClient, phone: e.target.value})}
+                    className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Organization</label>
+                  <input
+                    type="text"
+                    value={newClient.organization}
+                    onChange={(e) =>
+                      setNewClient({ ...newClient, organization: e.target.value })
+                    }
                     className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
