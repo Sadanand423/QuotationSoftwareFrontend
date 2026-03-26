@@ -31,8 +31,16 @@ const Invoice = () => {
   const [currentEmpName, setCurrentEmpName] = useState("");
 
   // ✅ Adjustment Bucket State (Carry-Forward Amount)
-  const [adjustmentAmount, setAdjustmentAmount] = useState(0); // Amount from previous invoice
-  const [quotationAdjustmentAmount, setQuotationAdjustmentAmount] = useState(0); // Full quotation adjustment
+  // adjustmentAmount: Total unpaid amount carried from previous invoices
+  // currentUnpaid: Unpaid amount from current installment (if user pays less than planned)
+  // totalAdjustment: adjustmentAmount + currentUnpaid
+  const [adjustmentAmount, setAdjustmentAmount] = useState(0);
+  const [quotationAdjustmentAmount, setQuotationAdjustmentAmount] = useState(0);
+  
+  // ✅ Real-time adjustment calculation states
+  const [actualAmount, setActualAmount] = useState("");
+  const [currentUnpaid, setCurrentUnpaid] = useState(0);
+  const [totalAdjustmentBucket, setTotalAdjustmentBucket] = useState(0);
 
   // ✅ Custom Percentage State
   const [showCustomPercentage, setShowCustomPercentage] = useState(false);
@@ -95,86 +103,93 @@ const Invoice = () => {
     }
   });
 
-  // ✅ Auto-calculate totals whenever payment fields change
- useEffect(() => {
-  if (!availableInstallments.length) return;
-  const term = availableInstallments[selectedInstallmentIdx];
-  if (!term) return;
+  // ✅ Helper: Fetch adjustment bucket amount for a quotation
+  const fetchAdjustmentBucket = async (quotationId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/quotations/${encodeURIComponent(quotationId)}`
+      );
+      if (!response.ok) return 0;
 
-  const quotationTotal = parseFloat(invoiceData.finalAmount) || 0;
-  const baseInstallmentAmount = Number(term.fixedAmount) || Math.round((quotationTotal * parseFloat(term.percent)) / 100);
-  
-  // ✅ CRITICAL: Apply adjustment bucket to final amount
-  const finalPaidAmount = baseInstallmentAmount + adjustmentAmount;
-  const balanceAfterThis = remainingBalance - finalPaidAmount;
+      const text = await response.text();
+      if (!text || text.trim() === "") return 0;
 
-  const overallPaid = previouslyPaid + finalPaidAmount;
-  let status = 'Pending';
-  if (overallPaid >= quotationTotal && quotationTotal > 0) {
-    status = 'Paid';
-  } else if (overallPaid > 0) {
-    status = 'Partially Paid';
-  }
-
-  setInvoiceData(prev => ({
-    ...prev,
-    advancePaid: finalPaidAmount,
-    advancePercentage: term.percent + '%',
-    midwayPaid: 0,
-    midwayPercentage: '0%',
-    totalPaidAmount: finalPaidAmount.toFixed(2),
-    balanceAmount: balanceAfterThis.toFixed(2),
-    paymentStatus: status,
-    adjustmentAmount: adjustmentAmount
-  }));
-}, [selectedInstallmentIdx, availableInstallments, remainingBalance, previouslyPaid, invoiceData.finalAmount, adjustmentAmount]);
-
-  // ✅ Handle custom percentage calculation
-  const handleCustomPercentageChange = () => {
-    setCustomPercentageError("");
-    
-    if (!customPercentage || customPercentage === "") {
-      setInvoiceData(prev => ({
-        ...prev,
-        advancePaid: 0,
-        advancePercentage: '0%',
-        midwayPaid: 0,
-        midwayPercentage: '0%',
-        totalPaidAmount: '0',
-        balanceAmount: remainingBalance.toFixed(2)
-      }));
-      setCarryForwardPercentage(0);
-      return;
+      const quotData = JSON.parse(text);
+      return parseFloat(quotData.adjustmentAmount) || 0;
+    } catch (err) {
+      console.error("Error fetching adjustment bucket:", err);
+      return 0;
     }
+  };
 
-    const percentage = parseFloat(customPercentage);
+  // ✅ Calculate planned amount for selected installment
+  const getPlannedAmount = () => {
+    if (!availableInstallments.length || selectedInstallmentIdx < 0) return 0;
+    const term = availableInstallments[selectedInstallmentIdx];
+    if (!term) return 0;
+    const totalAmount = parseFloat(invoiceData.finalAmount) || 0;
+    return Number(term.fixedAmount) || Math.round((totalAmount * parseFloat(term.percent)) / 100);
+  };
+
+  // ✅ Calculate unpaid amount from current installment
+  const calculateCurrentUnpaid = (inputAmount) => {
+    const plannedAmount = getPlannedAmount();
+    const actualPaid = Number(inputAmount) || 0;
+    
+    // If actual paid is less than planned, the difference is unpaid (carry forward)
+    return Math.max(0, plannedAmount - actualPaid);
+  };
+
+  // ✅ Update adjustment bucket (includes both previous + current unpaid)
+  const updateAdjustmentBucket = (inputAmount) => {
+    const currentUnpaidAmount = calculateCurrentUnpaid(inputAmount);
+    const totalAdjustment = adjustmentAmount + currentUnpaidAmount;
+    
+    setCurrentUnpaid(currentUnpaidAmount);
+    setTotalAdjustmentBucket(totalAdjustment);
+    
+    return { currentUnpaidAmount, totalAdjustment };
+  };
+
+  // ✅ Handle actual amount input
+  const handleActualAmountChange = (e) => {
+    let value = e.target.value;
+    if (value < 0) value = 0;
+    setActualAmount(value);
+    updateAdjustmentBucket(value);
+  };
+
+  // ✅ Sync adjustment when quotation changes
+  useEffect(() => {
+    setTotalAdjustmentBucket(adjustmentAmount);
+    setCurrentUnpaid(0);
+  }, [adjustmentAmount]);
+
+  // ✅ Recalculate adjustment when installment or amount changes
+  useEffect(() => {
+    if (actualAmount) {
+      updateAdjustmentBucket(actualAmount);
+    } else {
+      setCurrentUnpaid(0);
+      setTotalAdjustmentBucket(adjustmentAmount);
+    }
+  }, [selectedInstallmentIdx, invoiceData.finalAmount]);
+
+  // ✅ Auto-calculate totals when amounts change
+  useEffect(() => {
+    if (!availableInstallments.length) return;
+    const term = availableInstallments[selectedInstallmentIdx];
+    if (!term) return;
+
     const quotationTotal = parseFloat(invoiceData.finalAmount) || 0;
-
-    // Validation
-    if (percentage <= 0) {
-      setCustomPercentageError("Percentage must be greater than 0");
-      return;
-    }
-
-    // Get current selected installment to check remaining
-    const currentTerm = availableInstallments[selectedInstallmentIdx];
-    const maxAllowedPercentage = currentTerm?.percent || 100;
-
-    if (percentage > maxAllowedPercentage) {
-      setCustomPercentageError(`Entered percentage (${percentage}%) exceeds remaining limit (${maxAllowedPercentage}%)`);
-      return;
-    }
-
-    // Calculate amount
-    const calculatedAmount = Math.round((quotationTotal * percentage) / 100);
+    const plannedAmount = getPlannedAmount();
+    const actualPaidAmount = actualAmount ? Number(actualAmount) : plannedAmount;
     
-    // Calculate carry-forward: planned - actual = remaining to carry forward
-    const carryForward = maxAllowedPercentage - percentage;
-    setCarryForwardPercentage(carryForward);
+    // Final payable = actual amount + previous adjustment (carried forward)
+    const finalPaidAmount = actualPaidAmount + adjustmentAmount;
+    const balanceAfterThis = remainingBalance - finalPaidAmount;
 
-    const balanceAfterThis = remainingBalance - calculatedAmount;
-
-    const overallPaid = previouslyPaid + calculatedAmount;
+    const overallPaid = previouslyPaid + finalPaidAmount;
     let status = 'Pending';
     if (overallPaid >= quotationTotal && quotationTotal > 0) {
       status = 'Paid';
@@ -184,14 +199,55 @@ const Invoice = () => {
 
     setInvoiceData(prev => ({
       ...prev,
-      advancePaid: calculatedAmount,
-      advancePercentage: percentage + '%',
-      midwayPaid: 0,
-      midwayPercentage: '0%',
-      totalPaidAmount: calculatedAmount.toFixed(2),
+      advancePaid: finalPaidAmount,
+      advancePercentage: actualAmount ? `${((actualPaidAmount / quotationTotal) * 100).toFixed(2)}%` : term.percent + '%',
+      totalPaidAmount: finalPaidAmount.toFixed(2),
       balanceAmount: balanceAfterThis.toFixed(2),
-      paymentStatus: status
+      paymentStatus: status,
     }));
+  }, [selectedInstallmentIdx, availableInstallments, remainingBalance, previouslyPaid, invoiceData.finalAmount, actualAmount, adjustmentAmount]);
+
+  // ✅ Handle custom percentage calculation
+  const handleCustomPercentageChange = () => {
+    setCustomPercentageError("");
+    
+    if (!customPercentage || customPercentage === "") {
+      setActualAmount("");
+      setInvoiceData(prev => ({
+        ...prev,
+        advancePaid: adjustmentAmount,
+        advancePercentage: '0%',
+        totalPaidAmount: adjustmentAmount.toFixed(2),
+        balanceAmount: remainingBalance.toFixed(2)
+      }));
+      setCarryForwardPercentage(0);
+      return;
+    }
+
+    const percentage = parseFloat(customPercentage);
+    const quotationTotal = parseFloat(invoiceData.finalAmount) || 0;
+
+    if (percentage <= 0) {
+      setCustomPercentageError("Percentage must be greater than 0");
+      return;
+    }
+
+    const currentTerm = availableInstallments[selectedInstallmentIdx];
+    const maxAllowedPercentage = currentTerm?.percent || 100;
+
+    if (percentage > maxAllowedPercentage) {
+      setCustomPercentageError(`Entered percentage (${percentage}%) exceeds remaining limit (${maxAllowedPercentage}%)`);
+      return;
+    }
+
+    const calculatedAmount = Math.round((quotationTotal * percentage) / 100);
+    setActualAmount(calculatedAmount);
+    
+    const plannedAmount = getPlannedAmount();
+    const carryForward = Math.max(0, plannedAmount - calculatedAmount);
+    setCarryForwardPercentage(carryForward > 0 ? (carryForward / quotationTotal) * 100 : 0);
+    
+    updateAdjustmentBucket(calculatedAmount);
   };
 
   // ✅ Fetch Approved Quotations
@@ -214,7 +270,6 @@ const Invoice = () => {
           const approved = quotData.filter(q => q.status === 'Approved');
           setApprovedQuotations(approved);
 
-          // Fetch payment summaries for all approved quotations
           const quotationIds = approved.map(q => q.quotationNumber || q.id);
           if (quotationIds.length > 0) {
             const summaryResponse = await fetch('http://localhost:8080/api/invoices/payment-summaries', {
@@ -251,6 +306,7 @@ const Invoice = () => {
  const generateInvoice = async (quotation) => {
   const quotationId = quotation.quotationNumber || quotation.id;
 
+  // Parse amounts
   const rawAmount =
     typeof quotation.totalCost === "string"
       ? parseFloat(quotation.totalCost.replace(/[₹,]/g, ""))
@@ -260,35 +316,12 @@ const Invoice = () => {
   const gstAmount = quotation.gstAmount || 0;
   const finalTotal = quotation.finalAmount || rawAmount + gstAmount;
 
-  // ✅ CRITICAL: Fetch adjustment bucket from quotation
-  let adjustmentBucketAmount = 0;
- try {
-  // First, try to get adjustment from quotation directly
-  if (quotation.adjustmentAmount) {
-    adjustmentBucketAmount = parseFloat(quotation.adjustmentAmount) || 0;
-  }
+  // ✅ Fetch adjustment bucket (from quotation or backend)
+  let adjustmentBucketAmount = quotation.adjustmentAmount 
+    ? parseFloat(quotation.adjustmentAmount) || 0 
+    : await fetchAdjustmentBucket(quotationId);
 
-  // Otherwise, fetch from backend
-  if (adjustmentBucketAmount === 0) {
-    const quotRes = await fetch(
-      `http://localhost:8080/api/quotations/${encodeURIComponent(quotationId)}`
-    );
-
-    if (quotRes.ok) {
-      const text = await quotRes.text(); // safer
-
-      if (text && text.trim() !== "") {
-        const quotData = JSON.parse(text);
-        adjustmentBucketAmount = parseFloat(quotData.adjustmentAmount) || 0;
-      }
-    }
-  }
-
-} catch (err) {
-  console.error("Error fetching adjustment bucket:", err);
-}
-
-  // Fetch existing invoices for this quotation to calculate remaining balance
+  // ✅ Fetch existing invoices and calculate totals
   let totalAlreadyPaid = 0;
   let invoicesCount = 0;
   try {
@@ -309,7 +342,7 @@ const Invoice = () => {
     return;
   }
 
-  // Build installment list from quotation's paymentTerms, with fallback
+  // ✅ Determine payment terms based on quotation amount
   const fallbackTerms = (finalTotal < 10000)
     ? [
         { percent: 40, label: 'Advance upon contract signing' },
@@ -322,6 +355,7 @@ const Invoice = () => {
         { percent: 20, label: 'Final delivery and deployment' }
       ];
 
+  // ✅ Normalize payment terms
   const normalizedTerms = (Array.isArray(quotation.paymentTerms) && quotation.paymentTerms.length > 0
     ? quotation.paymentTerms
     : fallbackTerms
@@ -329,24 +363,29 @@ const Invoice = () => {
     .map(t => ({ percent: parseFloat(t.percent) || 0, label: t.label || 'Installment' }))
     .filter(t => t.percent > 0);
 
+  // ✅ Calculate remaining installments
   const safeInvoicedCount = Math.min(invoicesCount, normalizedTerms.length);
   let remainingTerms = normalizedTerms.slice(safeInvoicedCount);
 
-  // Safety: if all terms are used up but balance still remains, show it as final installment
   if (remainingTerms.length === 0 && remaining > 0) {
     remainingTerms = [{ percent: 100, label: 'Remaining balance', fixedAmount: remaining }];
   }
 
+  // ✅ Set state for invoice generation
   setPreviouslyPaid(totalAlreadyPaid);
   setRemainingBalance(remaining);
   setInvoicedCount(safeInvoicedCount);
   setAvailableInstallments(remainingTerms);
   setSelectedInstallmentIdx(0);
   
-  // ✅ Set adjustment amount in state
+  // ✅ Initialize adjustment states
   setAdjustmentAmount(adjustmentBucketAmount);
   setQuotationAdjustmentAmount(adjustmentBucketAmount);
+  setTotalAdjustmentBucket(adjustmentBucketAmount);
+  setCurrentUnpaid(0);
+  setActualAmount("");
 
+  // ✅ Initialize invoice data
   setInvoiceData((prev) => ({
     ...prev,
     invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
@@ -361,12 +400,9 @@ const Invoice = () => {
     taxAmount: gstAmount,
     finalAmount: finalTotal,
     advancePercentage: '0%',
-    advancePaid: 0,
-    midwayPercentage: '0%',
-    midwayPaid: 0,
-    finalPaymentPaid: 0,
-    totalPaidAmount: 0,
-    balanceAmount: remaining,
+    advancePaid: adjustmentBucketAmount,
+    totalPaidAmount: adjustmentBucketAmount.toFixed(2),
+    balanceAmount: remaining.toFixed(2),
     paymentStatus: 'Pending',
   }));
 
@@ -379,22 +415,21 @@ const Invoice = () => {
       const savedName = localStorage.getItem("empName") || currentEmpName;
       const empId = localStorage.getItem("empId") || currentEmpId;
 
-      // Prepare the data exactly how the Backend expects it
       const payload = {
         ...invoiceData,
         employeeId: empId,
         employeeName: savedName,
-        // Ensure status is 'Sent' so the Admin knows it's active
         status: 'Sent', 
         date: new Date().toLocaleDateString('en-IN'),
-        // ✅ Include carry-forward percentage if custom percentage is used
+        // Include current unpaid as carry forward for next invoice
+        carryForwardAmount: currentUnpaid,
         carryForwardPercentage: showCustomPercentage ? carryForwardPercentage : 0,
-        // ✅ Include adjustment bucket (carry-forward amount) from previous invoice
-        adjustmentAmount: adjustmentAmount,
-        customComment: customComment || ""
+        // Total adjustment includes both previous + current unpaid
+        adjustmentAmount: totalAdjustmentBucket,
+        customComment: customComment || "",
+        actualPaidAmount: actualAmount || getPlannedAmount()
       };
 
-      // Ensure the URL matches your Controller: /api/invoices/create
       const response = await fetch(`http://localhost:8080/api/invoices/create`, {
         method: 'POST',
         headers: { 
@@ -405,7 +440,6 @@ const Invoice = () => {
 
       if (response.ok) {
         alert("Invoice generated and saved successfully! ✅");
-        // ✅ Reload the page after successful save
         window.location.reload();
       } else {
         const errorData = await response.json();
@@ -442,17 +476,16 @@ const handleInvoicePrint = () => {
           ${styles}
           @page { 
             size: A4; 
-            margin: 10mm; /* Space between paper edge and your border */
+            margin: 10mm;
           }
           body { 
             -webkit-print-color-adjust: exact; 
             margin: 0;
             padding: 0;
           }
-          /* This creates the outer page border */
           .print-wrapper {
             border: 2px solid black; 
-            min-height: 277mm; /* Approximate A4 height minus margins */
+            min-height: 277mm;
             padding: 20px;
             box-sizing: border-box;
           }
@@ -649,18 +682,18 @@ const handleInvoicePrint = () => {
                   <div className="text-sm font-bold text-indigo-600">
                     Available Balance: ₹{remainingBalance.toLocaleString('en-IN')}
                   </div>
-                  {/* ✅ Custom Percentage Toggle Button */}
                   <button
                     onClick={() => {
                       setShowCustomPercentage(!showCustomPercentage);
                       if (!showCustomPercentage) {
-                        setSelectedInstallmentIdx(-1); // Deselect predefined when opening custom
+                        setSelectedInstallmentIdx(-1);
                       } else {
                         setCustomPercentage("");
                         setCustomComment("");
                         setCustomPercentageError("");
                         setCarryForwardPercentage(0);
-                        setSelectedInstallmentIdx(0); // Select first predefined
+                        setSelectedInstallmentIdx(0);
+                        setActualAmount("");
                       }
                     }}
                     className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
@@ -674,7 +707,6 @@ const handleInvoicePrint = () => {
                 </div>
               </div>
 
-              {/* ✅ Custom Percentage Card */}
               {showCustomPercentage ? (
                 <div className="mb-4">
                   <div className="bg-white p-4 rounded-xl border-2 border-emerald-500 ring-2 ring-emerald-100 space-y-3">
@@ -687,14 +719,12 @@ const handleInvoicePrint = () => {
                       </span>
                     </div>
 
-                    {/* Error Message */}
                     {customPercentageError && (
                       <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-3 py-2 rounded-lg">
                         ⚠️ {customPercentageError}
                       </div>
                     )}
 
-                    {/* Percentage Input */}
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-2">
                         Percentage (%)
@@ -708,7 +738,6 @@ const handleInvoicePrint = () => {
                         value={customPercentage}
                         onChange={(e) => {
                           setCustomPercentage(e.target.value);
-                          // Trigger calculation on change
                           setTimeout(() => {
                             setCustomPercentage(e.target.value);
                           }, 0);
@@ -718,7 +747,25 @@ const handleInvoicePrint = () => {
                       />
                     </div>
 
-                    {/* Comment Field */}
+                    {/* Actual Amount Input */}
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-2">
+                        Actual Amount (₹)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        placeholder="Enter actual payment amount"
+                        value={actualAmount}
+                        onChange={handleActualAmountChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Planned Amount: ₹{getPlannedAmount().toLocaleString('en-IN')}
+                      </p>
+                    </div>
+
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-2">
                         Comment (Optional)
@@ -732,7 +779,6 @@ const handleInvoicePrint = () => {
                       />
                     </div>
 
-                    {/* Display Calculated Amount */}
                     {customPercentage && !customPercentageError && (
                       <div className="pt-2 border-t border-gray-200 space-y-2">
                         <div className="flex justify-between items-center">
@@ -744,7 +790,6 @@ const handleInvoicePrint = () => {
                           </span>
                         </div>
                         
-                        {/* Carry-Forward Display */}
                         {carryForwardPercentage > 0 && (
                           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
                             <p className="text-xs text-blue-700">
@@ -757,68 +802,118 @@ const handleInvoicePrint = () => {
                   </div>
                 </div>
               ) : (
-                /* ✅ Predefined Installments Grid */
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {availableInstallments.map((term, i) => {
-                    const globalIdx = invoicedCount + i + 1;
-                    const ordinal = getOrdinal(globalIdx);
-                    const quotationTotal = parseFloat(invoiceData.finalAmount) || 0;
-                    const amount = Number(term.fixedAmount) || Math.round((quotationTotal * parseFloat(term.percent)) / 100);
-                    const isSelected = selectedInstallmentIdx === i;
-                    return (
-                      <div
-                        key={i}
-                        onClick={() => {
-                          setSelectedInstallmentIdx(i);
-                          setShowCustomPercentage(false);
-                          setCustomPercentage("");
-                          setCustomComment("");
-                          setCustomPercentageError("");
-                          setCarryForwardPercentage(0);
-                        }}
-                        className={`bg-white p-4 rounded-xl border-2 cursor-pointer transition-all shadow-sm space-y-2 ${
-                          isSelected ? 'border-purple-500 ring-2 ring-purple-200' : 'border-gray-100 hover:border-purple-300'
-                        }`}
-                      >
-                        <div className="flex justify-between items-center">
-                          <label className="text-xs font-bold text-gray-500 uppercase pointer-events-none">
-                            ({ordinal} Installment)
-                          </label>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {availableInstallments.map((term, i) => {
+                      const globalIdx = invoicedCount + i + 1;
+                      const ordinal = getOrdinal(globalIdx);
+                      const quotationTotal = parseFloat(invoiceData.finalAmount) || 0;
+                      const plannedAmount = Number(term.fixedAmount) || Math.round((quotationTotal * parseFloat(term.percent)) / 100);
+                      const isSelected = selectedInstallmentIdx === i;
+                      return (
+                        <div
+                          key={i}
+                          onClick={() => {
+                            setSelectedInstallmentIdx(i);
+                            setShowCustomPercentage(false);
+                            setCustomPercentage("");
+                            setCustomComment("");
+                            setCustomPercentageError("");
+                            setCarryForwardPercentage(0);
+                            setActualAmount("");
+                          }}
+                          className={`bg-white p-4 rounded-xl border-2 cursor-pointer transition-all shadow-sm space-y-2 ${
+                            isSelected ? 'border-purple-500 ring-2 ring-purple-200' : 'border-gray-100 hover:border-purple-300'
+                          }`}
+                        >
+                          <div className="flex justify-between items-center">
+                            <label className="text-xs font-bold text-gray-500 uppercase pointer-events-none">
+                              ({ordinal} Installment)
+                            </label>
+                            {isSelected && (
+                              <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold">SELECTED</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600">{term.label}</p>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-semibold text-gray-700">{term.percent}%</span>
+                            <span className="text-lg font-bold text-purple-600">₹{plannedAmount.toLocaleString('en-IN')}</span>
+                          </div>
                           {isSelected && (
-                            <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold">SELECTED</span>
+                            <div className="mt-3 pt-3 border-t border-gray-200">
+                              <label className="block text-xs font-semibold text-gray-600 mb-2">
+                                Actual Amount (₹)
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                placeholder="Enter actual payment amount"
+                                value={actualAmount}
+                                onChange={handleActualAmountChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                              />
+                              <p className="text-xs text-gray-500 mt-1">
+                                Planned: ₹{plannedAmount.toLocaleString('en-IN')}
+                              </p>
+                            </div>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600">{term.label}</p>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-semibold text-gray-700">{term.percent}%</span>
-                          <span className="text-lg font-bold text-purple-600">₹{amount.toLocaleString('en-IN')}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
-              {/* ✅ ADJUSTMENT BUCKET CARD - Always visible, shows amount & percentage */}
+              {/* ✅ ADJUSTMENT BUCKET CARD - Shows carry-forward amounts */}
               <div className="mt-4">
-                <div className="bg-yellow-50 p-4 rounded-xl border-2 border-yellow-300 shadow-sm space-y-2">
-                  <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold text-gray-600 uppercase">
-                      Adjustment (Carry Forward)
-                    </label>
+                <div className="bg-yellow-50 p-4 rounded-xl border-2 border-yellow-300 shadow-sm">
+                  <div className="flex justify-between items-center mb-3">
+                    <label className="text-xs font-bold text-gray-700 uppercase">📦 Adjustment Bucket (Carry Forward)</label>
                   </div>
-                  <div className="flex justify-between items-center pt-2">
-                    <span className="text-sm font-semibold text-gray-700">Amount:</span>
-                    <span className="text-lg font-bold text-amber-700">
-                      ₹{adjustmentAmount.toLocaleString('en-IN')} 
-                      <span className="text-xs font-normal text-gray-600 ml-2">
-                        ({((adjustmentAmount / (parseFloat(invoiceData.finalAmount) || 1)) * 100).toFixed(2)}%)
+                  
+                  {/* Previous unpaid amount */}
+                  {adjustmentAmount > 0 && (
+                    <div className="flex justify-between items-center pb-2 border-b border-yellow-200">
+                      <span className="text-sm font-semibold text-gray-600">Previous Unpaid:</span>
+                      <span className="text-base font-bold text-amber-700">
+                        ₹{adjustmentAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
-                    </span>
-                  </div>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5 mt-2">
+                    </div>
+                  )}
+                  
+                  {/* Current unpaid from this installment */}
+                  {currentUnpaid > 0 && (
+                    <div className="flex justify-between items-center py-2 border-b border-yellow-200">
+                      <span className="text-sm font-semibold text-gray-600">Current Unpaid:</span>
+                      <span className="text-base font-bold text-orange-600">
+                        ₹{currentUnpaid.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Total adjustment */}
+                  {totalAdjustmentBucket > 0 && (
+                    <div className="flex justify-between items-center pt-2">
+                      <span className="text-sm font-bold text-gray-700">Total to Carry Forward:</span>
+                      <span className="text-lg font-bold text-red-700">
+                        ₹{totalAdjustmentBucket.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <span className="text-xs font-normal text-gray-600 ml-2">
+                          ({((totalAdjustmentBucket / (parseFloat(invoiceData.finalAmount) || 1)) * 100).toFixed(2)}%)
+                        </span>
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Note */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5 mt-3">
                     <p className="text-xs text-blue-700">
-                      <strong>ℹ️ Note:</strong> Unpaid amount from previous invoice, automatically applied to this invoice total.
+                      <strong>ℹ️ How it works:</strong>{' '}
+                      {totalAdjustmentBucket > 0 ? (
+                        "This unpaid amount will be automatically added to the client's outstanding balance and carried forward to the next invoice."
+                      ) : (
+                        "No unpaid amounts to carry forward. Payment is on track."
+                      )}
                     </p>
                   </div>
                 </div>
@@ -831,7 +926,7 @@ const handleInvoicePrint = () => {
                     <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">DUE LATER</span>
                   </div>
                   <div className="text-2xl font-black text-orange-700 mt-2">
-                    ₹{(remainingBalance - (parseFloat(invoiceData.advancePaid) || 0)).toLocaleString('en-IN')}
+                    ₹{Math.max(0, remainingBalance - (parseFloat(invoiceData.advancePaid) || 0)).toLocaleString('en-IN')}
                   </div>
                 </div>
               )}
@@ -862,7 +957,6 @@ const handleInvoicePrint = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
 
-                {/* ✍️ Signature FIRST */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-600 mb-2">
                     Authorized Signature
@@ -893,7 +987,6 @@ const handleInvoicePrint = () => {
                   </div>
                 </div>
 
-                {/* 🏷️ Stamp SECOND */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-600 mb-2">
                     Company Stamp
@@ -960,29 +1053,22 @@ const handleInvoicePrint = () => {
                 <h1 className="text-3xl font-bold tracking-tighter">INVOICE</h1>
               </div>
 
-              {/* TAX TITLE */}
               <div className="text-center text-gray-500 font-bold text-base py-3 border-b">
-
               TAX INVOICE
-
               </div>
 
-              {/* Info Grid */}
               <div className="grid grid-cols-2 border-b border-gray-400">
                 <div className="p-3 border-r border-gray-400 space-y-1">
                   <h3 className="font-bold text-sm">BILL TO:</h3>
                   <p><span className="font-bold">Client Name:</span> {invoiceData.clientName}</p>
                   <p><span className="font-bold">Phone:</span> {invoiceData.clientPhone}</p>
                   <p><span className="font-bold">Email:</span> {invoiceData.clientEmail}</p>
-                  <p><span className="font-bold">Address:</span> {invoiceData.clientAddress}</p>
+                  <p><span  className="font-bold">Address:</span> {invoiceData.clientAddress}</p>
                 </div>
                 <div className="p-3 text-sm flex flex-col justify-between">
                   <div className="flex justify-between border-b border-gray-300 py-1"><span>Invoice No:</span><span className="font-medium">{invoiceData.invoiceNumber}</span></div>
                   <div className="flex justify-between border-b border-gray-300 py-1"><span>Invoice Date:</span><span className="font-medium">{invoiceData.invoiceDate}</span></div>
                   <div className="flex justify-between border-b border-gray-300 py-1"><span>Employee:</span><span className="font-medium">{currentEmpName}</span></div>
-              
-              
-                {/* Replace the hardcoded line with this dynamic one */}
                 <div className="flex justify-between border-b border-gray-300 py-1">
                   <span>Payment Method:</span>
                   <span className="font-bold text-green-600">
@@ -998,7 +1084,6 @@ const handleInvoicePrint = () => {
                 </div>
               </div>
 
-              {/* Item Table */}
               <table className="w-full border-collapse mt-4">
                 <thead>
                   <tr className="bg-gray-100 border-b border-gray-400">
@@ -1006,7 +1091,7 @@ const handleInvoicePrint = () => {
                     <th className="border border-gray-400 p-2 text-left text-gray-700">Name of Project/Service</th>
                     <th className="border border-gray-400 p-2 w-24 text-gray-700">Price</th>
                     <th className="border border-gray-400 p-2 w-32 text-gray-700">Total</th>
-                  </tr>
+                   </tr>
                 </thead>
                 <tbody>
                   <tr className="h-20">
@@ -1014,19 +1099,16 @@ const handleInvoicePrint = () => {
                     <td className="border border-gray-400 p-2 align-top font-medium">{invoiceData.projectName}</td>
                     <td className="border border-gray-400 text-center pt-2 align-top">₹{Number(invoiceData.totalAmount).toLocaleString("en-IN")}</td>
                     <td className="border border-gray-400 text-center p-2 align-top font-bold text-gray-800">₹{Number(invoiceData.finalAmount).toLocaleString("en-IN")}</td>
-                  </tr>
+                   </tr>
                 </tbody>
               </table>
 
-            {/* Totals Section */}
-              <div className="grid grid-cols-2 border border-gray-400 mt-4">
+            <div className="grid grid-cols-2 border border-gray-400 mt-4">
                 
-                {/* Amount in Words */}
                 <div className="p-4 border-r border-gray-300 bg-gray-50">
                   <p className="text-[11px] font-semibold uppercase text-gray-600 tracking-wide mb-2">
                     Amount in Words
                   </p>
-
                   <p 
                     style={{ fontSize: '15px' }} 
                     className="uppercase leading-snug text-gray-900 tracking-wide font-medium"
@@ -1035,7 +1117,6 @@ const handleInvoicePrint = () => {
                   </p>
                 </div>
 
-                {/* Amount Breakdown */}
                 <div className="text-sm">
                   
                   <div className="flex justify-between px-3 py-2 border-b border-gray-200">
@@ -1068,7 +1149,6 @@ const handleInvoicePrint = () => {
                     </span>
                   </div>
 
-                  {/* Balance Due (same place, just enhanced) */}
                   <div className="flex justify-between px-3 py-2">
                     <span className="font-semibold text-gray-800">Balance Due</span>
                     <span className="font-bold text-base text-gray-900">
@@ -1079,10 +1159,8 @@ const handleInvoicePrint = () => {
                 </div>
               </div>
 
-              {/* Signature */}
               <div className="flex justify-end items-end gap-10 mt-13">
 
-              {/* 🏷️ Stamp (LEFT of signature) */}
               <div className="text-center">
                 {stamp ? (
                   <img 
@@ -1095,7 +1173,6 @@ const handleInvoicePrint = () => {
                 )}
               </div>
 
-              {/* ✍️ Signature (RIGHT) */}
               <div className="text-center">
                 {signature ? (
                   <img 
