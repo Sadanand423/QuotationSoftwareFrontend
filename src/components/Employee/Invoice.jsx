@@ -295,14 +295,24 @@ const Invoice = () => {
 
   let adjustmentBucketAmount = 0;
   try {
+    // First, try to get adjustment from quotation directly
     if (quotation.adjustmentAmount) {
       adjustmentBucketAmount = parseFloat(quotation.adjustmentAmount) || 0;
     }
+
+    // Otherwise, fetch from backend
     if (adjustmentBucketAmount === 0) {
-      const quotRes = await fetch(`http://localhost:8080/api/quotations/${encodeURIComponent(quotationId)}`);
+      const quotRes = await fetch(
+        `http://localhost:8080/api/quotations/${encodeURIComponent(quotationId)}`
+      );
+
       if (quotRes.ok) {
-        const quotData = await quotRes.json();
-        adjustmentBucketAmount = parseFloat(quotData.adjustmentAmount) || 0;
+        const text = await quotRes.text(); // safer
+
+        if (text && text.trim() !== "") {
+          const quotData = JSON.parse(text);
+          adjustmentBucketAmount = parseFloat(quotData.adjustmentAmount) || 0;
+        }
       }
     }
   } catch (err) {
