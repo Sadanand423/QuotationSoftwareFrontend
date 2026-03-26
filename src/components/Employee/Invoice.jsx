@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import mainlogo from "../../assets/mainlogo.webp";
 import signatureImg from "../../assets/Smartmatrix_CEO.png";
 import stampImg from "../../assets/Smartmatrix_stamp.png";
+import watermark from "../../assets/Smartmatrix_watermark.png";
 
 const Invoice = () => {
   const navigate = useNavigate();
@@ -315,8 +316,6 @@ const Invoice = () => {
         }
       }
     }
-  } catch (err) {
-    console.error("Error fetching adjustment bucket:", err);
   }
 
   let totalAlreadyPaid = 0;
@@ -477,6 +476,9 @@ const handleInvoicePrint = () => {
             min-height: 277mm;
             padding: 20px;
             box-sizing: border-box;
+          }
+            img {
+            -webkit-print-color-adjust: exact;
           }
         </style>
       </head>
@@ -997,8 +999,13 @@ const handleInvoicePrint = () => {
       {showPreview && (
         <div className="fixed inset-0 bg-black/40 overflow-y-auto z-50 p-10 flex flex-col items-center">
           <div className="bg-white w-198.5 min-h-225 p-8 shadow-xl">
-            <div ref={printRef} className="border-2 border-black h-full p-6 text-[14px] flex flex-col">
-              
+            <div ref={printRef} className="relative border-2 border-black h-full p-6 text-[14px] flex flex-col overflow-hidden">
+              {/* WATERMARK */}
+                <img
+                  src={watermark}
+                  alt="watermark"
+                  className="absolute top-1/2 left-1/2 w-[470px] opacity-40 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                />
               {/* Header Section */}
               <div className="flex justify-between items-start border-b border-gray-400 pb-4">
                 <div className="flex gap-4">
