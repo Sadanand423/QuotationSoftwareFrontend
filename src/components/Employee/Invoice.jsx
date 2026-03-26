@@ -31,14 +31,16 @@ const Invoice = () => {
   const [currentEmpName, setCurrentEmpName] = useState("");
 
   // ✅ Adjustment Bucket State (Carry-Forward Amount)
+  // adjustmentAmount: Total unpaid amount carried from previous invoices
+  // currentUnpaid: Unpaid amount from current installment (if user pays less than planned)
+  // totalAdjustment: adjustmentAmount + currentUnpaid
   const [adjustmentAmount, setAdjustmentAmount] = useState(0);
   const [quotationAdjustmentAmount, setQuotationAdjustmentAmount] = useState(0);
   
   // ✅ Real-time adjustment calculation states
   const [actualAmount, setActualAmount] = useState("");
-  const [liveAdjustmentAmount, setLiveAdjustmentAmount] = useState(0);
-  const [currentRemaining, setCurrentRemaining] = useState(0);
-  const [previousAdjustment, setPreviousAdjustment] = useState(0);
+  const [currentUnpaid, setCurrentUnpaid] = useState(0);
+  const [totalAdjustmentBucket, setTotalAdjustmentBucket] = useState(0);
 
   // ✅ Custom Percentage State
   const [showCustomPercentage, setShowCustomPercentage] = useState(false);
@@ -101,6 +103,25 @@ const Invoice = () => {
     }
   });
 
+  // ✅ Helper: Fetch adjustment bucket amount for a quotation
+  const fetchAdjustmentBucket = async (quotationId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/quotations/${encodeURIComponent(quotationId)}`
+      );
+      if (!response.ok) return 0;
+
+      const text = await response.text();
+      if (!text || text.trim() === "") return 0;
+
+      const quotData = JSON.parse(text);
+      return parseFloat(quotData.adjustmentAmount) || 0;
+    } catch (err) {
+      console.error("Error fetching adjustment bucket:", err);
+      return 0;
+    }
+  };
+
   // ✅ Calculate planned amount for selected installment
   const getPlannedAmount = () => {
     if (!availableInstallments.length || selectedInstallmentIdx < 0) return 0;
@@ -110,24 +131,24 @@ const Invoice = () => {
     return Number(term.fixedAmount) || Math.round((totalAmount * parseFloat(term.percent)) / 100);
   };
 
-  // ✅ Real-time adjustment calculation
-  const updateAdjustment = (inputAmount) => {
+  // ✅ Calculate unpaid amount from current installment
+  const calculateCurrentUnpaid = (inputAmount) => {
     const plannedAmount = getPlannedAmount();
     const actualPaid = Number(inputAmount) || 0;
     
-    // Calculate current remaining if actual < planned
-    let remaining = 0;
-    if (actualPaid < plannedAmount) {
-      remaining = plannedAmount - actualPaid;
-    }
+    // If actual paid is less than planned, the difference is unpaid (carry forward)
+    return Math.max(0, plannedAmount - actualPaid);
+  };
+
+  // ✅ Update adjustment bucket (includes both previous + current unpaid)
+  const updateAdjustmentBucket = (inputAmount) => {
+    const currentUnpaidAmount = calculateCurrentUnpaid(inputAmount);
+    const totalAdjustment = adjustmentAmount + currentUnpaidAmount;
     
-    // Live adjustment = previous adjustment + current remaining
-    const liveAdjustment = previousAdjustment + remaining;
+    setCurrentUnpaid(currentUnpaidAmount);
+    setTotalAdjustmentBucket(totalAdjustment);
     
-    setCurrentRemaining(remaining);
-    setLiveAdjustmentAmount(liveAdjustment);
-    
-    return { remaining, liveAdjustment };
+    return { currentUnpaidAmount, totalAdjustment };
   };
 
   // ✅ Handle actual amount input
@@ -135,56 +156,56 @@ const Invoice = () => {
     let value = e.target.value;
     if (value < 0) value = 0;
     setActualAmount(value);
-    updateAdjustment(value);
+    updateAdjustmentBucket(value);
   };
 
-  // ✅ Sync previous adjustment from backend
+  // ✅ Sync adjustment when quotation changes
   useEffect(() => {
-    setPreviousAdjustment(adjustmentAmount);
-    setLiveAdjustmentAmount(adjustmentAmount);
+    setTotalAdjustmentBucket(adjustmentAmount);
+    setCurrentUnpaid(0);
   }, [adjustmentAmount]);
 
-  // ✅ Recalculate when installment changes
+  // ✅ Recalculate adjustment when installment or amount changes
   useEffect(() => {
     if (actualAmount) {
-      updateAdjustment(actualAmount);
+      updateAdjustmentBucket(actualAmount);
     } else {
-      setCurrentRemaining(0);
-      setLiveAdjustmentAmount(previousAdjustment);
+      setCurrentUnpaid(0);
+      setTotalAdjustmentBucket(adjustmentAmount);
     }
   }, [selectedInstallmentIdx, invoiceData.finalAmount]);
 
-  // ✅ Auto-calculate totals
- useEffect(() => {
-  if (!availableInstallments.length) return;
-  const term = availableInstallments[selectedInstallmentIdx];
-  if (!term) return;
+  // ✅ Auto-calculate totals when amounts change
+  useEffect(() => {
+    if (!availableInstallments.length) return;
+    const term = availableInstallments[selectedInstallmentIdx];
+    if (!term) return;
 
-  const quotationTotal = parseFloat(invoiceData.finalAmount) || 0;
-  const plannedAmount = getPlannedAmount();
-  const actualPaidAmount = actualAmount ? Number(actualAmount) : plannedAmount;
-  
-  // Final payable = actual amount + previous adjustment (NO double count)
-  const finalPaidAmount = actualPaidAmount + previousAdjustment;
-  const balanceAfterThis = remainingBalance - finalPaidAmount;
+    const quotationTotal = parseFloat(invoiceData.finalAmount) || 0;
+    const plannedAmount = getPlannedAmount();
+    const actualPaidAmount = actualAmount ? Number(actualAmount) : plannedAmount;
+    
+    // Final payable = actual amount + previous adjustment (carried forward)
+    const finalPaidAmount = actualPaidAmount + adjustmentAmount;
+    const balanceAfterThis = remainingBalance - finalPaidAmount;
 
-  const overallPaid = previouslyPaid + finalPaidAmount;
-  let status = 'Pending';
-  if (overallPaid >= quotationTotal && quotationTotal > 0) {
-    status = 'Paid';
-  } else if (overallPaid > 0) {
-    status = 'Partially Paid';
-  }
+    const overallPaid = previouslyPaid + finalPaidAmount;
+    let status = 'Pending';
+    if (overallPaid >= quotationTotal && quotationTotal > 0) {
+      status = 'Paid';
+    } else if (overallPaid > 0) {
+      status = 'Partially Paid';
+    }
 
-  setInvoiceData(prev => ({
-    ...prev,
-    advancePaid: finalPaidAmount,
-    advancePercentage: actualAmount ? `${((actualPaidAmount / quotationTotal) * 100).toFixed(2)}%` : term.percent + '%',
-    totalPaidAmount: finalPaidAmount.toFixed(2),
-    balanceAmount: balanceAfterThis.toFixed(2),
-    paymentStatus: status,
-  }));
-}, [selectedInstallmentIdx, availableInstallments, remainingBalance, previouslyPaid, invoiceData.finalAmount, actualAmount, previousAdjustment]);
+    setInvoiceData(prev => ({
+      ...prev,
+      advancePaid: finalPaidAmount,
+      advancePercentage: actualAmount ? `${((actualPaidAmount / quotationTotal) * 100).toFixed(2)}%` : term.percent + '%',
+      totalPaidAmount: finalPaidAmount.toFixed(2),
+      balanceAmount: balanceAfterThis.toFixed(2),
+      paymentStatus: status,
+    }));
+  }, [selectedInstallmentIdx, availableInstallments, remainingBalance, previouslyPaid, invoiceData.finalAmount, actualAmount, adjustmentAmount]);
 
   // ✅ Handle custom percentage calculation
   const handleCustomPercentageChange = () => {
@@ -194,9 +215,9 @@ const Invoice = () => {
       setActualAmount("");
       setInvoiceData(prev => ({
         ...prev,
-        advancePaid: 0,
+        advancePaid: adjustmentAmount,
         advancePercentage: '0%',
-        totalPaidAmount: '0',
+        totalPaidAmount: adjustmentAmount.toFixed(2),
         balanceAmount: remainingBalance.toFixed(2)
       }));
       setCarryForwardPercentage(0);
@@ -226,7 +247,7 @@ const Invoice = () => {
     const carryForward = Math.max(0, plannedAmount - calculatedAmount);
     setCarryForwardPercentage(carryForward > 0 ? (carryForward / quotationTotal) * 100 : 0);
     
-    updateAdjustment(calculatedAmount);
+    updateAdjustmentBucket(calculatedAmount);
   };
 
   // ✅ Fetch Approved Quotations
@@ -285,6 +306,7 @@ const Invoice = () => {
  const generateInvoice = async (quotation) => {
   const quotationId = quotation.quotationNumber || quotation.id;
 
+  // Parse amounts
   const rawAmount =
     typeof quotation.totalCost === "string"
       ? parseFloat(quotation.totalCost.replace(/[₹,]/g, ""))
@@ -294,30 +316,12 @@ const Invoice = () => {
   const gstAmount = quotation.gstAmount || 0;
   const finalTotal = quotation.finalAmount || rawAmount + gstAmount;
 
-  let adjustmentBucketAmount = 0;
-  try {
-    // First, try to get adjustment from quotation directly
-    if (quotation.adjustmentAmount) {
-      adjustmentBucketAmount = parseFloat(quotation.adjustmentAmount) || 0;
-    }
+  // ✅ Fetch adjustment bucket (from quotation or backend)
+  let adjustmentBucketAmount = quotation.adjustmentAmount 
+    ? parseFloat(quotation.adjustmentAmount) || 0 
+    : await fetchAdjustmentBucket(quotationId);
 
-    // Otherwise, fetch from backend
-    if (adjustmentBucketAmount === 0) {
-      const quotRes = await fetch(
-        `http://localhost:8080/api/quotations/${encodeURIComponent(quotationId)}`
-      );
-
-      if (quotRes.ok) {
-        const text = await quotRes.text(); // safer
-
-        if (text && text.trim() !== "") {
-          const quotData = JSON.parse(text);
-          adjustmentBucketAmount = parseFloat(quotData.adjustmentAmount) || 0;
-        }
-      }
-    }
-  }
-
+  // ✅ Fetch existing invoices and calculate totals
   let totalAlreadyPaid = 0;
   let invoicesCount = 0;
   try {
@@ -338,6 +342,7 @@ const Invoice = () => {
     return;
   }
 
+  // ✅ Determine payment terms based on quotation amount
   const fallbackTerms = (finalTotal < 10000)
     ? [
         { percent: 40, label: 'Advance upon contract signing' },
@@ -350,6 +355,7 @@ const Invoice = () => {
         { percent: 20, label: 'Final delivery and deployment' }
       ];
 
+  // ✅ Normalize payment terms
   const normalizedTerms = (Array.isArray(quotation.paymentTerms) && quotation.paymentTerms.length > 0
     ? quotation.paymentTerms
     : fallbackTerms
@@ -357,6 +363,7 @@ const Invoice = () => {
     .map(t => ({ percent: parseFloat(t.percent) || 0, label: t.label || 'Installment' }))
     .filter(t => t.percent > 0);
 
+  // ✅ Calculate remaining installments
   const safeInvoicedCount = Math.min(invoicesCount, normalizedTerms.length);
   let remainingTerms = normalizedTerms.slice(safeInvoicedCount);
 
@@ -364,19 +371,21 @@ const Invoice = () => {
     remainingTerms = [{ percent: 100, label: 'Remaining balance', fixedAmount: remaining }];
   }
 
+  // ✅ Set state for invoice generation
   setPreviouslyPaid(totalAlreadyPaid);
   setRemainingBalance(remaining);
   setInvoicedCount(safeInvoicedCount);
   setAvailableInstallments(remainingTerms);
   setSelectedInstallmentIdx(0);
   
+  // ✅ Initialize adjustment states
   setAdjustmentAmount(adjustmentBucketAmount);
-  setPreviousAdjustment(adjustmentBucketAmount);
   setQuotationAdjustmentAmount(adjustmentBucketAmount);
-  setLiveAdjustmentAmount(adjustmentBucketAmount);
+  setTotalAdjustmentBucket(adjustmentBucketAmount);
+  setCurrentUnpaid(0);
   setActualAmount("");
-  setCurrentRemaining(0);
 
+  // ✅ Initialize invoice data
   setInvoiceData((prev) => ({
     ...prev,
     invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
@@ -391,9 +400,9 @@ const Invoice = () => {
     taxAmount: gstAmount,
     finalAmount: finalTotal,
     advancePercentage: '0%',
-    advancePaid: 0,
-    totalPaidAmount: 0,
-    balanceAmount: remaining,
+    advancePaid: adjustmentBucketAmount,
+    totalPaidAmount: adjustmentBucketAmount.toFixed(2),
+    balanceAmount: remaining.toFixed(2),
     paymentStatus: 'Pending',
   }));
 
@@ -412,8 +421,11 @@ const Invoice = () => {
         employeeName: savedName,
         status: 'Sent', 
         date: new Date().toLocaleDateString('en-IN'),
+        // Include current unpaid as carry forward for next invoice
+        carryForwardAmount: currentUnpaid,
         carryForwardPercentage: showCustomPercentage ? carryForwardPercentage : 0,
-        adjustmentAmount: liveAdjustmentAmount,
+        // Total adjustment includes both previous + current unpaid
+        adjustmentAmount: totalAdjustmentBucket,
         customComment: customComment || "",
         actualPaidAmount: actualAmount || getPlannedAmount()
       };
@@ -853,34 +865,54 @@ const handleInvoicePrint = () => {
                 </div>
               )}
 
-              {/* ✅ ADJUSTMENT CARD - Shows unpaid amount in real-time */}
+              {/* ✅ ADJUSTMENT BUCKET CARD - Shows carry-forward amounts */}
               <div className="mt-4">
                 <div className="bg-yellow-50 p-4 rounded-xl border-2 border-yellow-300 shadow-sm">
-                  <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold text-gray-600 uppercase">
-                      Adjustment (Carry Forward)
-                    </label>
+                  <div className="flex justify-between items-center mb-3">
+                    <label className="text-xs font-bold text-gray-700 uppercase">📦 Adjustment Bucket (Carry Forward)</label>
                   </div>
-                  {currentRemaining > 0 && (
+                  
+                  {/* Previous unpaid amount */}
+                  {adjustmentAmount > 0 && (
+                    <div className="flex justify-between items-center pb-2 border-b border-yellow-200">
+                      <span className="text-sm font-semibold text-gray-600">Previous Unpaid:</span>
+                      <span className="text-base font-bold text-amber-700">
+                        ₹{adjustmentAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Current unpaid from this installment */}
+                  {currentUnpaid > 0 && (
+                    <div className="flex justify-between items-center py-2 border-b border-yellow-200">
+                      <span className="text-sm font-semibold text-gray-600">Current Unpaid:</span>
+                      <span className="text-base font-bold text-orange-600">
+                        ₹{currentUnpaid.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Total adjustment */}
+                  {totalAdjustmentBucket > 0 && (
                     <div className="flex justify-between items-center pt-2">
-                      <span className="text-sm font-semibold text-gray-700">Unpaid Amount:</span>
-                      <span className="text-lg font-bold text-amber-700">
-                        ₹{currentRemaining.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 
+                      <span className="text-sm font-bold text-gray-700">Total to Carry Forward:</span>
+                      <span className="text-lg font-bold text-red-700">
+                        ₹{totalAdjustmentBucket.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         <span className="text-xs font-normal text-gray-600 ml-2">
-                          ({((currentRemaining / (parseFloat(invoiceData.finalAmount) || 1)) * 100).toFixed(2)}%)
+                          ({((totalAdjustmentBucket / (parseFloat(invoiceData.finalAmount) || 1)) * 100).toFixed(2)}%)
                         </span>
                       </span>
                     </div>
                   )}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5 mt-2">
+                  
+                  {/* Note */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5 mt-3">
                     <p className="text-xs text-blue-700">
-                      <strong>ℹ️ Note:</strong>{' '}
-                      {currentRemaining > 0 ? (
-                        "Includes unpaid balance from current installment and previous carry forward."
-                      ) : previousAdjustment > 0 ? (
-                        "Includes unpaid balance from previous invoices."
+                      <strong>ℹ️ How it works:</strong>{' '}
+                      {totalAdjustmentBucket > 0 ? (
+                        "This unpaid amount will be automatically added to the client's outstanding balance and carried forward to the next invoice."
                       ) : (
-                        "Unpaid amount from previous invoice, automatically applied to this invoice total."
+                        "No unpaid amounts to carry forward. Payment is on track."
                       )}
                     </p>
                   </div>
