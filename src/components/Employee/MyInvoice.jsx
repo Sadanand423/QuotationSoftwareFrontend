@@ -71,21 +71,14 @@ const MyInvoice = () => {
         body: JSON.stringify({ status: newStatus }),
       });
       if (response.ok) {
-        // Update local state immediately
-        setInvoices((prev) =>
-          prev.map((inv) => (inv.id === invoiceId ? { ...inv, status: newStatus } : inv))
-        );
         setEditingStatusInvoiceId(null);
-        // Optional: Refresh from backend to ensure consistency
-        // Uncomment below to fetch fresh data from server
-        // await fetchMyInvoices();
+        // Refresh from backend to ensure consistency
+        await fetchMyInvoices();
       } else {
         console.error('Failed to update status:', response.statusText);
-        alert('Failed to update invoice status. Please try again.');
       }
     } catch (error) {
       console.error('Error updating status:', error);
-      alert('Error updating invoice status');
     }
   };
 
@@ -320,12 +313,13 @@ const MyInvoice = () => {
                                             <div className="relative">
                                               <button
                                                 onClick={(e) => {
-                                                  if (editingStatusInvoiceId === inv.id) {
+                                                  const invId = inv._id || inv.id;
+                                                  if (editingStatusInvoiceId === invId) {
                                                     setEditingStatusInvoiceId(null);
                                                   } else {
                                                     const rect = e.currentTarget.getBoundingClientRect();
                                                     setStatusPickerPos({ top: rect.bottom + window.scrollY, left: rect.left + window.scrollX });
-                                                    setEditingStatusInvoiceId(inv.id);
+                                                    setEditingStatusInvoiceId(invId);
                                                   }
                                                 }}
                                                 className="text-indigo-600 hover:text-indigo-800 font-medium"
