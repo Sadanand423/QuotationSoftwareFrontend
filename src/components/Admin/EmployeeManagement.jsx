@@ -10,6 +10,7 @@ const EmployeeManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [passwordHistory, setPasswordHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const [showSuccess, setShowSuccess] = useState(false);
   
@@ -156,20 +157,19 @@ const handleEditEmployee = (employee) => {
   };
 
   // ✅ DELETE FROM BACKEND
-  const deleteEmployee = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this employee?')) return;
+const deleteEmployee = async (id) => {
+  try {
+    await fetch(`http://localhost:8080/api/admin/employees/${id}`, {
+      method: "DELETE"
+    });
 
-    try {
-      await fetch(`http://localhost:8080/api/admin/employees/${id}`, {
-        method: "DELETE"
-      });
-
-      setEmployees(employees.filter(emp => emp.id !== id));
-      setCurrentView("list");
-    } catch (err) {
-      console.error("Delete failed", err);
-    }
-  };
+    setEmployees(prev => prev.filter(emp => emp.id !== id));
+    setCurrentView("list");
+    setShowDeleteModal(false);   // 👈 close modal
+  } catch (err) {
+    console.error("Delete failed", err);
+  }
+};
 
 
 
@@ -657,7 +657,7 @@ const formatHistoryDate = (isoDate) => {
                   Edit
                 </button>
                 <button
-                  onClick={() => deleteEmployee(employee.id)}
+                  onClick={() => {setSelectedEmployee(employee); setShowDeleteModal(true); }}
                   className="flex-1 bg-red-500 text-white py-2 px-2 sm:px-3 rounded text-xs sm:text-sm font-medium hover:bg-red-600"
                 >
                    Delete
@@ -667,6 +667,37 @@ const formatHistoryDate = (isoDate) => {
           ))}
         </div>
       )}
+      {showDeleteModal && selectedEmployee && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-[350px] p-5 animate-in fade-in zoom-in">
+
+            <h3 className="text-lg font-bold text-gray-800 mb-3">
+              Delete Employee
+            </h3>
+
+            <p className="text-sm text-gray-600 mb-5">
+              Are you sure you want to delete{" "}
+              <span className="font-semibold">{selectedEmployee.name}</span>?
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => deleteEmployee(selectedEmployee.id)}
+                className="flex-1 bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700"
+              >
+                Delete
+              </button>
+
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg font-semibold hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )} 
     </div>
   );
 };

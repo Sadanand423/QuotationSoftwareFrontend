@@ -107,15 +107,15 @@ const HeroSection = ({ onGetStarted }) => {
 
         // 💥 REAL EXPLOSION (physics-based)
         else if (time < 2.5) {
-  const t = (time - 1.5) / 1;
+          const t = (time - 1.5) / 1;
 
-  // smooth ease (important)
-  const ease = t * t * (3 - 2 * t);
+          // smooth ease (important)
+          const ease = t * t * (3 - 2 * t);
 
-  // move from sphere → full screen
-  drawX = dx + (p.fx - dx) * ease;
-  drawY = dy + (p.fy - dy) * ease;
-}
+          // move from sphere → full screen
+          drawX = dx + (p.fx - dx) * ease;
+          drawY = dy + (p.fy - dy) * ease;
+        }
 
         // 🧲 FORM TEXT
         else {
@@ -181,7 +181,7 @@ const HeroSection = ({ onGetStarted }) => {
       <style>{`
         .hero {
           width: 100%;
-          height: 100vh;
+          height: 100%;
           background: #050816;
           position: relative;
           overflow: hidden;
@@ -193,7 +193,7 @@ const HeroSection = ({ onGetStarted }) => {
 
         .welcome {
           position: absolute;
-          top: 30%;
+          top: 35%;
           left: 50%;
           transform: translateX(-50%);
           color: #60a5fa;
@@ -206,7 +206,7 @@ const HeroSection = ({ onGetStarted }) => {
 
         .cta {
           position: absolute;
-          top: 65%;
+          top: 60%;
           left: 50%;
           transform: translateX(-50%);
           display: flex;
