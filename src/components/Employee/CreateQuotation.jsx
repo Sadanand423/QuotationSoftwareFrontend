@@ -4,6 +4,8 @@ import signatureImg from "../../assets/Smartmatrix_CEO.png";
 import stampImg from "../../assets/Smartmatrix_stamp.png";
 import { useLocation } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 
 const CreateQuotation = ({ selectedClient }) => {
@@ -253,22 +255,20 @@ useEffect(() => {
     }
   };
 
-    const saveQuotation = async () => {
-    if (!formData.client || !formData.project) {
-      alert("Client and Project name required ❗");
-      return;
-    }
+   const saveQuotation = async () => {
+  if (!formData.client || !formData.project) {
+    toast.warning(" Client and Project name required");
+    return;
+  }
 
-    // 1. Get the Unique EmpId from localStorage
-    const currentEmpId = localStorage.getItem("empId");
+  const currentEmpId = localStorage.getItem("empId");
 
-    if (!currentEmpId) {
-      alert("Session expired. Please login again. ❌");
-      return;
-    }
+  if (!currentEmpId) {
+    toast.error(" Session expired. Please login again");
+    return;
+  }
 
-    // 2. Prepare the payload with the dynamic fields
-    const payload = {
+  const payload = {
     ...formData,
     totalCost: formData.totalCost,
     gstAmount: gstAmount,
@@ -281,29 +281,28 @@ useEffect(() => {
     const response = await fetch("http://localhost:8080/api/quotations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload) // Send payload, not formData
+      body: JSON.stringify(payload)
     });
 
     if (!response.ok) {
-      // If server returns 500, this alert will trigger
-      alert("Error saving quotation ❌");
+      toast.error(" Error saving quotation");
       return;
     }
 
     const data = await response.json();
 
-    // ✅ Sync the ID from the database into your local state
     setFormData(prev => ({
       ...prev,
       id: data.id 
     }));
 
-    alert("Quotation Saved Successfully ✅");
+    toast.success(" Quotation Saved Successfully!");
+
     setShowPreview(true);
 
   } catch (error) {
     console.error("Error:", error);
-    alert("Server error ❌");
+    toast.error(" Server error. Try again later");
   }
 };
 
@@ -1680,7 +1679,7 @@ const removeTimelineRow = (index) => {
             <button 
               onClick={() => {
                 if (!formData.id) {
-                  alert("Please save the quotation before previewing or sending for approval.");
+                  toast.error("Please save the quotation before previewing or sending for approval.");
                   return;
                 }
                 setShowPreview(true);
@@ -1690,6 +1689,7 @@ const removeTimelineRow = (index) => {
             </button>
           </div>
         </div>
+         <ToastContainer position="top-right" autoClose={3000} />
       </div>
       
       {/* Preview Modal */}
