@@ -42,12 +42,8 @@ const Invoice = () => {
   const [currentUnpaid, setCurrentUnpaid] = useState(0);
   const [totalAdjustmentBucket, setTotalAdjustmentBucket] = useState(0);
 
-  // ✅ Custom Percentage State
-  const [showCustomPercentage, setShowCustomPercentage] = useState(false);
-  const [customPercentage, setCustomPercentage] = useState("");
-  const [customComment, setCustomComment] = useState("");
-  const [carryForwardPercentage, setCarryForwardPercentage] = useState(0);
-  const [customPercentageError, setCustomPercentageError] = useState("");
+  // ✅ Payment Mode State (amount or percentage)
+  const [paymentMode, setPaymentMode] = useState('amount');
 
   const numberToWords = (num) => {
   const a = ['', 'one ', 'two ', 'three ', 'four ', 'five ', 'six ', 'seven ', 'eight ', 'nine ', 'ten ', 'eleven ', 'twelve ', 'thirteen ', 'fourteen ', 'fifteen ', 'sixteen ', 'seventeen ', 'eighteen ', 'nineteen '];
@@ -208,46 +204,9 @@ const Invoice = () => {
   }, [selectedInstallmentIdx, availableInstallments, remainingBalance, previouslyPaid, invoiceData.finalAmount, actualAmount, adjustmentAmount]);
 
   // ✅ Handle custom percentage calculation
-  const handleCustomPercentageChange = () => {
-    setCustomPercentageError("");
-    
-    if (!customPercentage || customPercentage === "") {
-      setActualAmount("");
-      setInvoiceData(prev => ({
-        ...prev,
-        advancePaid: adjustmentAmount,
-        advancePercentage: '0%',
-        totalPaidAmount: adjustmentAmount.toFixed(2),
-        balanceAmount: remainingBalance.toFixed(2)
-      }));
-      setCarryForwardPercentage(0);
-      return;
-    }
-
-    const percentage = parseFloat(customPercentage);
-    const quotationTotal = parseFloat(invoiceData.finalAmount) || 0;
-
-    if (percentage <= 0) {
-      setCustomPercentageError("Percentage must be greater than 0");
-      return;
-    }
-
-    const currentTerm = availableInstallments[selectedInstallmentIdx];
-    const maxAllowedPercentage = currentTerm?.percent || 100;
-
-    if (percentage > maxAllowedPercentage) {
-      setCustomPercentageError(`Entered percentage (${percentage}%) exceeds remaining limit (${maxAllowedPercentage}%)`);
-      return;
-    }
-
-    const calculatedAmount = Math.round((quotationTotal * percentage) / 100);
-    setActualAmount(calculatedAmount);
-    
-    const plannedAmount = getPlannedAmount();
-    const carryForward = Math.max(0, plannedAmount - calculatedAmount);
-    setCarryForwardPercentage(carryForward > 0 ? (carryForward / quotationTotal) * 100 : 0);
-    
-    updateAdjustmentBucket(calculatedAmount);
+  const handlePaymentModeChange = (mode) => {
+    setPaymentMode(mode);
+    setActualAmount("");
   };
 
   // ✅ Fetch Approved Quotations
@@ -267,7 +226,14 @@ const Invoice = () => {
         const quotResponse = await fetch(`http://localhost:8080/api/quotations/employee/id/${currentEmpId}`);
         if (quotResponse.ok) {
           const quotData = await quotResponse.json();
-          const approved = quotData.filter(q => q.status === 'Approved');
+          const approved = quotData
+            .filter(q => q.status === 'Approved')
+            .sort((a, b) => {
+              // Try multiple date fields: createdAt, date, createdDate
+              const dateA = new Date(a.createdAt || a.date || a.createdDate || 0).getTime();
+              const dateB = new Date(b.createdAt || b.date || b.createdDate || 0).getTime();
+              return dateB - dateA; // Newest first (descending)
+            });
           setApprovedQuotations(approved);
 
           const quotationIds = approved.map(q => q.quotationNumber || q.id);
@@ -293,15 +259,21 @@ const Invoice = () => {
     if (currentEmpId) fetchData();
   }, [currentEmpId]);
 
-  const filteredQuotations = approvedQuotations.filter((quotation) => {
-  const search = searchTerm.toLowerCase();
-
-  return (
-    quotation.quotationNumber?.toLowerCase().includes(search) ||
-    quotation.client?.toLowerCase().includes(search) ||
-    quotation.project?.toLowerCase().includes(search)
-  );
-});
+  const filteredQuotations = approvedQuotations
+    .filter((quotation) => {
+      const search = searchTerm.toLowerCase();
+      return (
+        quotation.quotationNumber?.toLowerCase().includes(search) ||
+        quotation.client?.toLowerCase().includes(search) ||
+        quotation.project?.toLowerCase().includes(search)
+      );
+    })
+    .sort((a, b) => {
+      // Sort by date descending (newest first)
+      const dateA = new Date(a.date || 0).getTime();
+      const dateB = new Date(b.date || 0).getTime();
+      return dateB - dateA;
+    });
 
  const generateInvoice = async (quotation) => {
   const quotationId = quotation.quotationNumber || quotation.id;
@@ -384,6 +356,7 @@ const Invoice = () => {
   setTotalAdjustmentBucket(adjustmentBucketAmount);
   setCurrentUnpaid(0);
   setActualAmount("");
+  setPaymentMode('amount');
 
   // ✅ Initialize invoice data
   setInvoiceData((prev) => ({
@@ -423,10 +396,9 @@ const Invoice = () => {
         date: new Date().toLocaleDateString('en-IN'),
         // Include current unpaid as carry forward for next invoice
         carryForwardAmount: currentUnpaid,
-        carryForwardPercentage: showCustomPercentage ? carryForwardPercentage : 0,
+        carryForwardPercentage: 0,
         // Total adjustment includes both previous + current unpaid
         adjustmentAmount: totalAdjustmentBucket,
-        customComment: customComment || "",
         actualPaidAmount: actualAmount || getPlannedAmount()
       };
 
@@ -678,192 +650,139 @@ const handleInvoicePrint = () => {
                 <div className="flex items-center gap-2">
                   <span>🗓️</span> Payment Details
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-sm font-bold text-indigo-600">
-                    Available Balance: ₹{remainingBalance.toLocaleString('en-IN')}
-                  </div>
+                <div className="text-sm font-bold text-indigo-600">
+                  Available Balance: ₹{remainingBalance.toLocaleString('en-IN')}
+                </div>
+              </div>
+
+              {/* Payment Mode Toggle */}
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 mb-3">Payment Mode:</label>
+                <div className="flex gap-3">
                   <button
-                    onClick={() => {
-                      setShowCustomPercentage(!showCustomPercentage);
-                      if (!showCustomPercentage) {
-                        setSelectedInstallmentIdx(-1);
-                      } else {
-                        setCustomPercentage("");
-                        setCustomComment("");
-                        setCustomPercentageError("");
-                        setCarryForwardPercentage(0);
-                        setSelectedInstallmentIdx(0);
-                        setActualAmount("");
-                      }
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
-                      showCustomPercentage
+                    onClick={() => handlePaymentModeChange('amount')}
+                    className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                      paymentMode === 'amount'
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'bg-white border-2 border-blue-400 text-blue-600 hover:bg-blue-50'
+                    }`}
+                  >
+                    💰 Pay by Amount
+                  </button>
+                  <button
+                    onClick={() => handlePaymentModeChange('percentage')}
+                    className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                      paymentMode === 'percentage'
                         ? 'bg-emerald-600 text-white shadow-md'
                         : 'bg-white border-2 border-emerald-400 text-emerald-600 hover:bg-emerald-50'
                     }`}
                   >
-                    {showCustomPercentage ? '✓ Custom Percentage' : '+ Custom Percentage'}
+                    📊 Pay by Percentage
                   </button>
                 </div>
               </div>
 
-              {showCustomPercentage ? (
-                <div className="mb-4">
-                  <div className="bg-white p-4 rounded-xl border-2 border-emerald-500 ring-2 ring-emerald-100 space-y-3">
-                    <div className="flex justify-between items-center">
-                      <label className="text-xs font-bold text-gray-500 uppercase">
-                        CUSTOM INSTALLMENT
-                      </label>
-                      <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">
-                        ACTIVE
-                      </span>
-                    </div>
+              {/* Installment Selection - Sequential/Fixed Order */}
+              <div className="space-y-4 mb-6">
+                <label className="block text-sm font-semibold text-gray-700">Select Installment:</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {availableInstallments.map((term, i) => {
+                    const globalIdx = invoicedCount + i + 1;
+                    const ordinal = getOrdinal(globalIdx);
+                    const quotationTotal = parseFloat(invoiceData.finalAmount) || 0;
+                    const plannedAmount = Number(term.fixedAmount) || Math.round((quotationTotal * parseFloat(term.percent)) / 100);
+                    const isSelected = selectedInstallmentIdx === i;
+                    const isCurrentInstallment = i === 0; // Only first installment should be clickable
 
-                    {customPercentageError && (
-                      <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-3 py-2 rounded-lg">
-                        ⚠️ {customPercentageError}
-                      </div>
-                    )}
-
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-2">
-                        Percentage (%)
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.1"
-                        placeholder="Enter percentage"
-                        value={customPercentage}
-                        onChange={(e) => {
-                          setCustomPercentage(e.target.value);
-                          setTimeout(() => {
-                            setCustomPercentage(e.target.value);
-                          }, 0);
+                    return (
+                      <div
+                        key={i}
+                        onClick={() => {
+                          if (isCurrentInstallment) {
+                            setSelectedInstallmentIdx(i);
+                            setActualAmount("");
+                          }
                         }}
-                        onBlur={handleCustomPercentageChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      />
-                    </div>
-
-                    {/* Actual Amount Input */}
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-2">
-                        Actual Amount (₹)
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        placeholder="Enter actual payment amount"
-                        value={actualAmount}
-                        onChange={handleActualAmountChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Planned Amount: ₹{getPlannedAmount().toLocaleString('en-IN')}
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-2">
-                        Comment (Optional)
-                      </label>
-                      <textarea
-                        placeholder="Enter reason / comment"
-                        value={customComment}
-                        onChange={(e) => setCustomComment(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        rows="2"
-                      />
-                    </div>
-
-                    {customPercentage && !customPercentageError && (
-                      <div className="pt-2 border-t border-gray-200 space-y-2">
+                        className={`p-4 rounded-xl border-2 transition-all shadow-sm space-y-2 ${
+                          !isCurrentInstallment
+                            ? 'border-gray-300 bg-gray-50 cursor-not-allowed opacity-60'
+                            : isSelected
+                            ? 'border-purple-500 ring-2 ring-purple-200 cursor-pointer bg-white'
+                            : 'border-gray-100 hover:border-purple-300 cursor-pointer bg-white'
+                        }`}
+                      >
                         <div className="flex justify-between items-center">
-                          <span className="text-sm font-semibold text-gray-700">
-                            Total Amount:
-                          </span>
-                          <span className="text-lg font-bold text-emerald-600">
-                            ₹{(Math.round((parseFloat(invoiceData.finalAmount) * parseFloat(customPercentage)) / 100)).toLocaleString('en-IN')}
-                          </span>
+                          <label className="text-xs font-bold text-gray-500 uppercase pointer-events-none">
+                            ({ordinal} Installment)
+                          </label>
+                          {isSelected && (
+                            <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold">
+                              CURRENT
+                            </span>
+                          )}
+                          {!isCurrentInstallment && (
+                            <span className="text-[10px] bg-gray-300 text-gray-700 px-2 py-0.5 rounded-full font-bold">
+                              NOT DUE YET
+                            </span>
+                          )}
                         </div>
-                        
-                        {carryForwardPercentage > 0 && (
-                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
-                            <p className="text-xs text-blue-700">
-                              <strong>💡 Carry-Forward:</strong> Remaining {carryForwardPercentage.toFixed(2)}% will be carried forward to next invoice
-                            </p>
+                        <p className="text-sm text-gray-600">{term.label}</p>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-semibold text-gray-700">{term.percent}%</span>
+                          <span className="text-lg font-bold text-purple-600">₹{plannedAmount.toLocaleString('en-IN')}</span>
+                        </div>
+
+                        {isSelected && (
+                          <div className="mt-3 pt-3 border-t border-gray-200 space-y-3">
+                            {paymentMode === 'amount' ? (
+                              <div>
+                                <label className="block text-xs font-semibold text-gray-600 mb-2">
+                                  Enter Payment Amount (₹)
+                                </label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  placeholder="Enter amount to pay"
+                                  value={actualAmount}
+                                  onChange={handleActualAmountChange}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Planned Amount: ₹{plannedAmount.toLocaleString('en-IN')}
+                                </p>
+                              </div>
+                            ) : (
+                              <div>
+                                <label className="block text-xs font-semibold text-gray-600 mb-2">
+                                  Enter Payment Percentage (%)
+                                </label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  step="0.1"
+                                  placeholder="Enter percentage"
+                                  value={actualAmount ? ((parseFloat(actualAmount) / quotationTotal) * 100).toFixed(2) : ''}
+                                  onChange={(e) => {
+                                    const percentage = parseFloat(e.target.value) || 0;
+                                    const amount = Math.round((quotationTotal * percentage) / 100);
+                                    setActualAmount(amount > 0 ? amount : '');
+                                  }}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Planned: {term.percent}% (₹{plannedAmount.toLocaleString('en-IN')})
+                                </p>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
-                    )}
-                  </div>
+                    );
+                  })}
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {availableInstallments.map((term, i) => {
-                      const globalIdx = invoicedCount + i + 1;
-                      const ordinal = getOrdinal(globalIdx);
-                      const quotationTotal = parseFloat(invoiceData.finalAmount) || 0;
-                      const plannedAmount = Number(term.fixedAmount) || Math.round((quotationTotal * parseFloat(term.percent)) / 100);
-                      const isSelected = selectedInstallmentIdx === i;
-                      return (
-                        <div
-                          key={i}
-                          onClick={() => {
-                            setSelectedInstallmentIdx(i);
-                            setShowCustomPercentage(false);
-                            setCustomPercentage("");
-                            setCustomComment("");
-                            setCustomPercentageError("");
-                            setCarryForwardPercentage(0);
-                            setActualAmount("");
-                          }}
-                          className={`bg-white p-4 rounded-xl border-2 cursor-pointer transition-all shadow-sm space-y-2 ${
-                            isSelected ? 'border-purple-500 ring-2 ring-purple-200' : 'border-gray-100 hover:border-purple-300'
-                          }`}
-                        >
-                          <div className="flex justify-between items-center">
-                            <label className="text-xs font-bold text-gray-500 uppercase pointer-events-none">
-                              ({ordinal} Installment)
-                            </label>
-                            {isSelected && (
-                              <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold">SELECTED</span>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-600">{term.label}</p>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-semibold text-gray-700">{term.percent}%</span>
-                            <span className="text-lg font-bold text-purple-600">₹{plannedAmount.toLocaleString('en-IN')}</span>
-                          </div>
-                          {isSelected && (
-                            <div className="mt-3 pt-3 border-t border-gray-200">
-                              <label className="block text-xs font-semibold text-gray-600 mb-2">
-                                Actual Amount (₹)
-                              </label>
-                              <input
-                                type="number"
-                                min="0"
-                                step="1"
-                                placeholder="Enter actual payment amount"
-                                value={actualAmount}
-                                onChange={handleActualAmountChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                              />
-                              <p className="text-xs text-gray-500 mt-1">
-                                Planned: ₹{plannedAmount.toLocaleString('en-IN')}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+              </div>
 
               {/* ✅ ADJUSTMENT BUCKET CARD - Shows carry-forward amounts */}
               <div className="mt-4">
