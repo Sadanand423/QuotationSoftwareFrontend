@@ -3,6 +3,8 @@ import headerImg from "../../assets/header.jpg";
 import footerImg from "../../assets/footer.jpg";
 import html2pdf from "html2pdf.js";
 import watermark from "../../assets/Smartmatrix_watermark.png";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const QuotationPreview = ({ formData, onClose }) => {
   const fileInputRef = useRef(null);
@@ -226,14 +228,18 @@ const handleSendForApprovalClick = () => {
       );
 
       if (response.ok) {
-        alert("PDF uploaded and email sent to client! ✅");
-        onClose();
-      } else {
-        alert("Failed to send email. Check backend.");
+  toast.success("PDF uploaded & email sent successfully 🚀");
+
+  setTimeout(() => {
+    onClose();
+  }, 2000);
+      }
+       else {
+        toast.error("Failed to send email ❌");
       }
     } catch (error) {
       console.error("Upload Error:", error);
-      alert("Connection error ❌");
+      toast.error("Server connection error ⚠️");
     }
   };
 
@@ -268,6 +274,7 @@ const calculateMaintenanceRange = () => {
 
   return (
   <div className="fixed inset-0 bg-black/50 z-50 overflow-y-auto p-6 print:static print:bg-white print:p-0">
+    <ToastContainer position="top-right" autoClose={3000} />
 
        {/* 4. THE HIDDEN FILE INPUT */}
       <input 
