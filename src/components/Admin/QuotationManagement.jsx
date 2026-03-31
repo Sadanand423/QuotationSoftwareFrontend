@@ -138,20 +138,18 @@ const updateQuotationStatus = async (quotationId, newStatus) => {
 };
 
   const handleDelete = async (quoteId) => {
-    if (!window.confirm("Are you sure you want to delete this quotation?")) return;
     try {
       const response = await fetch(`http://localhost:8080/api/quotations/${quoteId}`, {
         method: "DELETE",
       });
+
       if (response.ok) {
+        // remove from UI instantly
         setQuotations(prev => prev.filter((q) => q.id !== quoteId));
         setShowModal(false);
-      } else {
-        alert("Delete failed on server ❌");
       }
     } catch (error) {
       console.error("Delete error:", error);
-      alert("Failed to delete ❌");
     }
   };
 
@@ -296,8 +294,8 @@ const updateQuotationStatus = async (quotationId, newStatus) => {
                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-600 hidden md:table-cell">{quote.date}</td>
                     {/* 2. Added Action Date Data Cell */}
                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-600">
-    {quote.actionDate || "--"} 
-</td>
+                          {quote.actionDate || "--"} 
+                      </td>
                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm">
                       <div className="flex gap-3">
                         <button onClick={() => handleAction(quote, 'view')} className="text-green-600 hover:text-green-800 font-medium">View</button>
@@ -372,10 +370,10 @@ const updateQuotationStatus = async (quotationId, newStatus) => {
                 <div className="flex justify-between border-b border-gray-50 pb-2">
                   <span className="text-gray-500">Amount</span>
                   <span className="text-green-600 font-bold">
-  {selectedQuote.currency}{" "}
-  {(selectedQuote.finalAmount || selectedQuote.totalCost + (selectedQuote.gstAmount || 0))
-    ?.toLocaleString('en-IN')}
-</span>
+                    {selectedQuote.currency}{" "}
+                    {(selectedQuote.finalAmount || selectedQuote.totalCost + (selectedQuote.gstAmount || 0))
+                      ?.toLocaleString('en-IN')}
+                  </span>
                 </div>
                 <div className="flex justify-between border-b border-gray-50 pb-2">
                   <span className="text-gray-500">Status</span>
@@ -388,9 +386,9 @@ const updateQuotationStatus = async (quotationId, newStatus) => {
                   <span className="text-gray-900">{selectedQuote.date}</span>
                 </div>
                 <div className="flex justify-between border-b border-gray-50 pb-2">
-  <span className="text-gray-500">Action Date</span>
-  <span className="text-gray-900">{selectedQuote.actionDate || "--"}</span>
-</div>
+                  <span className="text-gray-500">Action Date</span>
+                  <span className="text-gray-900">{selectedQuote.actionDate || "--"}</span>
+                </div>
                 {selectedQuote.status === "Rejected" && selectedQuote.rejectionReason && (
                   <div className="mt-2 p-3 bg-red-50 border border-red-100 rounded-lg">
                     <p className="text-xs font-bold text-red-700 uppercase mb-1">Client Feedback</p>

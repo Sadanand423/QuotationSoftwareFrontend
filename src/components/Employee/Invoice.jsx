@@ -955,8 +955,12 @@ const handleInvoicePrint = () => {
                 <img
                   src={watermark}
                   alt="watermark"
-                  className="absolute top-1/2 left-1/2 w-[470px] opacity-40 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                  className="absolute top-1/2 left-1/2 w-[450px] opacity-50 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-2"
                 />
+
+              {/* CONTENT */}
+                <div className="relative z-8">
+
               {/* Header Section */}
               <div className="flex justify-between items-start border-b border-gray-400 pb-4">
                 <div className="flex gap-4">
@@ -1013,7 +1017,7 @@ const handleInvoicePrint = () => {
                    </tr>
                 </thead>
                 <tbody>
-                  <tr className="h-20">
+                  <tr className="h-10">
                     <td className="border border-gray-400 text-center pt-2 align-top">1</td>
                     <td className="border border-gray-400 p-2 align-top font-medium">{invoiceData.projectName}</td>
                     <td className="border border-gray-400 text-center pt-2 align-top">₹{Number(invoiceData.totalAmount).toLocaleString("en-IN")}</td>
@@ -1085,10 +1089,10 @@ const handleInvoicePrint = () => {
                   <img 
                     src={stamp} 
                     alt="Stamp" 
-                    className="h-23 mx-auto mb-1 opacity-90 -mt-6"
+                    className="h-27 mx-auto mb-1 opacity-90 -mt-6"
                   />
                 ) : (
-                  <div className="h-23"></div>
+                  <div className="h-25"></div>
                 )}
               </div>
 
@@ -1097,7 +1101,7 @@ const handleInvoicePrint = () => {
                   <img 
                     src={signature} 
                     alt="Signature" 
-                    className="h-12 mx-auto mb-1"
+                    className="h-20 mx-auto mb-1"
                   />
                 ) : (
                   <div className="h-12"></div>
@@ -1107,6 +1111,7 @@ const handleInvoicePrint = () => {
                   Authorized Signature
                 </p>
               </div>
+            </div>
             </div>
             </div>
           </div>

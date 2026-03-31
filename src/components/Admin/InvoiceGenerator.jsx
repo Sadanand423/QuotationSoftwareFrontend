@@ -81,27 +81,27 @@ const InvoiceGenerator = () => {
 
   const confirmDelete = async () => {
     if (!invoiceToDelete) return;
+
     const targetId = invoiceToDelete.id || invoiceToDelete._id;
     if (!targetId) {
-      alert("Error: Invoice ID is missing.");
+      console.error("Error: Invoice ID is missing.");
       return;
     }
+
     try {
       const response = await fetch(`http://localhost:8080/api/invoices/delete/${targetId}`, {
         method: 'DELETE',
       });
+
       if (response.ok) {
-        setInvoiceToDelete(null);
-        fetchAllInvoices();
-        alert("Invoice deleted successfully!");
+        setInvoiceToDelete(null);   // close modal
+        fetchAllInvoices();         // refresh list
       } else {
         const errorText = await response.text();
         console.error("Delete failed:", errorText);
-        alert(`Server says: ${errorText}`);
       }
     } catch (error) {
       console.error("Network Error:", error);
-      alert("Could not reach the server. Please check if the backend is running.");
     }
   };
 

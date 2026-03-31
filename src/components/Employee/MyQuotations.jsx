@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const MyQuotations = () => {
+const MyQuotations = ({ onEdit }) => {
   const navigate = useNavigate();
   const [filter, setFilter] = useState('all');
   const [quotations, setQuotations] = useState([]);
@@ -318,13 +318,10 @@ const MyQuotations = () => {
 
                         {(quote.status === "Draft" || quote.status === "Pending") && (
                           <button 
-                            onClick={() => {
-                              console.log("Navigating with:", quote);
-                              navigate(`/create-quotation/${quote.quotationNumber}`, { state: { editData: quote } });
-                            }}                            
-                            className="text-blue-600 hover:text-blue-800 font-medium">
-                            Edit
-                          </button>
+  onClick={() => onEdit(quote)}
+  className="text-blue-600 hover:text-blue-800 font-medium">
+  Edit
+</button>
                         )}
                       </div>
                     </td>
