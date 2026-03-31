@@ -24,10 +24,8 @@
       const readInSession = useRef(new Set());
 
       // ================= FETCH NOTIFICATIONS ================
-
-
-// Locate your existing useEffect for notifications and update it like this:
-useEffect(() => {
+  // Locate your existing useEffect for notifications and update it like this:
+  useEffect(() => {
     const fetchNotifications = async () => {
       try {
         // FORCE "ADMIN" here so the backend knows to fetch ALL quotations
