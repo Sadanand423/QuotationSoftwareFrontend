@@ -266,7 +266,7 @@ const formatHistoryDate = (isoDate) => {
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
                 placeholder="Enter full name"
                 required
-              />
+              />   
             </div>
             
             <div>
@@ -276,7 +276,7 @@ const formatHistoryDate = (isoDate) => {
                 name="email"
                 autoComplete="new-email"
                 value={formData.email}
-                onChange={handleChange}
+                onChange=  {handleChange}
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
                 placeholder="employee@company.com"
                 required
