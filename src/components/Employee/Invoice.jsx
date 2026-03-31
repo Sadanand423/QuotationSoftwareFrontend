@@ -4,6 +4,8 @@ import mainlogo from "../../assets/mainlogo.webp";
 import signatureImg from "../../assets/Smartmatrix_CEO.png";
 import stampImg from "../../assets/Smartmatrix_stamp.png";
 import watermark from "../../assets/Smartmatrix_watermark.png";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Invoice = () => {
   const navigate = useNavigate();
@@ -314,7 +316,7 @@ const Invoice = () => {
   const remaining = finalTotal - totalAlreadyPaid;
 
   if (remaining <= 0) {
-    alert("This quotation is fully paid. No more invoices can be generated.");
+    toast.warning("This quotation is fully paid. No more invoices can be generated.");
     return;
   }
 
@@ -414,16 +416,18 @@ const Invoice = () => {
         body: JSON.stringify(payload)
       });
 
-      if (response.ok) {
-        alert("Invoice generated and saved successfully! ✅");
-        window.location.reload();
-      } else {
+    if (response.ok) {
+  toast.success("Invoice generated and saved successfully! ✅");
+
+  setShowPreview(true); // 👈 opens preview after save
+
+} else {
         const errorData = await response.json();
-        alert(`Failed to save invoice: ${errorData.message || 'Server Error'}`);
+        toast.error(`Failed to save invoice: ${errorData.message || 'Server Error'}`);
       }
     } catch (error) {
       console.error("Save Error:", error);
-      alert("Server connection error ❌. Is the backend running?");
+      toast.error("Server connection error ❌");
     }
   };
 
@@ -488,6 +492,7 @@ const handleInvoicePrint = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
+      
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl sm:text-3xl font-bold bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
@@ -1142,7 +1147,13 @@ const handleInvoicePrint = () => {
           </div>
         </div>
       )}
+      <ToastContainer 
+  position="top-right" 
+  autoClose={3000} 
+  style={{ zIndex: 99999 }} 
+/>
     </div> 
+    
   );
 };
 
