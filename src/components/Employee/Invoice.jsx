@@ -44,6 +44,10 @@ const Invoice = () => {
 
   // ✅ Payment Mode State (amount or percentage)
   const [paymentMode, setPaymentMode] = useState('amount');
+  
+  // ✅ Direct percentage input state
+  const [percentageInput, setPercentageInput] = useState("");
+
 
   const numberToWords = (num) => {
   const a = ['', 'one ', 'two ', 'three ', 'four ', 'five ', 'six ', 'seven ', 'eight ', 'nine ', 'ten ', 'eleven ', 'twelve ', 'thirteen ', 'fourteen ', 'fifteen ', 'sixteen ', 'seventeen ', 'eighteen ', 'nineteen '];
@@ -758,18 +762,35 @@ const handleInvoicePrint = () => {
                                   Enter Payment Percentage (%)
                                 </label>
                                 <input
-                                  type="number"
-                                  min="0"
-                                  max="100"
-                                  step="0.1"
+                                  type="text"
                                   placeholder="Enter percentage"
-                                  value={actualAmount ? ((parseFloat(actualAmount) / quotationTotal) * 100).toFixed(2) : ''}
+                                  value={percentageInput}
                                   onChange={(e) => {
-                                    const percentage = parseFloat(e.target.value) || 0;
+                                    let value = e.target.value;
+                                    // Allow only numbers and one decimal point
+                                    if (value === '') {
+                                      setPercentageInput('');
+                                      setActualAmount('');
+                                      return;
+                                    }
+                                    
+                                    value = value.replace(/[^0-9.]/g, '');
+                                    const parts = value.split('.');
+                                    if (parts.length > 2) {
+                                      value = parts[0] + '.' + parts.slice(1).join('');
+                                    }
+                                    
+                                    setPercentageInput(value);
+                                    
+                                    const percentage = parseFloat(value) || 0;
                                     const amount = Math.round((quotationTotal * percentage) / 100);
                                     setActualAmount(amount > 0 ? amount : '');
                                   }}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                  style={{
+                                    WebkitAppearance: 'textfield',
+                                    MozAppearance: 'textfield',
+                                  }}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                 />
                                 <p className="text-xs text-gray-500 mt-1">
                                   Planned: {term.percent}% (₹{plannedAmount.toLocaleString('en-IN')})

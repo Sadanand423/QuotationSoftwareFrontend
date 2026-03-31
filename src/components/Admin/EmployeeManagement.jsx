@@ -156,6 +156,15 @@ const handleEditEmployee = (employee) => {
     });
   };
 
+  const handlePhoneChange = (e) => {
+    // Allow only numbers
+    const value = e.target.value.replace(/[^0-9]/g, '');
+    setFormData({
+      ...formData,
+      phone: value
+    });
+  };
+
   // ✅ DELETE FROM BACKEND
 const deleteEmployee = async (id) => {
   try {
@@ -286,12 +295,12 @@ const formatHistoryDate = (isoDate) => {
             <div>
               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">📱 Phone</label>
               <input
-                type="tel"
+                type="text"
                 name="phone"
                 value={formData.phone}
-                onChange={handleChange}
+                onChange={handlePhoneChange}
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
-                placeholder="+1 (555) 123-4567"
+                placeholder="Enter numbers only"
                 required
               />
             </div>
