@@ -14,14 +14,12 @@ const CreateQuotation = ({ selectedClient, editData }) => {
 
   const [showPreview, setShowPreview] = useState(false);
 
-  const [clients, setClients] = useState([]);
-
   const [formData, setFormData] = useState({
     quotationNumber: `QT-${Date.now().toString().slice(-6)}`,
     date: new Date().toLocaleDateString('en-IN'),
     validUntil: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN'),
     project: '',
-    client: selectedClient?.name || '',
+    client: '',
     clientOrganization: '',
     clientAddress: '',
     clientEmail: '',

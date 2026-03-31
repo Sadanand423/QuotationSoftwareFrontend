@@ -41,7 +41,7 @@
                   <h2 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                     QuoteAdmin
                   </h2>
-                  <p className="text-xs text-gray-400 hidden sm:block">Management Panel</p>
+                  <p className="text-xs text-gray-400 hidden sm:block">Admin Portal</p>
                 </div>
               </div>
               <button
