@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 const LoginModal = ({ isOpen, onClose }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [formData, setFormData] = useState({ username: '', employeeId: '', password: '' });
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (isOpen) {
@@ -30,9 +31,14 @@ const LoginModal = ({ isOpen, onClose }) => {
         if (!isAdmin) localStorage.setItem("empId", formData.employeeId);
         window.location.href = isAdmin ? "/admin" : "/employee";
       } else {
-        alert("Invalid credentials");
+        setError("Invalid username or password");
       }
-    } catch (err) { alert("Server error"); }
+    } catch (err) { setError("Something went wrong. Please try again."); }
+  };
+
+  const handleForgotPassword = () => {
+    onClose();
+    window.location.href = '/forgot-password';
   };
 
   const SocialIcons = () => (
@@ -67,16 +73,39 @@ const LoginModal = ({ isOpen, onClose }) => {
           
           {/* LEFT SIDE: ADMIN FORM */}
           <div className={`w-1/2 h-full flex flex-col items-center justify-center transition-all duration-700 ease-in-out ${isAdmin ? 'translate-x-0 opacity-100' : 'translate-x-[20%] opacity-0 pointer-events-none'}`}>
-            <form onSubmit={handleSubmit} className="w-full max-w-[320px] flex flex-col items-center">
-              <h2 className="text-3xl font-extrabold text-gray-800 mb-2">Admin Sign In</h2>
-              <SocialIcons />
-              <p className="text-gray-400 text-[10px] uppercase tracking-widest mb-4 font-semibold">or use your admin account</p>
+  
+            <form onSubmit={handleSubmit} className="w-full max-w-[340px] flex flex-col items-center">
+
+              {/* Title */}
+              <h2 className="text-3xl font-bold text-gray-900 mb-1 tracking-tight">
+                Admin Login
+              </h2>
+
+              {/* Subtitle */}
+              <p className="text-gray-500 text-sm mb-6">
+                Sign in to manage your dashboard
+              </p>
+
+              {/* Divider */}
+              <div className="flex items-center w-full mb-6">
+                <div className="flex-1 h-px bg-gray-200"></div>
+                <span className="px-3 text-xs text-gray-400 uppercase tracking-wider">
+                  Secure Access
+                </span>
+                <div className="flex-1 h-px bg-gray-200"></div>
+              </div>
+
+              {error && (
+                <div className="w-full mb-4 text-sm text-red-600 bg-red-50 border border-red-200 px-4 py-2 rounded-lg">
+                  ⚠️ {error}
+                </div>
+              )}
               
               <input type="text" placeholder="Username" className="w-full bg-gray-50 border border-gray-100 px-5 py-3.5 rounded-xl mb-3 outline-none focus:ring-2 focus:ring-[#c33764]/30 transition-all text-sm" 
-                value={formData.username} onChange={(e) => setFormData({...formData, username: e.target.value})} required={isAdmin} />
+                value={formData.username} onChange={(e) => {setFormData({...formData, username: e.target.value}); setError("");}} />
               
               <input type="password" placeholder="Password" className="w-full bg-gray-50 border border-gray-100 px-5 py-3.5 rounded-xl mb-6 outline-none focus:ring-2 focus:ring-[#c33764]/30 transition-all text-sm" 
-                value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} required={isAdmin} />
+                value={formData.password} onChange={(e) => {setFormData({...formData, password: e.target.value}); setError("");}} />
               
               {/* CROSS COLORED: Admin uses Blue theme */}
               <button type="submit" className="w-full bg-gradient-to-r from-[#4e54c8] to-[#c326c8] text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-indigo-100 hover:opacity-90 active:scale-95 transition-all text-base">
@@ -87,16 +116,42 @@ const LoginModal = ({ isOpen, onClose }) => {
 
           {/* RIGHT SIDE: EMPLOYEE FORM */}
           <div className={`w-1/2 h-full flex flex-col items-center justify-center transition-all duration-700 ease-in-out ${!isAdmin ? 'translate-x-0 opacity-100' : 'translate-x-[-20%] opacity-0 pointer-events-none'}`}>
-            <form onSubmit={handleSubmit} className="w-full max-w-[320px] flex flex-col items-center">
-              <h2 className="text-3xl font-extrabold text-gray-800 mb-2">Employee Sign In</h2>
-              <SocialIcons />
-              <p className="text-gray-400 text-[10px] uppercase tracking-widest mb-4 font-semibold">or use your employee ID</p>
+  
+            <form onSubmit={handleSubmit} className="w-full max-w-[340px] flex flex-col items-center">
+
+              {/* Title */}
+              <h2 className="text-3xl font-bold text-gray-900 mb-1 tracking-tight">
+                Employee Login
+              </h2>
+
+              {/* Subtitle */}
+              <p className="text-gray-500 text-sm mb-6 text-center">
+                Sign in using your employee credentials
+              </p>
+
+              {/* Divider */}
+              <div className="flex items-center w-full mb-6">
+                <div className="flex-1 h-px bg-gray-200"></div>
+                <span className="px-3 text-xs text-gray-400 uppercase tracking-wider">
+                  Employee Access
+                </span>
+                <div className="flex-1 h-px bg-gray-200"></div>
+              </div>
+
+              {error && (
+                <div className="w-full mb-4 text-sm text-red-600 bg-red-50 border border-red-200 px-4 py-2 rounded-lg">
+                  ⚠️ {error}
+                </div>
+              )}
               
               <input type="text" placeholder="Employee ID" className="w-full bg-gray-50 border border-gray-100 px-5 py-3.5 rounded-xl mb-3 outline-none focus:ring-2 focus:ring-[#4e54c8]/30 transition-all text-sm" 
-                value={formData.employeeId} onChange={(e) => setFormData({...formData, employeeId: e.target.value})} required={!isAdmin} />
+                value={formData.employeeId} onChange={(e) => {setFormData({...formData, employeeId: e.target.value}); setError("");}} />
               
               <input type="password" placeholder="Password" className="w-full bg-gray-50 border border-gray-100 px-5 py-3.5 rounded-xl mb-6 outline-none focus:ring-2 focus:ring-[#4e54c8]/30 transition-all text-sm" 
-                value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} required={!isAdmin} />
+                value={formData.password} onChange={(e) => {setFormData({...formData, password: e.target.value}); setError("");}} />
+              <button type="button" onClick={handleForgotPassword} className="text-xs text-[#4e54c8] hover:text-[#c326c8] mb-4 font-semibold transition-colors">
+                Forgot Password?
+              </button>
               
               {/* CROSS COLORED: Employee uses Pink/Red theme */}
               <button type="submit" className="w-full bg-gradient-to-r from-[#c33764] to-[#1d2671] text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-pink-100 hover:opacity-90 active:scale-95 transition-all text-base">

@@ -6,17 +6,14 @@ const AllNotifications = ({ notifications, setNotifications }) => {
 
   const getTypeStyle = (type) => {
     switch (type) {
-      case "APPROVAL":
-        return "bg-green-100 text-green-700";
-      case "REJECTION":
-        return "bg-red-100 text-red-700";
-      case "CREATION":
-      case "QUOTATION_CREATED":
-        return "bg-blue-100 text-blue-700";
-      case "SENT":
-        return "bg-purple-100 text-purple-700";
-      default:
-        return "bg-indigo-100 text-indigo-700";
+      case "APPROVAL": return "bg-green-100 text-green-700";
+      case "REJECTION": return "bg-red-100 text-red-700";
+      case "EXPIRED": return "bg-gray-200 text-gray-700 border border-gray-400"; 
+      case "DAILY_REMINDER": return "bg-yellow-100 text-yellow-700 border border-yellow-300"; 
+      case "CREATION": return "bg-blue-100 text-blue-700";
+      case "SENT": return "bg-purple-100 text-purple-700";
+      case "INVOICE": return "bg-orange-100 text-orange-700"; // Add this line
+      default: return "bg-indigo-100 text-indigo-700";
     }
   };
 

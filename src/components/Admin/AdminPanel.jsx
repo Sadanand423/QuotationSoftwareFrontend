@@ -24,50 +24,44 @@
       const readInSession = useRef(new Set());
 
       // ================= FETCH NOTIFICATIONS ================
+  // Locate your existing useEffect for notifications and update it like this:
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        // FORCE "ADMIN" here so the backend knows to fetch ALL quotations
+        const triggerId = "ADMIN"; 
 
+        // 1. Trigger backend for ALL reminders
+        await fetch(`http://localhost:8080/api/quotations/trigger-reminders/${triggerId}`);
 
-useEffect(() => {
-  const fetchNotifications = async () => {
-    try {
-      const res = await fetch("http://localhost:8080/api/notifications/admin");
-      if (!res.ok) return;
-      const incoming = await res.json();
+        // 2. Fetch notifications for Admin
+        const res = await fetch(`http://localhost:8080/api/notifications/admin`);
+        if (!res.ok) return;
+        const incoming = await res.json();
 
-      // This will show you exactly what is inside the data
-     // console.log("First item check:", incoming[0]); 
+        const formatted = incoming.map((n) => {
+          // Normalize ID handling for MongoDB or SQL
+          let actualId = n.id || (n._id && (typeof n._id === 'object' ? n._id.$oid : n._id));
+          return {
+            id: actualId,
+            message: n.message,
+            timestamp: n.timestamp,
+            type: n.type,
+            // Check both DB status and local session status
+            read: n.read === true || n.isRead === true || readInSession.current.has(actualId)
+          };
+        });
 
-      const formatted = incoming.map((n, index) => {
-        // MAPPING LOGIC:
-        // 1. Try n.id (Standard)
-        // 2. Try n._id (MongoDB default)
-        // 3. Try n._id.$oid (MongoDB Object format)
-        let actualId = null;
-        
-        if (n.id) {
-          actualId = n.id;
-        } else if (n._id) {
-          actualId = typeof n._id === 'object' ? n._id.$oid : n._id;
-        }
+        setNotifications(formatted);
+      } catch (e) {
+        console.error("Admin Notification fetch error", e);
+      }
+    };
 
-        return {
-          id: actualId, // If this is null, the delete button will show 'Critical Error'
-          message: n.message,
-          timestamp: n.timestamp,
-          type: n.type,
-          read: n.read === true || n.isRead === true || readInSession.current.has(actualId)
-        };
-      });
-
-      setNotifications(formatted);
-    } catch (e) {
-      console.error("Notification fetch error", e);
-    }
-  };
-
-  fetchNotifications();
-  const interval = setInterval(fetchNotifications, 5000);
-  return () => clearInterval(interval);
-}, []);
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000); // 30s is healthy
+    return () => clearInterval(interval);
+  }, []);
 
       // ================= TOGGLE NOTIFICATIONS =================
       const toggleNotifications = () => {
@@ -250,16 +244,16 @@ const markAllAsRead = () => {
                           </div>
 
                           {/* VIEW ALL */}
-<div
-  onClick={() => {
-    markAllAsRead(); // 👈 Add this call here
-    setActiveModule("allNotifications");
-    setShowNotifications(false);
-  }}
-  className="px-4 py-3 text-center text-sm font-semibold text-indigo-600 hover:bg-indigo-50 cursor-pointer"
->
-  View All Notifications →
-</div>
+                          <div
+                            onClick={() => {
+                              markAllAsRead(); // 👈 Add this call here
+                              setActiveModule("allNotifications");
+                              setShowNotifications(false);
+                            }}
+                            className="px-4 py-3 text-center text-sm font-semibold text-indigo-600 hover:bg-indigo-50 cursor-pointer"
+                          >
+                            View All Notifications →
+                          </div>
                         </div>
                       </div>
                     )}
@@ -311,11 +305,18 @@ const markAllAsRead = () => {
 
                   {/* 👤 ADMIN */}
                   <div className="relative" ref={dropdownRef}>
-                    <div
-                      onClick={() => setShowDropdown(!showDropdown)}
-                      className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium cursor-pointer"
-                    >
-                      👤 Admin Panel
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowDropdown(!showDropdown)}
+                        className="w-10 h-10 flex items-center justify-center rounded-full 
+                                  bg-gradient-to-r from-blue-500 to-purple-600
+                                  text-white shadow-lg hover:scale-105 transition-transform"
+                      >
+                        {/* User Icon */}
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5z"/>
+                        </svg>
+                      </button>
                     </div>
 
                     {showDropdown && (

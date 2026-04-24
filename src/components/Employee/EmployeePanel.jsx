@@ -9,6 +9,7 @@ import Invoice from './Invoice';
 import MyInvoice from './MyInvoice';
 import MyProfile from './MyProfile';
 import AllNotifications from "./AllNotifications";
+import QuotationPreview from './QuotationPreview';
 
 const EmployeePanel = () => {
   const [activeModule, setActiveModule] = useState('dashboard');
@@ -17,6 +18,7 @@ const EmployeePanel = () => {
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
 
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
@@ -25,42 +27,45 @@ const EmployeePanel = () => {
   // ✅ 1. ADDED: Session shield to prevent unread count from jumping back during polling
   const readInSession = useRef(new Set());
 
-  // ================= FETCH NOTIFICATIONS ================
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const empId = localStorage.getItem("empId");
-        if (!empId) return;
+ useEffect(() => {
+  const fetchNotifications = async () => {
+    try {
+      const empId = localStorage.getItem("empId");
+      if (!empId) return;
 
-        const res = await fetch(`http://localhost:8080/api/notifications/employee/${empId}`);
-        if (!res.ok) return;
+      // STEP 1: Trigger the generation of reminder notifications on the server
+      // This MUST happen before we fetch the list below
+      await fetch(`http://localhost:8080/api/quotations/trigger-reminders/${empId}`, {
+        method: 'GET' // or POST depending on your backend
+      });
 
-        const incoming = await res.json();
+      // STEP 2: Fetch the actual notification list
+      const res = await fetch(`http://localhost:8080/api/notifications/employee/${empId}`);
+      if (!res.ok) return;
 
-        // ✅ 2. UPDATED: Improved the mapping logic to respect the session shield
-        const formatted = incoming.map((n, index) => {
-          const id = n.id || n._id || `notif-${index}`;
-          return {
-            id: id,
-            message: n.message,
-            timestamp: n.timestamp,
-            type: n.type || "INFO",
-            // Keep it read if DB says so OR if we clicked it in this browser session
-            read: n.read === true || n.isRead === true || readInSession.current.has(id)
-          };
-        });
-        
-        setNotifications(formatted);
-      } catch (e) {
-        console.error("Notification fetch error", e);
-      }
-    };
+      const incoming = await res.json();
 
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 5000);
-    return () => clearInterval(interval);
-  }, []);
+      const formatted = incoming.map((n, index) => {
+        const id = n.id || n._id || `notif-${index}`;
+        return {
+          id: id,
+          message: n.message,
+          timestamp: n.timestamp,
+          type: n.type || "INFO",
+          read: n.read === true || n.isRead === true || readInSession.current.has(id)
+        };
+      });
+      
+      setNotifications(formatted);
+    } catch (e) {
+      console.error("Employee Notification fetch error", e);
+    }
+  };
 
+  fetchNotifications();
+  const interval = setInterval(fetchNotifications, 30000); 
+  return () => clearInterval(interval);
+}, []);
   // ================= TOGGLE & MARK READ LOGIC =================
   const markAllAsRead = () => {
     const unreadCount = notifications.filter(n => !n.read).length;
@@ -112,6 +117,7 @@ const EmployeePanel = () => {
 
   // ================= NAVIGATION =================
   const handleCreateQuotation = (client = null) => {
+    setPreviewData(null); 
     setSelectedClient(client);
     setActiveModule('create');
   };
@@ -130,8 +136,28 @@ const EmployeePanel = () => {
     switch (activeModule) {
       case 'dashboard': return <EmployeeDashboard onCreateQuotation={() => setActiveModule('create')} />;
       case 'clients': return <MyClients onCreateQuotation={handleCreateQuotation} />;
-      case 'create': return <CreateQuotation selectedClient={selectedClient} />;
-      case 'quotations': return <MyQuotations />;
+      case 'create': return <CreateQuotation selectedClient={selectedClient} editData={previewData}  />;
+      case 'quotations':
+        return (
+          <MyQuotations 
+            onEdit={(quote) => {
+              setSelectedClient(null); // optional
+              setPreviewData(quote);   // reuse this state
+              setActiveModule('create'); // 🔥 OPEN CREATE PAGE
+            }}
+          />
+        );
+      case 'preview':
+  if (!previewData) {
+    return <div className="p-6 text-center">Loading preview...</div>;
+  }
+
+  return (
+    <QuotationPreview 
+      formData={previewData} 
+      onClose={() => setActiveModule('quotations')} 
+    />
+  );
       case 'invoice': return <Invoice />;
       case 'myinvoice': return <MyInvoice />;
       case 'profile': return <MyProfile />;
@@ -150,13 +176,31 @@ const EmployeePanel = () => {
         <div className="fixed inset-0 z-50 sm:hidden">
           <div className="fixed inset-0 bg-black opacity-50" onClick={() => setSidebarOpen(false)} />
           <div className="fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white shadow-2xl z-50">
-            <EmployeeSidebar activeModule={activeModule} setActiveModule={setActiveModule} onClose={() => setSidebarOpen(false)} />
+            <EmployeeSidebar 
+  activeModule={activeModule} 
+  setActiveModule={(module) => {
+    if (module !== 'create') {
+      setPreviewData(null);
+    }
+    setActiveModule(module);
+    setSidebarOpen(false);
+  }} 
+/>
           </div>
         </div>
       )}
 
       <div className="hidden sm:block">
-        <EmployeeSidebar activeModule={activeModule} setActiveModule={setActiveModule} />
+        <EmployeeSidebar 
+          activeModule={activeModule} 
+          setActiveModule={(module) => {
+            if (module !== 'create') {
+              setPreviewData(null);
+            }
+            setActiveModule(module);
+            setSidebarOpen(false);
+          }} 
+        />
       </div>
 
       <div className="flex-1 overflow-auto">
@@ -240,16 +284,21 @@ const EmployeePanel = () => {
 
               {/* 👤 EMPLOYEE PANEL DROPDOWN */}
               <div className="relative" ref={dropdownRef}>
-                <div
+                <button
                   onClick={() => setShowDropdown(!showDropdown)}
-                  className="bg-gradient-to-r from-green-400 to-blue-500 text-white px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium shadow-lg cursor-pointer"
-                >
-                  👤 Employee Panel
-                </div>
+                  className="w-10 h-10 flex items-center justify-center rounded-full 
+                             bg-gradient-to-r from-blue-500 to-purple-600
+                            text-white shadow-lg hover:scale-105 transition-transform"
+                            >
+                  {/* User Icon */}
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                   <path d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5z"/>
+                  </svg>
+                </button>
                 {showDropdown && (
                   <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-xl border z-50">
-                    <button onClick={handleProfile} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">👤 Profile</button>
-                    <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">🚪 Logout</button>
+                    <button onClick={handleProfile} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"> Profile</button>
+                    <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"> Logout</button>
                   </div>
                 )}
               </div>

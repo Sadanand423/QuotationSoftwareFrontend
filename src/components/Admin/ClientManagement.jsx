@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import AdminClientInfoModal from './AdminClientInfoModal';
 
 const ClientManagement = () => {
   const [clients, setClients] = useState([]);
@@ -8,7 +9,9 @@ const ClientManagement = () => {
   const [selectedClient, setSelectedClient] = useState(null);
   const [modalType, setModalType] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newClient, setNewClient] = useState({ name: '', email: '', phone: '', status: 'Active' });
+  const [newClient, setNewClient] = useState({ name: '', email: '', phone: '', organization: '', status: 'Active' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   const statusFilters = ['All', 'Active', 'Inactive'];
 
@@ -20,13 +23,17 @@ useEffect(() => {
 }, []);
 
 
-  const filteredClients = clients.filter(client => {
+  const allFilteredClients = clients.filter(client => {
     const matchesFilter = activeFilter === 'All' || client.status === activeFilter;
     const matchesSearch = client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          client.clientId?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   });
+
+  const totalPages = Math.ceil(allFilteredClients.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const filteredClients = allFilteredClients.slice(startIndex, startIndex + itemsPerPage);
 
   const handleAction = (client, action) => {
     setSelectedClient(client);
@@ -94,16 +101,19 @@ const handleDelete = async (clientId) => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-          Client Management
-        </h2>
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+            Client Management
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">Total Clients: {clients.length}</p>
+        </div>
         <div className="flex gap-3">
           <div className="relative">
             <input
               type="text"
               placeholder="Search clients..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,7 +135,7 @@ const handleDelete = async (clientId) => {
           {statusFilters.map((filter) => (
             <button
               key={filter}
-              onClick={() => setActiveFilter(filter)}
+              onClick={() => { setActiveFilter(filter); setCurrentPage(1); }}
               className={`px-6 py-4 text-sm font-medium transition-colors duration-200 ${
                 activeFilter === filter
                   ? 'bg-green-50 text-green-600 border-b-2 border-green-500'
@@ -177,12 +187,7 @@ const handleDelete = async (clientId) => {
                       >
                         View
                       </button>
-                      <button 
-                        onClick={() => handleAction(client, 'edit')}
-                        className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200"
-                      >
-                        Edit
-                      </button>
+                      
                       <button 
                         onClick={() => handleAction(client, 'delete')}
                         className="text-red-600 hover:text-red-800 font-medium transition-colors duration-200"
@@ -196,12 +201,52 @@ const handleDelete = async (clientId) => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
+            <div className="text-sm text-gray-700">
+              Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, allFilteredClients.length)} of {allFilteredClients.length} clients
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Previous
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      page === currentPage
+                        ? 'bg-green-500 text-white'
+                        : 'border border-gray-300 text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Add Client Modal */}
       {showAddForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white/90 rounded-2xl shadow-2xl max-w-md w-full border border-white/30 backdrop-blur-md">
             <div className="p-6">
               <h3 className="text-lg font-semibold mb-4">Add New Client</h3>
               <div className="space-y-4">
@@ -229,6 +274,17 @@ const handleDelete = async (clientId) => {
                     type="tel"
                     value={newClient.phone}
                     onChange={(e) => setNewClient({...newClient, phone: e.target.value})}
+                    className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Organization</label>
+                  <input
+                    type="text"
+                    value={newClient.organization}
+                    onChange={(e) =>
+                      setNewClient({ ...newClient, organization: e.target.value })
+                    }
                     className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -263,15 +319,22 @@ const handleDelete = async (clientId) => {
         </div>
       )}
 
-      {/* --- ACTION MODAL (VIEW / EDIT / DELETE) --- */}
-{showModal && selectedClient && (
+      {/* --- CLIENT INFO MODAL (VIEW WITH QUOTATIONS & INVOICES) --- */}
+      {showModal && modalType === 'view' && selectedClient && (
+        <AdminClientInfoModal 
+          client={selectedClient}
+          onClose={() => setShowModal(false)}
+        />
+      )}
+
+      {/* --- ACTION MODAL (EDIT / DELETE) --- */}
+{showModal && (modalType === 'edit' || modalType === 'delete') && selectedClient && (
   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all animate-in fade-in zoom-in duration-200">
+    <div className="bg-white/90 rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all animate-in fade-in zoom-in duration-200 border border-white/30 backdrop-blur-md">
       
       {/* Header */}
       <div className="flex justify-between items-center border-b pb-3 mb-4">
         <h3 className="text-xl font-bold text-gray-800">
-          {modalType === 'view' && 'Client Summary'}
           {modalType === 'edit' && 'Edit Client Status'}
           {modalType === 'delete' && 'Delete Client'}
         </h3>
@@ -282,54 +345,6 @@ const handleDelete = async (clientId) => {
           &times;
         </button>
       </div>
-
-      {/* VIEW */}
-      {modalType === 'view' && (
-        <div className="space-y-4">
-          <div className="flex justify-between border-b border-gray-50 pb-2">
-            <span className="text-gray-500">Client ID</span>
-            <span className="text-gray-900 font-bold">{selectedClient.clientId}</span>
-          </div>
-
-          <div className="flex justify-between border-b border-gray-50 pb-2">
-            <span className="text-gray-500">Name</span>
-            <span className="text-gray-900 font-medium">{selectedClient.name}</span>
-          </div>
-
-          <div className="flex justify-between border-b border-gray-50 pb-2">
-            <span className="text-gray-500">Email</span>
-            <span className="text-gray-900">{selectedClient.email}</span>
-          </div>
-
-          <div className="flex justify-between border-b border-gray-50 pb-2">
-            <span className="text-gray-500">Phone</span>
-            <span className="text-gray-900">{selectedClient.phone}</span>
-          </div>
-
-          <div className="flex justify-between border-b border-gray-50 pb-2">
-            <span className="text-gray-500">Status</span>
-            <span className={`px-3 py-1 text-xs rounded-full font-medium ${
-              selectedClient.status === 'Active'
-                ? 'bg-green-100 text-green-700'
-                : 'bg-gray-100 text-gray-700'
-            }`}>
-              {selectedClient.status}
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span className="text-gray-500">Join Date</span>
-            <span className="text-gray-900">{selectedClient.joinDate || 'N/A'}</span>
-          </div>
-
-          <button
-            onClick={() => setShowModal(false)}
-            className="mt-8 w-full bg-gray-800 text-white py-3 rounded-xl font-semibold hover:bg-gray-900 transition-colors"
-          >
-            Close Details
-          </button>
-        </div>
-      )}
 
       {/* EDIT */}
       {modalType === 'edit' && (

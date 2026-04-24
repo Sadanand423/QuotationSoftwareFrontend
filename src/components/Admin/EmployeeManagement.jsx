@@ -8,8 +8,12 @@ const EmployeeManagement = () => {
   const [currentView, setCurrentView] = useState('list');
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [passwordHistory, setPasswordHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const [showSuccess, setShowSuccess] = useState(false);
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -80,9 +84,27 @@ const handleEditEmployee = (employee) => {
 
 
 
-  const handleViewEmployee = (employee) => {
+  const handleViewEmployee = async (employee) => {
     setCurrentView('view');
     setSelectedEmployee(employee);
+
+    setHistoryLoading(true);
+    setPasswordHistory([]);
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/admin/employees/${employee.id}/password-history`);
+      if (response.ok) {
+        const data = await response.json();
+        setPasswordHistory(Array.isArray(data) ? data : []);
+      } else {
+        setPasswordHistory([]);
+      }
+    } catch (error) {
+      console.error('Failed to load password history:', error);
+      setPasswordHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
   };
 
   // ✅ ADD + UPDATE (POST / PUT)
@@ -100,11 +122,16 @@ const handleEditEmployee = (employee) => {
 
     const method = isEdit ? "PUT" : "POST";
 
+    // In edit mode, exclude password from the update (employees must use email-based password reset)
+    const dataToSend = isEdit 
+      ? { ...formData, password: selectedEmployee.password }
+      : formData;
+
     try {
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(dataToSend),
       });
 
       const data = await res.json();
@@ -129,21 +156,31 @@ const handleEditEmployee = (employee) => {
     });
   };
 
-  // ✅ DELETE FROM BACKEND
-  const deleteEmployee = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this employee?')) return;
-
-    try {
-      await fetch(`http://localhost:8080/api/admin/employees/${id}`, {
-        method: "DELETE"
-      });
-
-      setEmployees(employees.filter(emp => emp.id !== id));
-      setCurrentView("list");
-    } catch (err) {
-      console.error("Delete failed", err);
-    }
+  const handlePhoneChange = (e) => {
+    // Allow only numbers
+    const value = e.target.value.replace(/[^0-9]/g, '');
+    setFormData({
+      ...formData,
+      phone: value
+    });
   };
+
+  // ✅ DELETE FROM BACKEND
+const deleteEmployee = async (id) => {
+  try {
+    await fetch(`http://localhost:8080/api/admin/employees/${id}`, {
+      method: "DELETE"
+    });
+
+    setEmployees(prev => prev.filter(emp => emp.id !== id));
+    setCurrentView("list");
+    setShowDeleteModal(false);   // 👈 close modal
+  } catch (err) {
+    console.error("Delete failed", err);
+  }
+};
+
+
 
   const backToList = () => {
     setCurrentView('list');
@@ -175,7 +212,9 @@ const passwordRules = {
 };
 
 const validCount = Object.values(passwordRules).filter(Boolean).length;
-const isPasswordValid = validCount === 4;
+// In edit mode, skip password validation since password field is read-only
+// In add mode, password must be valid
+const isPasswordValid = currentView === 'edit' ? true : validCount === 4;
 
 
 
@@ -184,6 +223,19 @@ const getStrength = () => {
   if (validCount === 2 || validCount === 3)
     return { text: "Medium", color: "bg-yellow-500", width: "60%" };
   return { text: "Strong", color: "bg-green-500", width: "100%" };
+};
+
+const formatHistoryDate = (isoDate) => {
+  if (!isoDate) return 'N/A';
+  const date = new Date(isoDate);
+  if (Number.isNaN(date.getTime())) return 'N/A';
+  return date.toLocaleString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 };
 
   // Add/Edit Form View
@@ -212,7 +264,7 @@ const getStrength = () => {
             </div>
           )}
           
-          <form className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 overflow-visible">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 overflow-visible">
             <div>
               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">👤 Name</label>
               <input
@@ -223,7 +275,7 @@ const getStrength = () => {
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
                 placeholder="Enter full name"
                 required
-              />
+              />   
             </div>
             
             <div>
@@ -233,7 +285,7 @@ const getStrength = () => {
                 name="email"
                 autoComplete="new-email"
                 value={formData.email}
-                onChange={handleChange}
+                onChange=  {handleChange}
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
                 placeholder="employee@company.com"
                 required
@@ -243,12 +295,12 @@ const getStrength = () => {
             <div>
               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">📱 Phone</label>
               <input
-                type="tel"
+                type="text"
                 name="phone"
                 value={formData.phone}
-                onChange={handleChange}
+                onChange={handlePhoneChange}
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
-                placeholder="+1 (555) 123-4567"
+                placeholder="Enter numbers only"
                 required
               />
             </div>
@@ -284,61 +336,63 @@ const getStrength = () => {
 
           
           <div className="relative">
-  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-    🔐 Password
-  </label>
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+              🔐 Password
+            </label>
 
-  <input
-    type="password"
-    name="password"
-    autoComplete="new-password"
-    value={formData.password}
-    onChange={handleChange}
-    onFocus={() => setIsFocused(true)}
-    onBlur={() => setIsFocused(false)}
-    className={`w-full p-2 rounded-lg text-xs sm:text-sm border transition-all duration-300 ${
-      isFocused && isPasswordValid
-        ? "border-green-500 bg-green-50 focus:ring-2 focus:ring-green-500"
-        : "border-gray-300 focus:ring-2 focus:ring-blue-500"
-    }`}
-    placeholder="Enter strong password"
-    required
-  />
+            <input
+              type="password"
+              name="password"
+              autoComplete="new-password"
+              value={formData.password}
+              onChange={currentView === 'edit' ? undefined : handleChange}
+              onFocus={() => currentView !== 'edit' && setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              readOnly={currentView === 'edit'}
+              className={`w-full p-2 rounded-lg text-xs sm:text-sm border transition-all duration-300 ${
+                currentView === 'edit' 
+                  ? 'bg-gray-100 text-gray-600 border-gray-300 cursor-not-allowed'
+                  : (isFocused && isPasswordValid
+                    ? "border-green-500 bg-green-50 focus:ring-2 focus:ring-green-500"
+                    : "border-gray-300 focus:ring-2 focus:ring-blue-500")
+              }`}
+              placeholder={currentView === 'edit' ? "Password is secured" : "Enter strong password"}
+              required
+            />
 
-  {isFocused && formData.password.length > 0 && !isPasswordValid && (
-    <div
-      className="absolute left-0 top-full mt-2 w-full z-20 
-                 bg-red-50 border border-red-300 text-red-600 
-                 text-xs px-3 py-2 rounded-lg shadow-lg animate-slideFade 
-                 flex items-start gap-2"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-4 w-4 mt-0.5 flex-shrink-0"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={2}
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M12 9v2m0 4h.01M10.29 3.86l-7.2 12.48A1 1 0 004 18h16a1 1 0 00.91-1.66l-7.2-12.48a1 1 0 00-1.72 0z"
-        />
-      </svg>
+            {currentView === 'edit' && (
+              <p className="text-xs text-gray-500 mt-1.5">Passwords cannot be edited here. Employees must securely reset their password using the email-based password reset system.</p>
+            )}
 
-      <span>
-        Password must be at least 8 characters and include an uppercase letter, number and special character.
-      </span>
-    </div>
-  )}
-</div>
+            {isFocused && formData.password.length > 0 && !isPasswordValid && currentView !== 'edit' && (
+              <div
+                className="absolute left-0 top-full mt-2 w-full z-20 
+                          bg-red-50 border border-red-300 text-red-600 
+                          text-xs px-3 py-2 rounded-lg shadow-lg animate-slideFade 
+                          flex items-start gap-2"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 mt-0.5 flex-shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v2m0 4h.01M10.29 3.86l-7.2 12.48A1 1 0 004 18h16a1 1 0 00.91-1.66l-7.2-12.48a1 1 0 00-1.72 0z"
+                  />
+                </svg>
 
+                <span>
+                  Password must be at least 8 characters and include an uppercase letter, number and special character.
+                </span>
+              </div>
+            )}
 
-
-
-
-
+          </div>
             
             <div>
               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">📅 Join Date</label>
@@ -371,40 +425,40 @@ const getStrength = () => {
              
              <div className="col-span-1 sm:col-span-2 flex items-center justify-between gap-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
   
-  {/* Photo Preview */}
-  <div className="flex items-center gap-3">
-    <div className="w-14 h-14 rounded-full bg-blue-100 border-2 border-blue-400 overflow-hidden flex items-center justify-center">
-      {formData.photo ? (
-        <img
-          src={formData.photo}
-          alt="Employee"
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        <span className="text-blue-600 font-bold text-sm">IMG</span>
-      )}
-    </div>
+            {/* Photo Preview */}
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-full bg-blue-100 border-2 border-blue-400 overflow-hidden flex items-center justify-center">
+                {formData.photo ? (
+                  <img
+                    src={formData.photo}
+                    alt="Employee"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-blue-600 font-bold text-sm">IMG</span>
+                )}
+              </div>
 
-    <div>
-      <p className="text-sm font-semibold text-gray-700">Profile Photo</p>
-      <p className="text-xs text-gray-500">PNG / JPG up to 2MB</p>
-    </div>
-  </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">Profile Photo</p>
+                <p className="text-xs text-gray-500">PNG / JPG up to 2MB</p>
+              </div>
+            </div>
 
-  {/* Upload Button */}
-  <label className="cursor-pointer">
-    <input
-      type="file"
-      accept="image/*"
-      onChange={handlePhotoChange}
-      className="hidden"
-    />
-    <span className="bg-green-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg text-xs sm:text-sm font-medium">
-      Upload
-    </span>
-  </label>
+            {/* Upload Button */}
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                className="hidden"
+              />
+              <span className="bg-green-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg text-xs sm:text-sm font-medium">
+                Upload
+              </span>
+            </label>
 
-</div>
+          </div>
 
             <div className="col-span-1 sm:col-span-2 pt-3 sm:pt-4">
              <button
@@ -474,19 +528,38 @@ const getStrength = () => {
               </div>
             </div>
           </div>
+
+          <div className="mt-4 sm:mt-6 p-3 sm:p-4 rounded-lg border border-gray-200 bg-slate-50">
+            <h3 className="text-sm sm:text-base font-bold text-gray-800 mb-2"> Password Change History</h3>
+
+            {historyLoading ? (
+              <p className="text-xs sm:text-sm text-gray-500">Loading password history...</p>
+            ) : passwordHistory.length === 0 ? (
+              <p className="text-xs sm:text-sm text-gray-500">No password reset history available for this employee.</p>
+            ) : (
+              <div className="space-y-2">
+                {passwordHistory.map((entry, index) => (
+                  <div key={`${entry.changedAt}-${index}`} className="bg-white border border-gray-200 rounded-lg p-2.5 sm:p-3">
+                    <p className="text-xs sm:text-sm font-semibold text-gray-800">Changed: {formatHistoryDate(entry.changedAt)}</p>
+                    <p className="text-xs text-gray-500 mt-1">Requested: {formatHistoryDate(entry.requestedAt)}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-gray-200">
             <button
               onClick={() => handleEditEmployee(selectedEmployee)}
               className="bg-blue-500 text-white px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm"
             >
-              ✏️ Edit Employee
+               Edit Employee
             </button>
             <button
               onClick={() => deleteEmployee(selectedEmployee.id)}
               className="bg-red-500 text-white px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm"
             >
-              🗑️ Delete Employee
+               Delete Employee
             </button>
           </div>
         </div>
@@ -593,7 +666,7 @@ const getStrength = () => {
                   Edit
                 </button>
                 <button
-                  onClick={() => deleteEmployee(employee.id)}
+                  onClick={() => {setSelectedEmployee(employee); setShowDeleteModal(true); }}
                   className="flex-1 bg-red-500 text-white py-2 px-2 sm:px-3 rounded text-xs sm:text-sm font-medium hover:bg-red-600"
                 >
                    Delete
@@ -603,6 +676,37 @@ const getStrength = () => {
           ))}
         </div>
       )}
+      {showDeleteModal && selectedEmployee && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-[350px] p-5 animate-in fade-in zoom-in">
+
+            <h3 className="text-lg font-bold text-gray-800 mb-3">
+              Delete Employee
+            </h3>
+
+            <p className="text-sm text-gray-600 mb-5">
+              Are you sure you want to delete{" "}
+              <span className="font-semibold">{selectedEmployee.name}</span>?
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => deleteEmployee(selectedEmployee.id)}
+                className="flex-1 bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700"
+              >
+                Delete
+              </button>
+
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg font-semibold hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )} 
     </div>
   );
 };
